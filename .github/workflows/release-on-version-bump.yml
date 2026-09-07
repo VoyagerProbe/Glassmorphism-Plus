@@ -127,16 +127,40 @@ jobs:
           git tag -a "${RELEASE_TAG}" -m "Release ${RELEASE_TAG}"
           git push origin "${RELEASE_TAG}"
 
-      - name: Create or update GitHub release
+      - name: Prepare new prerelease notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.release_tag }}
+        run: |
+          if gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "Release ${RELEASE_TAG} already exists. Refusing to edit or promote it." >&2
+            exit 1
+          fi
+          node <<'NODE'
+          const { readFileSync, writeFileSync } = require('node:fs')
+          const { execFileSync } = require('node:child_process')
+          const tag = process.env.RELEASE_TAG
+          const readme = readFileSync('README.md', 'utf8')
+          const heading = `### ✨ 最新版本 · ${tag}`
+          const start = readme.indexOf(heading)
+          if (start < 0) throw new Error('Current README release summary is missing')
+          const summary = readme.slice(start + heading.length).split(/\n---/)[0].split('\n').filter(line => line.startsWith('- ')).join('\n')
+          if (!summary) throw new Error('Current release has no verified summary')
+          const previous = execFileSync('git', ['describe', '--tags', '--abbrev=0', `${tag}^`], { encoding: 'utf8' }).trim()
+          writeFileSync('release-notes.md', `## ${tag}\n\n${summary}\n\n> 此版本先以 Pre-release 提供，待用户实际测试确认后再转为正式版本。\n\n**完整变更记录**: https://github.com/${process.env.GITHUB_REPOSITORY}/compare/${previous}...${tag}\n`)
+          NODE
+
+      - name: Create GitHub prerelease
         if: (steps.version.outputs.version_changed == 'true' || steps.tag.outputs.exists == 'false') && (steps.tag.outputs.exists == 'false' || steps.tag.outputs.current == 'true')
         # The verified customer installer is uploaded separately from the local
-        # release flow so this action never manufactures an unreviewed asset.
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ steps.version.outputs.release_tag }}
-          name: Glassmorphism Plus ${{ steps.version.outputs.release_tag }}
-          target_commitish: ${{ github.sha }}
-          generate_release_notes: true
+        # release flow so this workflow never manufactures an unreviewed asset.
+        # create (not edit) also refuses an existing Release if another publisher races us.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.release_tag }}
+        run: |
+          gh release create "${RELEASE_TAG}" --verify-tag --title "${RELEASE_TAG}" \
+            --notes-file release-notes.md --prerelease --latest=false
 
       - name: Verify release has no unexpected custom assets
         if: (steps.version.outputs.version_changed == 'true' || steps.tag.outputs.exists == 'false') && (steps.tag.outputs.exists == 'false' || steps.tag.outputs.current == 'true')

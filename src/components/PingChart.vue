@@ -176,6 +176,8 @@ const legacyCustomRangeFallback = ref(false)
 
 // 任务选择
 const selectedTaskIds = ref<number[]>([])
+// Local UI state: reconcile only accepted task inventories, not range/loading resets.
+let selectionAvailableTaskIds: number[] | null = null
 const isTouchTooltipMode = ref(false)
 const activeTaskTooltipId = ref<number | null>(null)
 const smoothPeaks = ref(false)
@@ -449,8 +451,11 @@ async function fetchRecords() {
       ? result.tasks
       : orderPingTasksByBackend(result.tasks, await loadPublicPingTasks().catch(() => []))
 
-    if (tasks.value.length > 0 && selectedTaskIds.value.length === 0) {
-      selectedTaskIds.value = tasks.value.map(t => t.id)
+    const availableIds = tasks.value.map(t => t.id)
+    if (selectionAvailableTaskIds === null || availableIds.join(',') !== selectionAvailableTaskIds.join(',')) {
+      const retainedIds = selectedTaskIds.value.filter(id => availableIds.includes(id))
+      selectedTaskIds.value = retainedIds.length ? retainedIds : availableIds
+      selectionAvailableTaskIds = availableIds
     }
   }
   catch (err) {
@@ -794,7 +799,6 @@ const pingChartOption = computed(() => {
 // ==================== 生命周期 ====================
 
 watch(selectedView, () => {
-  selectedTaskIds.value = []
   if (isCustomRange.value)
     ensureDefaultCustomRange()
   fetchRecords()
@@ -804,6 +808,7 @@ watch(() => props.uuid, () => {
   remoteData.value = []
   tasks.value = []
   selectedTaskIds.value = []
+  selectionAvailableTaskIds = null
   activeTaskTooltipId.value = null
   smoothInfoTooltipOpen.value = false
   fetchRecords()
@@ -1053,7 +1058,8 @@ onBeforeUnmount(() => {
 
         <!-- 图表 -->
         <div class="h-80 bg-background/50 p-4 rounded-md">
-          <VChart :option="pingChartOption" autoresize @legendselectchanged="handleLegendSelectionChanged" />
+          <!-- Task inventory changes must replace visible series, not infer color as a component. -->
+          <VChart :option="pingChartOption" :update-options="{ replaceMerge: ['series'] }" autoresize @legendselectchanged="handleLegendSelectionChanged" />
         </div>
       </template>
     </Spinner>

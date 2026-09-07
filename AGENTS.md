@@ -16,6 +16,7 @@ Before any non-trivial task, read in this order:
 - `_upstream-komari-glassmorphism-reference`, `komari-main`, and `Komari-Theme-LuminaPlus-main` are read-only unless the current task explicitly requires otherwise.
 - Never weaken the privacy, Git, release, versioning, customer-installer, or protected-product rules defined in `CODEX.md`.
 - A formal GitHub Release normally receives exactly one locally verified customer-installer ZIP after source publication; the ZIP itself must never be staged, committed, or pushed to `main`, and any per-version opt-out must be explicit.
+- Every newly created GitHub Release defaults to Pre-release, with its title exactly matching the tag. Do not mark it Latest or stable automatically; the user promotes tested releases. Only explicit per-task authorization may override this default.
 - Nested `AGENTS.md` files may add scoped implementation rules but must not intentionally redefine repository-wide safety/release policy.
 - Preserve unrelated user work and never perform destructive Git/history operations without explicit authorization.
 - For multi-file or interruptible work, maintain `AICACHE.md` without secrets.

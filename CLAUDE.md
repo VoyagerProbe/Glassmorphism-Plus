@@ -34,6 +34,7 @@ application.
 - bun run release:prepare verifies that installer ZIP and creates the filtered
   release snapshot. It does not create the publish clone.
 - The installer layout remains komari-theme.json, preview.png, and dist/.
+- New GitHub Releases default to Pre-release with title equal to tag, never automatic Latest/stable. The user promotes tested releases; only explicit per-task authorization overrides this default.
 - The final customer installer stays outside Git. A formal GitHub Release uploads
   that exact locally verified ZIP by default as its sole custom asset unless the
   user explicitly opts out for that version, followed by an external temporary

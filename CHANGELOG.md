@@ -2,6 +2,18 @@
 
 本文件只记录 **Glassmorphism Plus** 自己的发行版本。原始 Glassmorphism 的版本历史请查看[上游仓库](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases)；Plus 的选择性同步记录见 [UPSTREAM.md](UPSTREAM.md)。
 
+## [2.7.4] - 2026-09-07
+
+### Fixed
+
+- 节点详情页使用明确的响应式布局：手机端标题、节点切换器和服务商信息分行；PC 端服务商归入节点身份区，切换器独立右对齐。长名称可收缩省略，不挤压在线状态或超出详情内容边界。
+- 同一节点的 Ping 任务选择独立于时间范围，包含自定义范围；UUID 改变时重新初始化，任务列表更新时清理已不存在的选项。
+
+### Release policy
+
+- 新建 GitHub Release 默认 Pre-release，标题等于 tag，不自动标记 Latest；用户实测后自行提升，只有明确的单次授权可例外。
+- 保持 Ping RPC、查询参数、Metric／Legacy、缓存、调度、bucket、统计和节点业务逻辑不变；继续执行风险相关回归、敏感资料与安装包校验。
+
 ## [2.7.3] - 2026-09-06
 
 ### Changed

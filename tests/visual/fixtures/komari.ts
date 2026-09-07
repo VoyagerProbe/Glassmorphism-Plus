@@ -32,6 +32,8 @@ export interface VisualFixtureOptions {
   nodeCardPingDisplayConfigV3?: string
   nodeCardPingFixture?: NodeCardPingFixture
   nodeCount?: number
+  /** Synthetic detail-header names; omitted fixtures retain their original data. */
+  nodeNames?: string[]
   clockNow?: string
   fakeTimers?: boolean
   preserveStorageOnReload?: boolean
@@ -1013,6 +1015,11 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
     nodeCount,
   )
   const statusFixtures = buildStatuses(nodeCount)
+  for (const [index, name] of (options.nodeNames ?? []).entries()) {
+    const node = clientFixtures[uuidFor(index)]
+    if (node)
+      node.name = name
+  }
   const pingResponseGate = createPingResponseGate()
   const adminResponseGate = createPingResponseGate()
   const pingTimeline: PingRpcTimelineEntry[] = []

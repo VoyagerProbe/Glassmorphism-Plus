@@ -120,6 +120,7 @@ Vite 注入的全局常量：
 发布注意：
 
 - GitHub Release 自动化必须读取 `komari-theme.json.version`。
+- 新建 GitHub Release 默认 **Pre-release**，标题等于 tag，不自动设为 Latest／stable；用户实测后亲自提升。仅当次任务的明确授权可覆盖这一默认策略，不能在创建后自行转正。
 - 改 release workflow 或 bump 版本后，不要只信本地 build，要检查 GitHub Actions 和 Release assets。
 - 如果已发布构建坏了，应该 bump patch version 后发布新 Release，不要静默依赖旧失败 tag。
 
@@ -403,7 +404,7 @@ HomeView tool button
 2. 本地跑 `bun run build`，确认生成动态版本路径的安装 ZIP。
 3. 跑 `bun run release:prepare`，建立并验证过滤后的 release snapshot。
 4. 在动态 publish 路径 clone 已核准的 GitHub target，审查后同步有效 source、提交并推送。
-5. 如需 Tag / GitHub Release，手动 dispatch workflow；除非用户对该版本明确要求不上传，否则把本地已完成结构、版本、隐私和 SHA-256 验证的最终客户 ZIP 作为唯一自定义 Release asset 上传。ZIP 始终不得进入 Git。
+5. 如需 Tag / GitHub Release，按 CODEX 发布契约创建 Pre-release（可显式 dispatch workflow）；除非用户对该版本明确要求不上传，否则把本地已完成结构、版本、隐私和 SHA-256 验证的最终客户 ZIP 作为唯一自定义 Release asset 上传。ZIP 始终不得进入 Git。
 6. 从 Release 下载 asset 到正式仓库以外的临时目录，复核 SHA-256、可解压性、根结构和 manifest 版本，确认自定义 asset 数量恰为 1 后安全清理临时副本；将 tag、Release、Actions 和验证结果记录到 [AICACHE.md](AICACHE.md)。
 
 ## 13. 里程碑边界

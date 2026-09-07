@@ -385,6 +385,10 @@ template, report, screenshot, cache, or local backup.
 
 For every future formal Release:
 
+- create it as **Pre-release** by default and explicitly disable automatic Latest
+  promotion; the user will manually promote a tested release to stable/Latest.
+  Only explicit per-task user authorization may override this rule. Never promote
+  it after creation on the user's behalf without that authorization;
 - use the full SemVer tag `v<version>`;
 - set the Release title/name to exactly the tag (`release.name === release.tag_name`)
   without a product-name or `Release` prefix;

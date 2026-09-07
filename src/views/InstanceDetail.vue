@@ -489,19 +489,21 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
 
     <template v-else>
       <!-- 顶部导航 -->
-      <div class="px-4 flex flex-wrap gap-2 items-center sm:gap-4">
-        <Button variant="ghost" size="icon-sm" class="bg-background/50 hover:bg-background" aria-label="返回首页" @click="router.push('/')">
-          <Icon icon="tabler:arrow-left" :width="16" :height="16" />
-        </Button>
-        <div class="min-w-0 text-lg font-bold flex gap-2 items-center">
-          <img :src="`/images/flags/${getRegionCode(data.region)}.svg`" :alt="getRegionAltText(data.region)" class="size-6">
-          <span class="truncate">{{ data.name }}</span>
+      <div class="detail-header px-4 grid min-w-0 gap-2 items-center lg:gap-x-4">
+        <div class="detail-identity flex min-w-0 items-center gap-2">
+          <Button variant="ghost" size="icon-sm" class="shrink-0 bg-background/50 hover:bg-background" aria-label="返回首页" @click="router.push('/')">
+            <Icon icon="tabler:arrow-left" :width="16" :height="16" />
+          </Button>
+          <div class="min-w-0 text-lg font-bold flex gap-2 items-center">
+            <img :src="`/images/flags/${getRegionCode(data.region)}.svg`" :alt="getRegionAltText(data.region)" class="size-6 shrink-0">
+            <span class="truncate">{{ data.name }}</span>
+          </div>
+          <Badge :variant="data.online ? 'default' : 'destructive'" class="shrink-0 text-xs !rounded">
+            {{ data.online ? '在线' : '离线' }}
+          </Badge>
         </div>
-        <Badge :variant="data.online ? 'default' : 'destructive'" class="text-xs !rounded">
-          {{ data.online ? '在线' : '离线' }}
-        </Badge>
         <!-- 节点自定义标签 -->
-        <div v-if="customTags.length" class="flex flex-wrap gap-1">
+        <div v-if="customTags.length" class="detail-tags flex min-w-0 flex-wrap gap-1">
           <Badge
             v-for="(tag, i) in customTags" :key="i" variant="outline"
             class="!text-[11px] rounded text-muted-foreground border-muted-foreground/15 px-1.5 py-0"
@@ -509,7 +511,7 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
             {{ tag }}
           </Badge>
         </div>
-        <div class="ml-auto flex h-8 shrink-0 items-center gap-1 rounded-md bg-background/50 p-0.5 backdrop-blur-xs">
+        <div class="detail-selector flex h-8 w-full min-w-0 max-w-80 justify-self-end items-center gap-1 rounded-md bg-background/50 p-0.5 backdrop-blur-xs">
           <Button
             variant="ghost" size="icon-sm"
             class="size-7 rounded-sm shadow-none"
@@ -530,7 +532,7 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
           </Button>
           <select
             :value="data.uuid"
-            class="detail-node-select h-7 max-w-34 rounded-sm border-0 bg-transparent px-1 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/60 sm:max-w-48"
+            class="detail-node-select h-7 min-w-0 w-0 flex-1 truncate rounded-sm border-0 bg-transparent px-1 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
             aria-label="切换节点"
             @change="selectDetailNode"
           >
@@ -553,12 +555,12 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
           as="div"
           placement="bottom"
           :content="vpsProvider.tooltipLines.join('\n')"
-          class="max-w-full"
+          class="detail-provider min-w-0 max-w-full justify-self-start"
           content-class="w-72 whitespace-pre-wrap break-words px-2 py-1.5 text-left leading-relaxed"
         >
           <div class="flex max-w-full items-center gap-1.5 rounded-full bg-background/50 px-3 py-1 text-xs text-muted-foreground">
             <Icon :icon="vpsProvider.primary.icon" :width="14" :height="14" class="shrink-0" />
-            <span class="whitespace-normal break-words leading-snug">{{ vpsProvider.displayName }}</span>
+            <span class="min-w-0 truncate leading-snug">{{ vpsProvider.displayName }}</span>
           </div>
         </DataTooltip>
       </div>
@@ -765,3 +767,35 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
     </template>
   </div>
 </template>
+
+<style scoped>
+.detail-header {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'identity' 'selector' 'provider' 'tags';
+}
+.detail-identity {
+  grid-area: identity;
+}
+.detail-selector {
+  grid-area: selector;
+}
+.detail-provider {
+  grid-area: provider;
+}
+.detail-tags {
+  grid-area: tags;
+}
+
+@media (min-width: 1024px) {
+  .detail-header {
+    grid-template-columns: minmax(0, max-content) minmax(0, 1fr) 20rem;
+    grid-template-areas: 'identity provider selector' 'tags tags tags';
+  }
+  .detail-identity {
+    max-width: clamp(16rem, 40vw, 36rem);
+  }
+  .detail-provider {
+    max-width: 24rem;
+  }
+}
+</style>
