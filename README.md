@@ -53,8 +53,6 @@ Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用�
 - 修复 Ping 图表切换时间范围后任务选择重置的问题，同一节点内保留选择，切换节点后重新初始化。
 - 保持节点数据读取、Ping 查询、缓存、调度和图表计算行为不变。
 
-> v2.7.4 已由用户实际测试确认，现为正式版本／Latest。今后新 Release 默认预发布，由用户实际测试后亲自转为正式／Latest；仅明确的单次授权可例外。
-
 ---
 
 ## ➕ Glassmorphism Plus 的主要增强
