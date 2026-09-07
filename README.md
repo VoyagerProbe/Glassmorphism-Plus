@@ -35,25 +35,25 @@
 
 | 项目               | 当前状态                                                                                                               |
 | :----------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v2.7.4**（预发布）                                                                                                   |
+| 当前 Plus 版本     | **v2.7.4**（正式版本／Latest）                                                                                         |
 | 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7) |
 | 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                        |
 | 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                             |
 | 已验证 Komari 版本 | **1.4.3**                                                                                                              |
 | 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                         |
-| 源码发布           | GitHub `main` 与 `v2.7.4` Pre-release；附加唯一、已验证的客户安装包                                                    |
+| 源码发布           | GitHub `main` 与 `v2.7.4` 正式 Release；附加唯一、已验证的客户安装包                                                   |
 | 本地安装包         | `2.7.4/Glassmorphism-Plus-release-2.7.4.zip`                                                                           |
 
 Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用自己的版本体系；上游 v3.3.7 仅代表当前同步基线，并非 Plus 的版本号。同步来源、选择性合并和署名详见 [UPSTREAM.md](UPSTREAM.md)。
 
-### ✨ 最新版本 · v2.7.4（预发布）
+### ✨ 最新版本 · v2.7.4
 
 - 优化节点详情页顶部响应式布局，长节点名称和服务商名称不再挤压节点切换控件。
 - 移动端将节点切换器与服务商信息分行；PC 端将服务商归入身份区，切换器稳定右对齐。
 - 修复 Ping 图表切换时间范围后任务选择重置的问题，同一节点内保留选择，切换节点后重新初始化。
 - 保持节点数据读取、Ping 查询、缓存、调度和图表计算行为不变。
 
-> 此版本先以 Pre-release 提供。今后新 Release 默认预发布，由用户实际测试后亲自转为正式／Latest；仅明确的单次授权可例外。
+> v2.7.4 已由用户实际测试确认，现为正式版本／Latest。今后新 Release 默认预发布，由用户实际测试后亲自转为正式／Latest；仅明确的单次授权可例外。
 
 ---
 
@@ -145,8 +145,8 @@ Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用�
 
 ### 重要说明
 
-- **v2.7.4 GitHub Pre-release 附加且只附加一个已验证的 installer asset：** `Glassmorphism-Plus-release-2.7.4.zip`。
-- 预发布版本请从对应版本页面手动下载安装包测试；远程仓库的 Latest 导入可能仍使用上一正式版本。
+- **v2.7.4 GitHub 正式 Release 附加且只附加一个已验证的 installer asset：** `Glassmorphism-Plus-release-2.7.4.zip`。
+- 当前 Latest 为 v2.7.4。其他预发布版本请从对应版本页面手动下载安装包测试。
 - GitHub 自动生成的 **Source code (zip)** 是源码快照，**不是** Komari 可安装主题包。
 - Komari 的远程仓库导入流程应使用正式 Release 中的 installer asset；仍不要用 GitHub 自动生成的源码压缩包代替。
 
@@ -227,7 +227,7 @@ bun run release:prepare
 
 ## 📝 版本历史
 
-当前版本更新见上方「最新版本 · v2.7.4（预发布）」。
+当前版本更新见上方「最新版本 · v2.7.4」。
 
 <details>
 <summary><strong>📚 查看历史版本更新</strong></summary>
