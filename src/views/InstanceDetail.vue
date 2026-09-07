@@ -540,6 +540,7 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
               {{ node.name }}
             </option>
           </select>
+          <Icon icon="tabler:chevron-down" class="detail-selector-chevron hidden pointer-events-none" :width="14" :height="14" aria-hidden="true" />
           <Button
             variant="ghost" size="icon-sm" class="size-7 rounded-sm shadow-none"
             :disabled="detailNodes.length < 2"
@@ -555,10 +556,10 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
           as="div"
           placement="bottom"
           :content="vpsProvider.tooltipLines.join('\n')"
-          class="detail-provider min-w-0 max-w-full justify-self-start"
+          class="detail-provider min-w-0 w-full max-w-full justify-self-stretch lg:w-auto lg:justify-self-start"
           content-class="w-72 whitespace-pre-wrap break-words px-2 py-1.5 text-left leading-relaxed"
         >
-          <div class="flex max-w-full items-center gap-1.5 rounded-full bg-background/50 px-3 py-1 text-xs text-muted-foreground">
+          <div class="flex w-full max-w-full items-center justify-start gap-1.5 rounded-full bg-background/50 px-3 py-1 text-xs text-muted-foreground">
             <Icon :icon="vpsProvider.primary.icon" :width="14" :height="14" class="shrink-0" />
             <span class="min-w-0 truncate leading-snug">{{ vpsProvider.displayName }}</span>
           </div>
@@ -784,6 +785,35 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
 }
 .detail-tags {
   grid-area: tags;
+}
+
+@media (max-width: 1023px) {
+  .detail-selector {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    justify-self: stretch;
+    display: grid;
+    grid-template-columns: 1.75rem 1.75rem minmax(0, 1fr) 1.75rem 1.75rem;
+  }
+  .detail-selector .detail-node-select {
+    /* Include the decorative arrow in the native click target; center text in its own track. */
+    grid-area: 1 / 3 / 2 / 5;
+    width: 100%;
+    padding-right: 2.25rem;
+    appearance: none;
+    -webkit-appearance: none;
+    text-align: center;
+    text-align-last: center;
+  }
+  .detail-selector-chevron {
+    grid-area: 1 / 4;
+    display: block;
+    justify-self: center;
+  }
+  .detail-selector > button:last-child {
+    grid-area: 1 / 5;
+  }
 }
 
 @media (min-width: 1024px) {

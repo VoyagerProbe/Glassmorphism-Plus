@@ -33,11 +33,20 @@ for (const [width, height] of sizes) {
         }
         const select = element.querySelector('select')!
         const providerText = Array.from(element.querySelectorAll('span')).find(el => el.textContent === identity.provider)!
+        const providerSurface = providerText.parentElement!
+        const providerIcon = providerSurface.querySelector('svg')!
+        const controls = Array.from(select.parentElement!.querySelectorAll('button')).map(rect)
+        const selectStyle = getComputedStyle(select)
+        const selectBox = rect(select)
+        const textCenter = (selectBox.left + Number.parseFloat(selectStyle.paddingLeft) + selectBox.right - Number.parseFloat(selectStyle.paddingRight)) / 2
+        const chevron = element.querySelector('.detail-selector-chevron')!
+        const chevronBox = rect(chevron)
+        const chevronTargetsSelect = document.elementFromPoint((chevronBox.left + chevronBox.right) / 2, (chevronBox.top + chevronBox.bottom) / 2) === select
         const name = Array.from(element.querySelectorAll('span')).find(el => el.textContent === identity.name)!
         const status = Array.from(element.querySelectorAll('[data-slot="badge"]')).find(el => el.textContent?.trim() === '在线')!
         const summary = element.nextElementSibling!
         const cards = Array.from(summary.children).map(rect)
-        return { selector: rect(select.parentElement!), select: rect(select), provider: rect(providerText), name: rect(name), status: rect(status), back: rect(element.querySelector('button')!), flag: rect(element.querySelector('img')!), cards, overflow: document.documentElement.scrollWidth > innerWidth, nameOverflow: getComputedStyle(name).textOverflow, selectOverflow: getComputedStyle(select).textOverflow, providerOverflow: getComputedStyle(providerText).textOverflow }
+        return { selector: rect(select.parentElement!), select: selectBox, textCenter, chevron: chevronBox, chevronTargetsSelect, provider: rect(providerText), providerSurface: rect(providerSurface), providerIcon: rect(providerIcon), controls, sharedParent: select.parentElement!.parentElement === providerSurface.parentElement!.parentElement, selectAlign: selectStyle.textAlign, selectLastAlign: selectStyle.textAlignLast, providerAlign: getComputedStyle(providerSurface).justifyContent, name: rect(name), status: rect(status), back: rect(element.querySelector('button')!), flag: rect(element.querySelector('img')!), cards, overflow: document.documentElement.scrollWidth > innerWidth, nameOverflow: getComputedStyle(name).textOverflow, selectOverflow: selectStyle.textOverflow, providerOverflow: getComputedStyle(providerText).textOverflow }
       }, { name: names[index]!, provider: providers[index]! })
       measurements.push(geometry)
       expect(geometry.overflow).toBe(false)
@@ -53,6 +62,24 @@ for (const [width, height] of sizes) {
       if (width! < 1024) {
         expect(geometry.selector.top).toBeGreaterThanOrEqual(geometry.status.bottom)
         expect(geometry.provider.top).toBeGreaterThanOrEqual(geometry.selector.bottom)
+        expect(geometry.sharedParent).toBe(true)
+        for (const edge of ['left', 'right', 'width'] as const)
+          expect(Math.abs(geometry.selector[edge] - geometry.providerSurface[edge])).toBeLessThanOrEqual(2)
+        expect(Math.abs(geometry.selector.left - geometry.cards[0]!.left)).toBeLessThanOrEqual(2)
+        expect(Math.abs(geometry.selector.right - Math.max(...geometry.cards.map(card => card.right)))).toBeLessThanOrEqual(2)
+        expect(geometry.selectAlign).toBe('center')
+        expect(geometry.selectLastAlign).toBe('center')
+        expect(geometry.providerAlign).toBe('flex-start')
+        expect(geometry.providerIcon.left - geometry.providerSurface.left).toBeCloseTo(12, 0)
+        expect(geometry.provider.left - geometry.providerIcon.right).toBeCloseTo(6, 0)
+        expect(geometry.providerIcon.width).toBeGreaterThanOrEqual(14)
+        for (const [controlIndex, control] of geometry.controls.entries()) {
+          expect(control.width).toBeGreaterThanOrEqual(28)
+          expect(Math.abs(control.left - measurements[0]!.controls[controlIndex]!.left)).toBeLessThanOrEqual(1)
+        }
+        expect(Math.abs(geometry.textCenter - (geometry.selector.left + geometry.selector.right) / 2)).toBeLessThanOrEqual(2)
+        expect(geometry.chevronTargetsSelect).toBe(true)
+        expect(Math.abs(geometry.chevron.left - measurements[0]!.chevron.left)).toBeLessThanOrEqual(1)
       }
       else {
         expect(geometry.provider.left).toBeGreaterThanOrEqual(geometry.status.right)
@@ -85,6 +112,9 @@ for (const [width, height] of sizes) {
       expect(bottom.background).not.toBe('rgba(0, 0, 0, 0)')
     }
     await testInfo.attach('geometry', { body: JSON.stringify(measurements), contentType: 'application/json' })
+    await page.getByRole('button', { name: '返回首页', exact: true }).click()
+    await expect(page).toHaveURL(/\/$/)
+    await expect(page.getByRole('button', { name: '浅色模式', exact: true })).toBeVisible()
   })
 }
 
