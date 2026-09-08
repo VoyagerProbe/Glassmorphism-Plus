@@ -21,16 +21,6 @@
 
 ---
 
-## 📸 预览
-
-<div align="center">
-
-<img src="docs/preview.png" width="80%" alt="Glassmorphism Plus 主题预览" />
-
-</div>
-
----
-
 ## 🚦 项目状态
 
 | 项目               | 当前状态                                                                                                               |
@@ -55,85 +45,43 @@ Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用�
 
 ---
 
-## ➕ Glassmorphism Plus 的主要增强
+## 📸 预览
 
-在保留原始 Glassmorphism 视觉基础的同时，Plus 重点维护以下能力：
+### 首页与三网监控
 
-- 以节点 UUID 为中心，为首页卡片显示单个任务或固定三行的三网任务；统一延迟监测中心位于 `pingsettings`。
-- 支持全局三网监控开关、每服务器继承全局／单独配置，以及严格任务交集下的多服务器批量配置。
-- 任务目录、配置解析、分组查询、精确 pair fallback、缓存与共享刷新器组成同一数据管线；单任务失败不会阻塞其他任务。
-- 指定任务的 Metric 与同任务 Legacy 保持严格的节点／任务归属验证；有效 selected task 不会被 aggregate 数据冒充。
-- Ping 支持 1 小时至 30 天及自定义范围，并为长范围采用多层历史覆盖。
-- 首页时间桶明确区分 `PENDING`、`DATA` 与 `CONFIRMED_MISSING`，支持真实迟到样本 late backfill。
-- Cold/Warm Start、原始缓存桥接与 Promise 去重让卡片先恢复可靠快照，再静默刷新真实数据。
-- `0 ms`、`0%` 与 `100% loss` 均采用明确数据语义；断网缺口不会被伪造或错误连线。
-- iPhone Safari safe-area、弹窗滚动锁、移动端布局和返回路径经过专项回归。
-- Plus 自己维护版本、发布、隐私扫描、安装包校验和桌面／移动端视觉回归流程。
+[![Glassmorphism Plus 首页与三网监控预览](https://cdn.nodeimage.com/i/EGIqdmhrJ8Bqz25PQ1TP4gyITnpaVc8v.png)](https://cdn.nodeimage.com/i/EGIqdmhrJ8Bqz25PQ1TP4gyITnpaVc8v.png)
 
-这些增强是在原主题之上的维护与二次开发；原项目贡献不被重新声明为 Plus 原创。
+<details>
+<summary><strong>查看延迟监测中心：任务配置与任务概览</strong></summary>
+
+### 延迟任务配置
+
+[![Glassmorphism Plus 延迟任务配置预览](https://cdn.nodeimage.com/i/smXmmmmP89tYoBsGYnHnnHtXrLHisDxw.png)](https://cdn.nodeimage.com/i/smXmmmmP89tYoBsGYnHnnHtXrLHisDxw.png)
+
+### 延迟任务概览
+
+[![Glassmorphism Plus 延迟任务概览预览](https://cdn.nodeimage.com/i/Tah3jwF2c6RkVIg0EJBflMeUi2a91XPF.png)](https://cdn.nodeimage.com/i/Tah3jwF2c6RkVIg0EJBflMeUi2a91XPF.png)
+
+</details>
+
+*点击图片可查看原图，具体界面以当前版本为准。*
 
 ---
 
 ## ✨ 功能概览
 
-### 首页与节点卡片
+保留原版 Glassmorphism 的玻璃拟态界面与节点展示能力，重点增强每节点 Ping 任务配置、三网监控和日常浏览体验。
 
-- 卡片、列表、真实地球、点阵地球、平铺地图与隐藏地球布局。
-- 总览卡片预设、自定义 keys 和顺序在所有地球布局中使用同一配置来源。
-- CPU、内存、磁盘、流量、价格、到期状态、收藏、分组、搜索和快捷筛选。
-- 多尺寸节点卡片、响应式密度与访客可见字段控制。
+- **节点监控**：支持卡片与列表视图，查看 CPU、内存、磁盘、流量及运行状态；提供多尺寸卡片、分组、搜索与收藏。
+- **延迟与丢包**：每台节点可独立选择已分配的 Ping 任务；支持单任务或三网监控，并分别展示延迟与丢包趋势，区分等待采样、无采样和探测不可达。
+- **统一任务管理**：在“延迟监测中心”查看任务覆盖情况，支持全局默认、单节点配置和多节点批量配置，配置保存仅限管理员。
+- **详情与历史图表**：查看节点硬件、系统信息和历史指标；Ping 支持1小时至30天及自定义范围、平滑峰值，同一节点切换时间范围时保留任务选择。
+- **外观与移动端**：支持浅色、深色、北京时间自动模式，以及地球／地图、自定义背景与布局；兼顾电脑和手机浏览。
+- **费用与辅助工具**：查看节点费用、剩余价值与到期提醒，提供节点对比、健康摘要和视图导出，并支持配置访客可见内容。
 
-### Ping 与丢包
+*历史数据的实际可查看范围取决于后端保留时间及已有采样记录。*
 
-- 每张首页节点卡只采用单任务或三网监控模式；三网模式始终保留三行几何结构，未覆盖或失效任务不会被折叠。
-- 候选任务必须真实包含该节点 UUID，重复、未分配或失效任务会被明确拦截或标记，不会由聚合结果冒充。
-- 全局默认、单服务器单独配置和批量配置均由统一延迟监测中心管理；批量候选取所选服务器的严格 task 交集。
-- 每个任务条明确标示延迟与丢包，并各保留 20 个固定宽高时间桶；数值、hover、focus 和 tooltip 只改变颜色或提示，不改变双轨几何。
-- 100% 丢包只显示一次 `丢包 100%`，延迟明确显示 `延迟 -`；延迟轨使用不可达状态，丢包轨使用红色满丢包状态。
-- 延迟、丢包与趋势条来自同一节点／任务 pair；Metric 批量查询不支持时才降级为精确 pair 请求，同任务 Legacy 是最后的数据 fallback。
-- 共享 Promise、内存／持久快照和单一 sample-aware scheduler 提供快速 Warm Start，同时在 hidden／offline／unmount 时暂停或清理。
-- 1 小时、6 小时、12 小时、1 天、7 天、14 天、30 天与自定义范围。
-- 平滑峰值、真实 outage gap、late backfill、固定卡片时间桶与 100% loss 语义。
-
-### 历史 Metric
-
-- Metric Store 优先，旧 records 路径作为兼容 fallback。
-- 历史范围支持实时、4 小时、1 天、7 天、30 天与自定义查询。
-- 普通 gauge 按 bucket 平均；累计上传／下载 counter 按 bucket 最后值保留累计语义。
-- 请求去重、缓存隔离和快速切换范围的旧响应防覆盖。
-
-### 节点详情
-
-- CPU／负载、内存／Swap、磁盘、网络、累计与周期流量、连接、进程、GPU、温度和 Ping 图表。
-- 概览卡与图表预设、英文 key 自定义、旧配置解析和响应式分区。
-- 节点切换、硬件和系统信息、供应商与运行状态展示。
-
-### 高级工具
-
-- 节点拓扑、节点对比、性价比、健康摘要和当前视图快照导出。
-- 流量、费用、到期、离线与高负载等运维筛选。
-- 登录状态下按需显示高级工具，避免普通访客误触管理能力。
-
-### 隐私与权限
-
-- 未登录隐藏后台入口、价格与费用信息等 managed theme 配置。
-- 心跳图标向访客提供只读 Ping 概览；设置页、保存动作与管理员 API 仍以真实管理员权限为安全边界。
-- “隐藏延迟任务绑定入口”只控制公开心跳入口；管理员仍可通过 `?view=pingsettings` 直接进入设置，访客永远不能保存。
-- 导出二级密码、访客字段控制和发布前敏感信息扫描。
-
-### 移动端与浏览器
-
-- 桌面、Android、iPhone Safari 与窄屏布局。
-- WebKit safe-area、动态视口、弹窗关闭和路由返回后的滚动状态修复。
-- 亮色、暗色、北京时间自动模式和色觉辅助配色。
-
-### 主题配置
-
-- Komari managed theme 配置，无需修改源码即可调整布局、卡片、图表、背景和隐私选项。
-- `pingsettings` 延迟监测中心提供公开概览及管理员设置页，采用简体中文主筛选、可点击覆盖状态、紧凑节点列表和批量操作，不要求手写任务 ID。
-- v3 配置使用不透明、版本化的 `nodeCardPingDisplayConfigV3`，记录全局三网模式、三个任务槽与节点单独配置；保存前会重新读取最新 settings，并只合并本功能 key。
-- v2.0 的 `displayCount=1` 迁移为单任务模式，`displayCount=3` 迁移为三网模式，`displayCount=2` 迁移为保留前两项且第三项留空的待补全三网模式；迁移不会猜测或删除任务。
-- 旧 `nodeCardPingTaskBindings` 与 `nodeCardPingDisplayConfigV2` 原值均会保留，升级不要求重新配置，也保留降级读取能力；关闭三网监控只隐藏任务 2／3，不删除其 ID。
+原版主题由 sanrokamlan 开发，Plus 由 VoyagerProbe 继续维护。来源与致谢见 [UPSTREAM.md](UPSTREAM.md) 和 [CREDITS.md](CREDITS.md)。
 
 ---
 
