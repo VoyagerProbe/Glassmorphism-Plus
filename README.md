@@ -25,13 +25,13 @@
 
 | 项目               | 当前状态                                                                                                               |
 | :----------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v2.8.0**（预发布／Pre-release）                                                                                       |
+| 当前 Plus 版本     | **v2.8.0**（预发布／Pre-release）                                                                                      |
 | 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7) |
 | 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                        |
 | 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                             |
 | 已验证 Komari 版本 | **1.4.3**                                                                                                              |
 | 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                         |
-| 源码发布           | GitHub `main` 与 `v2.8.0` Pre-release；附加唯一、已验证的客户安装包                                                     |
+| 源码发布           | GitHub `main` 与 `v2.8.0` Pre-release；附加唯一、已验证的客户安装包                                                    |
 | 本地安装包         | `2.8.0/Glassmorphism-Plus-release-2.8.0.zip`                                                                           |
 
 Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用自己的版本体系；上游 v3.3.7 仅代表当前同步基线，并非 Plus 的版本号。同步来源、选择性合并和署名详见 [UPSTREAM.md](UPSTREAM.md)。
@@ -64,7 +64,7 @@ Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用�
 
 </details>
 
-*点击图片可查看原图，具体界面以当前版本为准。*
+_点击图片可查看原图，具体界面以当前版本为准。_
 
 ---
 
@@ -79,7 +79,7 @@ Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用�
 - **外观与移动端**：支持浅色、深色、北京时间自动模式，以及地球／地图、自定义背景与布局；兼顾电脑和手机浏览。
 - **费用与辅助工具**：查看节点费用、剩余价值与到期提醒，提供节点对比、健康摘要和视图导出，并支持配置访客可见内容。
 
-*历史数据的实际可查看范围取决于后端保留时间及已有采样记录。*
+_历史数据的实际可查看范围取决于后端保留时间及已有采样记录。_
 
 原版主题由 sanrokamlan 开发，Plus 由 VoyagerProbe 继续维护。来源与致谢见 [UPSTREAM.md](UPSTREAM.md) 和 [CREDITS.md](CREDITS.md)。
 
