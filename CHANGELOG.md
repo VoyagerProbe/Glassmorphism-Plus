@@ -2,6 +2,13 @@
 
 本文件只记录 **Glassmorphism Plus** 自己的发行版本。原始 Glassmorphism 的版本历史请查看[上游仓库](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases)；Plus 的选择性同步记录见 [UPSTREAM.md](UPSTREAM.md)。
 
+## [2.8.0] - 2026-09-09
+
+- 节点详情页新增默认开启的丢包历史图，共用任务、时间范围、底部图例、时间参考线与单个 Tooltip；关闭“丢包数据”恢复原有单延迟图，首页弹窗不启用此功能。
+- 保留同节点的范围选择与显式全不选，区分同名任务；换节点恢复默认开启并隔离迟到响应。
+- 按同节点、同任务与精确时间戳保留已有 Metric 丢包比例，展示 0% 至 100% 及真实空缺；旧接口缺少逐点丢包时保持未知，不由延迟或统计摘要推断。
+- 丢包曲线不平滑、不补点，延迟平滑仍只影响展示；现有查询参数、Metric/Legacy fallback、缓存、调度和历史覆盖逻辑不变。
+
 ## [2.7.4] - 2026-09-07
 
 ### Fixed

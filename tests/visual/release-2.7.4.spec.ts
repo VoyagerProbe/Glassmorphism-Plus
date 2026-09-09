@@ -135,7 +135,8 @@ async function installSelectionFixture(page: Page) {
     }
     calls.push({ method, params })
     const ids = idsFor(params.entity_id)
-    const task = (id: number) => ({ id, name: `Task ${id}`, interval: 60, loss: 0, type: 'icmp', clients: [params.entity_id] })
+    // The catalog RPC has no entity_id parameter; return real assigned UUIDs.
+    const task = (id: number) => ({ id, name: `Task ${id}`, interval: 60, loss: 0, type: 'icmp', clients: [id >= 400 ? '00000000-0000-4000-8000-000000000002' : PRIMARY_NODE_UUID] })
     const end = Date.parse(params.end ?? '2026-07-25T12:00:00Z')
     const points = [3, 2, 1].map(minute => ({ time: new Date(end - minute * 60_000).toISOString(), value: 20, count: 1 }))
     const result = method === 'public:getPublicPingTasks'
@@ -170,7 +171,7 @@ async function expectSelection(page: Page, ids: number[]) {
       if (!node)
         return
       if (node.el === element && node.component?.exposed?.getOption)
-        return node.component.exposed.getOption().series?.map(series => Number(series.name.replace('Task ', ''))) ?? []
+        return node.component.exposed.getOption().series?.filter(Boolean).map(series => Number(series.name.replace('Task ', ''))) ?? []
       for (const child of [node.component?.subTree, node.suspense?.activeBranch, ...(Array.isArray(node.children) ? node.children : [])]) {
         const result = find(child)
         if (result)
@@ -178,7 +179,7 @@ async function expectSelection(page: Page, ids: number[]) {
       }
     }
     return find((document.querySelector('#app') as unknown as { _vnode: VNode })._vnode)
-  })).toEqual(ids)
+  })).toEqual([...ids, ...ids]) // v2.8.0: identical task selection in latency and loss grids.
 }
 
 test('same-node selection survives all ranges and custom range without extra queries', async ({ page }) => {
@@ -214,17 +215,17 @@ test('same-node selection survives all ranges and custom range without extra que
   await expectSelection(page, [101, 202, 303])
 })
 
-test('UUID navigation resets selection and task removal prunes only unavailable IDs', async ({ page }) => {
+test('UUID navigation resets selection while range-missing catalog tasks remain available', async ({ page }) => {
   const fixture = await installSelectionFixture(page)
   await page.goto(`/instance/${PRIMARY_NODE_UUID}`)
   await expectSelection(page, [101, 202, 303])
   await page.locator('[data-ping-chart-task-id="101"]').click()
   fixture.setAvailable([101, 202])
   await page.locator('[data-ping-chart]').getByRole('tab', { name: '6 小时', exact: true }).click()
-  await expectSelection(page, [202])
+  await expectSelection(page, [202, 303])
   fixture.setAvailable([101])
   await page.locator('[data-ping-chart]').getByRole('tab', { name: '12 小时', exact: true }).click()
-  await expectSelection(page, [101])
+  await expectSelection(page, [202, 303])
   await page.getByRole('button', { name: '下一个节点', exact: true }).click()
   await expectSelection(page, [401, 402])
   await expect(page.locator('[data-ping-chart-task-id="202"]')).toHaveCount(0)
@@ -232,7 +233,7 @@ test('UUID navigation resets selection and task removal prunes only unavailable 
   await page.locator('[data-ping-chart]').getByRole('tab', { name: '1 天', exact: true }).click()
   await expectSelection(page, [402])
   await page.getByRole('button', { name: '上一个节点', exact: true }).click()
-  await expectSelection(page, [101])
+  await expectSelection(page, [101, 202, 303])
 })
 
 test('new release workflow defaults to prerelease without promoting or editing existing releases', () => {

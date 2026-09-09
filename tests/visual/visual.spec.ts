@@ -41,14 +41,14 @@ test('Plus documentation keeps its own version identity and preserves upstream a
 
   expect(readme).toContain('# 🌌 Komari Glassmorphism Plus')
   expect(readme).toContain('当前 Plus 版本')
-  expect(readme).toContain('**v2.7.4**')
+  expect(readme).toContain('**v2.8.0**')
   expect(readme).toContain('sanrokamlan Glassmorphism v3.3.7')
-  expect(readme).toContain('Glassmorphism-Plus-release-2.7.4.zip')
+  expect(readme).toContain('Glassmorphism-Plus-release-2.8.0.zip')
   expect(readme).toContain('Source code (zip)')
   expect(readme).not.toMatch(/^#{2,}\s+(?:\S.*)?v3\.\d/m)
 
   const changelogVersions = Array.from(changelog.matchAll(/^## \[([^\]]+)\]/gm), match => match[1])
-  expect(changelogVersions).toEqual(['2.7.4', '2.7.3', '2.7.2', '2.7.1', '2.7.0', '2.6.0', '2.5.0', '2.3.1', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.4.0', '1.3.6', '1.3.5', '1.3.4', '1.3.3', '1.3.2', '1.3.1', '1.3.0', '1.2.1'])
+  expect(changelogVersions).toEqual(['2.8.0', '2.7.4', '2.7.3', '2.7.2', '2.7.1', '2.7.0', '2.6.0', '2.5.0', '2.3.1', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.4.0', '1.3.6', '1.3.5', '1.3.4', '1.3.3', '1.3.2', '1.3.1', '1.3.0', '1.2.1'])
   expect(upstream).toContain('Current upstream baseline')
   expect(upstream).toContain('v3.3.7')
   expect(credits).toContain('VoyagerProbe')
@@ -848,6 +848,8 @@ test('Ping modal and detail restore the smoothing control without changing the r
 
   const dialog = await openPrimaryPingDialog(page)
   const dialogChart = dialog.locator('[data-ping-chart]')
+  await expect(dialogChart.getByRole('button', { name: '丢包数据', exact: true })).toHaveCount(0)
+  await expect(dialogChart).toHaveAttribute('data-ping-chart-loss', 'disabled')
   const dialogSmooth = dialogChart.getByRole('button', { name: '平滑峰值', exact: true })
   await expect(dialogSmooth).toHaveAttribute('aria-pressed', 'false')
   await expect(dialogChart).toHaveAttribute('data-ping-chart-smoothing', 'disabled')
@@ -1327,13 +1329,13 @@ test('brand metadata and shared footer keep current identity and a compact versi
     name: 'Komari Glassmorphism Plus',
     short: 'glassmorphism-plus',
     description: 'A customized Glassmorphism theme for Komari, based on the original theme by sanrokamlan.',
-    version: '2.7.4',
+    version: '2.8.0',
     author: 'VoyagerProbe',
     url: 'https://github.com/VoyagerProbe/Glassmorphism-Plus',
   })
   expect(packageMetadata).toMatchObject({
     name: 'komari-theme-glassmorphism-plus',
-    version: '2.7.4',
+    version: '2.8.0',
     author: { name: 'VoyagerProbe', url: 'https://github.com/VoyagerProbe' },
     homepage: 'https://github.com/VoyagerProbe/Glassmorphism-Plus',
   })
@@ -1378,10 +1380,10 @@ test('brand metadata and shared footer keep current identity and a compact versi
 
   const footer = page.locator('footer')
   await expect(footer.getByRole('link', { name: 'Glassmorphism Plus' })).toHaveAttribute('href', 'https://github.com/VoyagerProbe/Glassmorphism-Plus')
-  await expect(footer.getByText('v2.7.4 · VoyagerProbe', { exact: true }).first()).toBeVisible()
+  await expect(footer.getByText('v2.8.0 · VoyagerProbe', { exact: true }).first()).toBeVisible()
   await expect(footer).not.toContainText('Based on the original theme')
   await page.goto(`/instance/${PRIMARY_NODE_UUID}`)
-  await expect(footer.getByText('v2.7.4 · VoyagerProbe', { exact: true }).first()).toBeVisible()
+  await expect(footer.getByText('v2.8.0 · VoyagerProbe', { exact: true }).first()).toBeVisible()
   await expect(footer).not.toContainText('Based on the original theme')
   await expect(footer).not.toContainText('unknown')
 })

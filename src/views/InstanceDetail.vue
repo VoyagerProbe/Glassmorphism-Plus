@@ -764,7 +764,7 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
       </div>
 
       <LoadChart v-if="!appStore.nodeDetailSectionTabsEnabled || activeDetailSection === 'load'" :uuid="data.uuid" class="px-4" />
-      <PingChart v-if="!appStore.nodeDetailSectionTabsEnabled || activeDetailSection === 'ping'" :uuid="data.uuid" class="px-4" />
+      <PingChart v-if="!appStore.nodeDetailSectionTabsEnabled || activeDetailSection === 'ping'" :uuid="data.uuid" loss-history class="px-4" />
     </template>
   </div>
 </template>
