@@ -1,4 +1,4 @@
-import type { EChartsType, TooltipComponentPositionCallback } from 'echarts'
+import type { EChartsType, Payload, TooltipComponentPositionCallback } from 'echarts'
 import type { Ref } from 'vue'
 import type { TooltipRect, TooltipSide } from '@/utils/pingTooltipPlacement'
 import { format, time } from 'echarts/core'
@@ -153,7 +153,7 @@ export function usePingTooltipPlacement(host: Ref<HTMLElement | null>, chart: ()
     if (!touchInput)
       hide()
   }
-  const hide = (event: { from?: string }) => {
+  const hide = (event: Payload) => {
     // ECharts emits an internal hideTip when touch leaves its canvas. The
     // enterable in-flow shell remains owned by this chart; explicit public
     // hide actions and the owner's close/reset paths still dismiss it.
