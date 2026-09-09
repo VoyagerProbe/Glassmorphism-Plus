@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { pingTimeLabel, usePingTooltipPlacement } from '@/composables/usePingTooltipPlacement'
 import { usePingTooltipTouch } from '@/composables/usePingTooltipTouch'
 import { CACHE_CONFIG } from '@/constants/cache'
 import { PING_RECORD_MAX_COUNT } from '@/constants/load'
@@ -191,13 +190,10 @@ const showLoss = ref(true)
 const dualChart = computed(() => props.lossHistory === true && showLoss.value)
 const chart = shallowRef<InstanceType<typeof VChart> | null>(null)
 const chartHost = shallowRef<HTMLElement | null>(null)
-const sharedTooltipEnabled = computed(() => props.lossHistory === true)
-const tooltipPlacement = usePingTooltipPlacement(chartHost, () => chart.value, sharedTooltipEnabled, dualChart)
-const { reset: resetTooltipTouch } = usePingTooltipTouch(chartHost, sharedTooltipEnabled, clearChartHover)
+const { reset: resetTooltipTouch } = usePingTooltipTouch(chartHost, dualChart, clearChartHover)
 
 function clearChartHover() {
   resetTooltipTouch()
-  tooltipPlacement.reset()
   chart.value?.dispatchAction({ type: 'hideTip' })
   chart.value?.dispatchAction({ type: 'updateAxisPointer', currTrigger: 'leave' })
 }
@@ -852,25 +848,8 @@ const lossPoints = computed(() => new Map(remoteData.value.map(record => [
 
 const pingChartOption = computed(() => {
   const base = latencyChartOption.value
-  const sharedTooltip = {
-    confine: false,
-    enterable: true,
-    alwaysShowContent: true,
-    appendTo: (el: HTMLElement) => el.closest<HTMLElement>('.ping-chart-host')!,
-    className: 'ping-shared-tooltip-shell',
-    transitionDuration: 0,
-    position: tooltipPlacement.position,
-  }
-  if (!dualChart.value) {
-    return {
-      ...base,
-      tooltip: sharedTooltipEnabled.value
-        ? { ...base.tooltip, ...sharedTooltip, formatter: (params: unknown) => `<div data-ping-shared-tooltip>${base.tooltip.formatter(params)}</div>`, axisPointer: { ...baseTooltipConfig.value.axisPointer, type: 'line' as const } }
-        : { ...base.tooltip, className: '', transitionDuration: 0.4 },
-      xAxis: sharedTooltipEnabled.value ? { ...base.xAxis, axisPointer: { snap: true, label: { ...pingTimeLabel, show: true } } } : base.xAxis,
-      axisPointer: { link: [] },
-    }
-  }
+  if (!dualChart.value)
+    return { ...base, tooltip: { ...base.tooltip, className: '', transitionDuration: 0.4 }, axisPointer: { link: [] } }
 
   const rows = new Map(chartData.value.map(row => [parsePingTimestampMs(row.time), row]))
   const lossSeries = base.series.map((series, index) => ({
@@ -895,7 +874,7 @@ const pingChartOption = computed(() => {
       id: `ping-time-${index}`,
       gridIndex: index,
       axisLabel: { ...base.xAxis.axisLabel, hideOverlap: true },
-      axisPointer: { snap: true, label: { ...pingTimeLabel, show: index === 1 } },
+      axisPointer: { snap: true, label: { show: index === 1 } },
     })),
     yAxis: [
       { ...base.yAxis, id: 'latency-axis', gridIndex: 0, axisPointer: { show: false } },
@@ -904,7 +883,9 @@ const pingChartOption = computed(() => {
     series: [...base.series, ...lossSeries],
     tooltip: {
       ...base.tooltip,
-      ...sharedTooltip,
+      confine: true,
+      enterable: true,
+      className: 'ping-shared-tooltip-shell',
       // Animated HTML tooltips also throttle positioning, replaying stale coordinates after rotation.
       transitionDuration: 0,
       axisPointer: { ...baseTooltipConfig.value.axisPointer, type: 'line' as const },
@@ -1208,11 +1189,9 @@ onBeforeUnmount(() => {
         </TooltipProvider>
 
         <!-- 图表 -->
-        <div ref="chartHost" class="ping-chart-host bg-background/50 p-4 rounded-md" @mouseleave="tooltipPlacement.leave(clearChartHover)">
-          <div :class="dualChart ? 'h-[528px]' : 'h-72'">
-            <!-- Task inventory changes must replace visible series, not infer color as a component. -->
-            <VChart ref="chart" :option="pingChartOption" :update-options="{ replaceMerge: ['series', 'grid', 'xAxis', 'yAxis'] }" autoresize @legendselectchanged="handleLegendSelectionChanged" @hidetip="tooltipPlacement.hide" />
-          </div>
+        <div ref="chartHost" class="ping-chart-host bg-background/50 p-4 rounded-md" :class="dualChart ? 'h-[560px]' : 'h-80'" @mouseleave="clearChartHover">
+          <!-- Task inventory changes must replace visible series, not infer color as a component. -->
+          <VChart ref="chart" :option="pingChartOption" :update-options="{ replaceMerge: ['series', 'grid', 'xAxis', 'yAxis'] }" autoresize @legendselectchanged="handleLegendSelectionChanged" />
         </div>
       </template>
     </Spinner>
@@ -1221,32 +1200,15 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .ping-chart-host {
-  position: relative;
   container-type: inline-size;
-  overflow-anchor: none;
 }
 
 /* The shell is inserted by ECharts inside this chart, not a global Portal. */
 .ping-chart-host :deep(.ping-shared-tooltip-shell) {
-  overflow-anchor: none;
-  transform: none !important;
-  left: var(--ping-tooltip-left, 0px) !important;
-  top: var(--ping-tooltip-top, 0px) !important;
   --ping-tooltip-max: min(440px, calc(100cqw - 24px), calc(100vw - 32px));
   box-sizing: border-box;
   width: max-content;
   max-width: var(--ping-tooltip-max);
-}
-
-.ping-chart-host :deep(.ping-shared-tooltip-shell[data-ping-placement='docked']) {
-  position: relative !important;
-  left: auto !important;
-  top: auto !important;
-  margin-top: 16px;
-}
-
-.ping-chart-host :deep(.ping-shared-tooltip-shell[data-ping-open='false']) {
-  display: none !important;
 }
 
 .ping-chart-host :deep([data-ping-shared-tooltip]) {

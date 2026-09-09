@@ -75,10 +75,6 @@ async function chart(page: Page, action = 'inspect', value: any = null): Promise
 }
 
 async function open(page: Page, index = 0, touch = false) {
-  // Each existing formatting/gesture scenario selects an independent sample.
-  // The enterable shell now lives outside the canvas, so clear the previous
-  // sample before teleporting test input through an area it may occupy.
-  await chart(page, 'dispatch', { type: 'hideTip' })
   const el = page.locator('[data-ping-chart] x-vue-echarts')
   await el.scrollIntoViewIfNeeded()
   const state = await chart(page, 'inspect', index)
@@ -308,10 +304,8 @@ test.describe('touch content', () => {
     await root.getByRole('button', { name: '全选', exact: true }).tap()
     await open(page, 3, true)
     await page.getByRole('button', { name: '丢包数据', exact: true }).tap()
-    await expect(page.locator('.ping-shared-tooltip-shell')).toBeHidden()
-    // The opted-in full chart uses the same placement/touch owner in single
-    // mode too; it must retain exactly one listener, not accumulate another.
-    expect(await listenerCounts()).toEqual([{ connected: true, count: 1 }])
+    await expect(page.locator('.ping-shared-tooltip-shell')).toHaveCount(0)
+    expect(await listenerCounts()).toEqual([{ connected: true, count: 0 }])
     await page.getByRole('button', { name: '丢包数据', exact: true }).tap()
     await open(page, 0, true)
     expect(await listenerCounts()).toEqual([{ connected: true, count: 1 }])
@@ -408,9 +402,6 @@ test.describe('touch content', () => {
     const tip = await open(page, 3, true)
     const requests = f.calls.length
     const stamp = await tip.locator('.ping-tooltip-time').textContent()
-    // In-flow data is intentionally not auto-scrolled into view by the app.
-    // Expose it explicitly before native viewport-coordinate touch injection.
-    await tip.scrollIntoViewIfNeeded()
     const session = await page.context().newCDPSession(page)
     const drag = async (delta: number) => {
       const box = await tip.boundingBox()
