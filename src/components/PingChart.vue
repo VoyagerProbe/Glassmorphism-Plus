@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { usePingTooltipTouch } from '@/composables/usePingTooltipTouch'
 import { CACHE_CONFIG } from '@/constants/cache'
 import { PING_RECORD_MAX_COUNT } from '@/constants/load'
 import { loadPingRecordsWithTasks } from '@/services/history.service'
@@ -20,7 +21,7 @@ import { useAppStore } from '@/stores/app'
 import { ACCESSIBLE_LINE_TYPES, getChartSeriesPalette } from '@/utils/chartPalette'
 import { normalizeMetricSeriesList, orderPingTasksByBackend, PING_LATENCY_METRIC, PING_LOSS_METRIC, pingTaskId, pingTaskName } from '@/utils/metricSeries'
 import { resolvePingChartDisplayDomain } from '@/utils/pingChartDisplayDomain'
-import { escapePingTooltip, pingChartTaskLabels, pingLossPercent } from '@/utils/pingChartPresentation'
+import { escapePingTooltip, pingChartTaskLabels, pingLossPercent, pingTooltipLoss } from '@/utils/pingChartPresentation'
 import { smoothPingChartDisplayRows } from '@/utils/pingChartSmoothing'
 import { normalizePingMetricSamples } from '@/utils/pingMetricSamples'
 import { createNextAlignedPingTimeWindow, createPingTimeWindow, isPingTimestampInWindow, parsePingTimestampMs } from '@/utils/pingTime'
@@ -188,8 +189,11 @@ const smoothPeaks = ref(false)
 const showLoss = ref(true)
 const dualChart = computed(() => props.lossHistory === true && showLoss.value)
 const chart = shallowRef<InstanceType<typeof VChart> | null>(null)
+const chartHost = shallowRef<HTMLElement | null>(null)
+const { reset: resetTooltipTouch } = usePingTooltipTouch(chartHost, dualChart, clearChartHover)
 
 function clearChartHover() {
+  resetTooltipTouch()
   chart.value?.dispatchAction({ type: 'hideTip' })
   chart.value?.dispatchAction({ type: 'updateAxisPointer', currTrigger: 'leave' })
 }
@@ -845,7 +849,7 @@ const lossPoints = computed(() => new Map(remoteData.value.map(record => [
 const pingChartOption = computed(() => {
   const base = latencyChartOption.value
   if (!dualChart.value)
-    return { ...base, axisPointer: { link: [] } }
+    return { ...base, tooltip: { ...base.tooltip, className: '', transitionDuration: 0.4 }, axisPointer: { link: [] } }
 
   const rows = new Map(chartData.value.map(row => [parsePingTimestampMs(row.time), row]))
   const lossSeries = base.series.map((series, index) => ({
@@ -881,6 +885,9 @@ const pingChartOption = computed(() => {
       ...base.tooltip,
       confine: true,
       enterable: true,
+      className: 'ping-shared-tooltip-shell',
+      // Animated HTML tooltips also throttle positioning, replaying stale coordinates after rotation.
+      transitionDuration: 0,
       axisPointer: { ...baseTooltipConfig.value.axisPointer, type: 'line' as const },
       formatter: (params: unknown) => {
         const points = params as Array<{ axisValue?: number | string, value?: [number, number | null] }>
@@ -892,12 +899,13 @@ const pingChartOption = computed(() => {
         const taskRows = selectedTasks.value.filter(task => visibleTaskIds.value.includes(task.id)).map((task) => {
           const latency = row[task.id]
           const loss = lossPoints.value.get(`${task.id}:${timestamp}`) ?? null
+          const lossCell = pingTooltipLoss(loss)
           const latencyText = typeof latency === 'number' && Number.isFinite(latency)
             ? `${Math.round(latency)} ms`
             : loss === 100 ? '不可达' : '—'
-          return `<div style="display:contents"><span style="display:flex;align-items:center;min-width:0;gap:6px"><i style="width:8px;height:8px;border-radius:50%;flex:none;background:${getTaskColor(task.id)}"></i><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapePingTooltip(taskLabel(task.id))}</span></span><span style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">${latencyText}</span><span style="text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">${loss === null ? '—' : `${loss.toFixed(1)}%`}</span></div>`
+          return `<div class="ping-tooltip-row" data-task-id="${task.id}"><span class="ping-tooltip-name"><i style="background:${getTaskColor(task.id)}"></i><span>${escapePingTooltip(taskLabel(task.id))}</span></span><span class="ping-tooltip-number${latencyText === '不可达' ? ' ping-tooltip-abnormal' : ''}" data-ping-latency>${escapePingTooltip(latencyText)}</span><span class="ping-tooltip-number${lossCell.abnormal ? ' ping-tooltip-abnormal' : ''}" data-ping-loss>${escapePingTooltip(lossCell.text)}</span></div>`
         }).join('')
-        return `<div data-ping-shared-tooltip style="width:min(440px,calc(100vw - 72px));max-height:min(320px,50vh);overflow:auto"><div style="font-weight:600;margin-bottom:6px">${formatTimeForTooltip(timestamp, selectedHours.value)}</div><div style="display:grid;grid-template-columns:minmax(0,1fr) max-content max-content;gap:5px 12px"><span>任务</span><span style="text-align:right">延迟</span><span style="text-align:right">丢包</span>${taskRows}</div></div>`
+        return `<div data-ping-shared-tooltip><div class="ping-tooltip-time">${escapePingTooltip(formatTimeForTooltip(timestamp, selectedHours.value))}</div><div class="ping-tooltip-grid"><span>任务</span><span class="ping-tooltip-number">延迟</span><span class="ping-tooltip-number">丢包</span>${taskRows}</div></div>`
       },
     },
   }
@@ -1181,7 +1189,7 @@ onBeforeUnmount(() => {
         </TooltipProvider>
 
         <!-- 图表 -->
-        <div class="bg-background/50 p-4 rounded-md" :class="dualChart ? 'h-[560px]' : 'h-80'" @mouseleave="clearChartHover">
+        <div ref="chartHost" class="ping-chart-host bg-background/50 p-4 rounded-md" :class="dualChart ? 'h-[560px]' : 'h-80'" @mouseleave="clearChartHover">
           <!-- Task inventory changes must replace visible series, not infer color as a component. -->
           <VChart ref="chart" :option="pingChartOption" :update-options="{ replaceMerge: ['series', 'grid', 'xAxis', 'yAxis'] }" autoresize @legendselectchanged="handleLegendSelectionChanged" />
         </div>
@@ -1191,6 +1199,78 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.ping-chart-host {
+  container-type: inline-size;
+}
+
+/* The shell is inserted by ECharts inside this chart, not a global Portal. */
+.ping-chart-host :deep(.ping-shared-tooltip-shell) {
+  --ping-tooltip-max: min(440px, calc(100cqw - 24px), calc(100vw - 32px));
+  box-sizing: border-box;
+  width: max-content;
+  max-width: var(--ping-tooltip-max);
+}
+
+.ping-chart-host :deep([data-ping-shared-tooltip]) {
+  box-sizing: border-box;
+  width: max-content;
+  max-width: calc(var(--ping-tooltip-max) - 20px);
+  max-height: min(320px, 50vh);
+  /* WebKit overlay scrollbars may not reserve scrollbar-gutter space. */
+  padding-inline-end: 8px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y pinch-zoom;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ping-chart-host :deep(.ping-tooltip-time) {
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.ping-chart-host :deep(.ping-tooltip-grid) {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(7ch, max-content) minmax(7ch, max-content);
+  gap: 5px 12px;
+}
+
+.ping-chart-host :deep(.ping-tooltip-row) {
+  display: contents;
+}
+
+.ping-chart-host :deep(.ping-tooltip-name) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ping-chart-host :deep(.ping-tooltip-name > i) {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+}
+
+.ping-chart-host :deep(.ping-tooltip-name > span) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ping-chart-host :deep(.ping-tooltip-number) {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.ping-chart-host :deep(.ping-tooltip-abnormal) {
+  color: var(--destructive);
+}
+
 /* The Portal does not inherit the parent's scope attribute. Target only this
    statistics instance's class, pairing its opaque surface and foreground. */
 :global(.ping-task-statistics) {

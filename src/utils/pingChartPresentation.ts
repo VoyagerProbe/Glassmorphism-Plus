@@ -5,6 +5,16 @@ export function pingLossPercent(ratio: unknown): number | null {
     : null
 }
 
+/** Input is already a percentage. Style/precision only; never normalize twice. */
+export function pingTooltipLoss(percent: number | null): { text: string, abnormal: boolean } {
+  if (percent === null || !Number.isFinite(percent) || percent < 0 || percent > 100)
+    return { text: '—', abnormal: false }
+  return {
+    text: percent > 0 && percent < 0.1 ? '<0.1%' : `${percent.toFixed(1)}%`,
+    abnormal: percent > 0,
+  }
+}
+
 const htmlSpecialCharacters = /[&<>"']/g
 
 export function escapePingTooltip(value: string): string {
