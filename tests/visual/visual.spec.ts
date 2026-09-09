@@ -848,8 +848,8 @@ test('Ping modal and detail restore the smoothing control without changing the r
 
   const dialog = await openPrimaryPingDialog(page)
   const dialogChart = dialog.locator('[data-ping-chart]')
-  await expect(dialogChart.getByRole('button', { name: '丢包数据', exact: true })).toHaveCount(0)
-  await expect(dialogChart).toHaveAttribute('data-ping-chart-loss', 'disabled')
+  await expect(dialogChart.getByRole('button', { name: '丢包数据', exact: true })).toBeVisible()
+  await expect(dialogChart).toHaveAttribute('data-ping-chart-loss', 'enabled')
   const dialogSmooth = dialogChart.getByRole('button', { name: '平滑峰值', exact: true })
   await expect(dialogSmooth).toHaveAttribute('aria-pressed', 'false')
   await expect(dialogChart).toHaveAttribute('data-ping-chart-smoothing', 'disabled')

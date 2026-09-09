@@ -24,6 +24,6 @@ const PingChart = defineAsyncComponent(() => import('@/components/PingChart.vue'
     safe-viewport
     @update:open="emit('update:open', $event)"
   >
-    <PingChart v-if="open && uuid" :uuid="uuid" />
+    <PingChart v-if="open && uuid" :key="uuid" :uuid="uuid" loss-history />
   </AppDialog>
 </template>
