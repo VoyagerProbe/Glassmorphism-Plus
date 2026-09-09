@@ -25,18 +25,18 @@
 
 | 项目               | 当前状态                                                                                                               |
 | :----------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v2.8.0**（预发布／Pre-release）                                                                                      |
+| 当前 Plus 版本     | **v2.8.0（正式发布）**                                                                                                 |
 | 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7) |
 | 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                        |
 | 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                             |
 | 已验证 Komari 版本 | **1.4.3**                                                                                                              |
 | 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                         |
-| 源码发布           | GitHub `main` 与 `v2.8.0` Pre-release；附加唯一、已验证的客户安装包                                                    |
+| 源码发布           | GitHub `main` 与 `v2.8.0` Release；附加唯一、已验证的客户安装包                                                        |
 | 本地安装包         | `2.8.0/Glassmorphism-Plus-release-2.8.0.zip`                                                                           |
 
 Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用自己的版本体系；上游 v3.3.7 仅代表当前同步基线，并非 Plus 的版本号。同步来源、选择性合并和署名详见 [UPSTREAM.md](UPSTREAM.md)。
 
-### ✨ 最新版本 · v2.8.0（预发布）
+### ✨ 最新版本 · v2.8.0
 
 - 节点详情页新增丢包历史图，与延迟图共享任务选择、时间范围、底部图例和时间参考线。
 - 新增默认开启的“丢包数据”按钮，关闭恢复单延迟图；首页 Ping 弹窗保持原有布局。
@@ -91,8 +91,8 @@ _历史数据的实际可查看范围取决于后端保留时间及已有采样�
 
 ### 重要说明
 
-- **v2.8.0 GitHub Pre-release 附加且只附加一个已验证的 installer asset：** `Glassmorphism-Plus-release-2.8.0.zip`。
-- 当前 Latest 为 v2.7.4。其他预发布版本请从对应版本页面手动下载安装包测试。
+- **v2.8.0 GitHub Release 附加且只附加一个已验证的 installer asset：** `Glassmorphism-Plus-release-2.8.0.zip`。
+- 当前 Latest 为 v2.8.0。其他预发布版本请从对应版本页面手动下载安装包测试。
 - GitHub 自动生成的 **Source code (zip)** 是源码快照，**不是** Komari 可安装主题包。
 - Komari 的远程仓库导入流程应使用正式 Release 中的 installer asset；仍不要用 GitHub 自动生成的源码压缩包代替。
 
@@ -173,7 +173,7 @@ bun run release:prepare
 
 ## 📝 版本历史
 
-当前版本更新见上方「最新版本 · v2.8.0（预发布）」。
+当前版本更新见上方「最新版本 · v2.8.0」。
 
 <details>
 <summary><strong>📚 查看历史版本更新</strong></summary>
