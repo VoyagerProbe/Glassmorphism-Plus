@@ -269,10 +269,10 @@ test.describe('mobile full modal retention', () => {
     })
   }
   test('five modal cycles preserve dual chart, scroll, tap close, selection and cleanup', async ({ page, browserName }, info) => {
-    // WebKit's native action stability checks take ~0.8s each on both CI and
-    // Windows. Budget all five cycles; do not add waits or change any assertion.
+    // WebKit's native action checks accumulate across five cycles and rotation;
+    // Linux reaches the final rotation at 59s. Keep a fixed 90s ceiling, no waits.
     if (browserName === 'webkit')
-      test.setTimeout(60_000)
+      test.setTimeout(90_000)
     await page.addInitScript(() => {
       const owners = new Map<HTMLElement, Set<EventListenerOrEventListenerObject>>()
       const windowListeners = new Map<string, Set<EventListenerOrEventListenerObject>>()
