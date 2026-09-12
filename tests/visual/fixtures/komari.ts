@@ -140,6 +140,8 @@ export interface PingRpcTimelineEntry {
 }
 
 export interface KomariFixtureController {
+  /** Synthetic metadata only; exercises the existing common:getNodes path. */
+  setClientMetadata: (index: number, patch: Record<string, unknown>) => void
   setSiteName: (value: string) => void
   setNodeCardPingTaskBindings: (value: string) => void
   setNodeCardPingDisplayConfigV2: (value: string) => void
@@ -1225,6 +1227,11 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
   }))
 
   return {
+    setClientMetadata: (index, patch) => {
+      const client = clientFixtures[uuidFor(index)]
+      if (client)
+        Object.assign(client, patch)
+    },
     setSiteName: (value) => {
       siteName = value
     },

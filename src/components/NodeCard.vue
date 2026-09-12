@@ -207,6 +207,11 @@ const priceText = computed(() => {
   return formatPriceWithCycle(node.price, node.billing_cycle, node.currency, appStore.lang)
 })
 
+const PUBLIC_REMARK_WHITESPACE_RE = /\s+/g
+const publicRemarkText = computed(() => typeof props.node.public_remark === 'string'
+  ? props.node.public_remark.trim().replace(PUBLIC_REMARK_WHITESPACE_RE, ' ')
+  : '')
+
 // 第三列：剩余天数（始终） + 剩余价值（仅在允许显示金额时），带图标与相邻列对齐
 const remainingInfoTags = computed<RemainingInfoTag[]>(() => {
   const node = props.node
@@ -329,15 +334,22 @@ function hasRegion(region: string | null | undefined): boolean {
     <template #default>
       <div class="flex flex-col relative" :class="nodeCardContentClass">
         <!-- 在线天数固定展示，价格独立展示，避免不同主机卡片高度不一致 -->
-        <div class="relative z-20 flex items-center gap-1.5 -mt-1 h-[19px] overflow-hidden">
+        <div class="relative z-20 flex min-w-0 items-center gap-1.5 -mt-1 h-[19px] overflow-hidden">
           <span class="shrink-0 text-[11px] px-2 py-0.5 rounded-full bg-slate-500/10 text-muted-foreground leading-tight">
             {{ uptimeDaysText }}
           </span>
           <span
             v-if="priceText"
-            class="min-w-0 truncate text-[11px] px-2 py-0.5 rounded-full bg-slate-500/10 text-muted-foreground leading-tight"
+            class="min-w-0 shrink-0 truncate text-[11px] px-2 py-0.5 rounded-full bg-slate-500/10 text-muted-foreground leading-tight"
           >
             {{ priceText }}
+          </span>
+          <span
+            v-if="publicRemarkText"
+            data-node-public-remark
+            class="min-w-0 truncate text-[11px] px-2 py-0.5 rounded-full bg-slate-500/10 text-muted-foreground leading-tight"
+          >
+            {{ publicRemarkText }}
           </span>
         </div>
 
