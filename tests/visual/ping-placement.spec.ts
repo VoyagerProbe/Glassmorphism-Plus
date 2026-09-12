@@ -185,8 +185,89 @@ for (const touch of [false, true]) {
   })
 }
 
+test.describe('desktop leave lifecycle', () => {
+  test.use({ viewport: { width: 1280, height: 800 }, hasTouch: false, isMobile: false })
+  for (const modal of [false, true]) {
+    test(`${modal ? 'modal' : 'detail'} real mouse leave hides and next hover opens`, async ({ page }) => {
+      const { owner, calls, errors } = await setup(page, modal)
+      const before = calls.length
+      for (const index of [5, 50, 95]) {
+        const tip = await openFloating(page, owner, index, false)
+        await tip.hover()
+        await page.mouse.move(0, 0)
+        await expect(tip).toBeHidden()
+      }
+      expect(calls.length).toBe(before)
+      expect(errors).toEqual([])
+    })
+  }
+})
+
 test.describe('mobile full modal retention', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
+  for (const modal of [false, true]) {
+    test(`${modal ? 'modal' : 'detail'} touch scrolling survives compatibility leave and returns to real mouse leave`, async ({ page, browserName }) => {
+      const { owner, calls, errors } = await setup(page, modal, true)
+      const tip = await openFloating(page, owner, 50, true)
+      const host = owner.locator('.ping-chart-host')
+      const stamp = await tip.locator('.ping-tooltip-time').textContent()
+      const before = calls.length
+      const box = (await tip.boundingBox())!
+      const point = { x: box.x + box.width / 2, y: box.y + box.height - 35 }
+      const session = browserName === 'chromium' ? await page.context().newCDPSession(page) : null
+      const pointer = { pointerId: 81, pointerType: 'touch', isPrimary: true, clientX: point.x, clientY: point.y }
+      const touch = { identifier: 81, clientX: point.x, clientY: point.y }
+      if (session) {
+        await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...point, id: 81 }] })
+        for (let step = 1; step <= 6; step++) {
+          await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: point.x, y: point.y - step * 20, id: 81 }] })
+          await page.waitForTimeout(16)
+        }
+      }
+      else {
+        // WebKit has no CDP native drag transport: classify the touch sequence
+        // and verify DOM scrolling, without claiming physical iPhone inertia.
+        await tip.dispatchEvent('pointerdown', pointer)
+        await tip.dispatchEvent('touchstart', { touches: [touch], changedTouches: [touch] })
+        await tip.dispatchEvent('pointermove', { ...pointer, clientY: point.y - 120 })
+        await tip.evaluate(el => el.scrollBy({ top: 120, behavior: 'instant' }))
+      }
+      await expect.poll(() => tip.evaluate(el => el.scrollTop)).toBeGreaterThan(20)
+      const leave = async () => {
+        // Target all three old hide entry points: renderer, HTML shell, owner.
+        await owner.locator('canvas').first().dispatchEvent('mouseout', { clientX: 0, clientY: 0, relatedTarget: null })
+        await owner.locator('.ping-shared-tooltip-shell').dispatchEvent('mouseleave', { clientX: 0, clientY: 0, relatedTarget: null })
+        await host.dispatchEvent('mouseleave', { clientX: 0, clientY: 0, relatedTarget: null })
+        await page.waitForTimeout(150) // observe beyond ECharts' existing 100ms hide delay
+        await expect(tip).toBeVisible()
+        await expect(tip.locator('.ping-tooltip-time')).toHaveText(stamp!)
+      }
+      await leave() // while a native gesture/scroll is still active
+      if (session) {
+        await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+        await session.detach()
+      }
+      else {
+        await tip.dispatchEvent('pointerup', pointer)
+        await tip.dispatchEvent('touchend', { touches: [], changedTouches: [touch] })
+      }
+      await leave() // queued compatibility events after release must also be safe
+      await tip.locator('.ping-tooltip-row:last-child [data-ping-loss]').scrollIntoViewIfNeeded()
+      await page.waitForTimeout(160)
+      await tip.locator('.ping-tooltip-row:last-child [data-ping-loss]').tap()
+      await expect(tip).toBeHidden()
+      await openFloating(page, owner, 50, true)
+      // A hybrid device's next REAL mouse pointer must end touch ownership.
+      await tip.hover()
+      await page.mouse.move(0, 0)
+      await expect(tip).toBeHidden()
+      // Ordinary hover is covered in a genuine desktop context above. ZRender's
+      // pre-existing touch-browser 700ms compatibility timer ignores an immediate
+      // single mousemove; it is not the product leave guard under test here.
+      expect(calls.length).toBe(before)
+      expect(errors).toEqual([])
+    })
+  }
   test('five modal cycles preserve dual chart, scroll, tap close, selection and cleanup', async ({ page, browserName }, info) => {
     await page.addInitScript(() => {
       const owners = new Map<HTMLElement, Set<EventListenerOrEventListenerObject>>()

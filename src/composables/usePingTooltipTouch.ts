@@ -24,6 +24,7 @@ export function usePingTooltipTouch(host: Ref<HTMLElement | null>, enabled: Read
   let suppressed: { x: number, y: number, at: number } | null = null
   let lastScroll = -Infinity
   let stopMultiTouchWatch: (() => void) | null = null
+  let input: 'touch' | 'mouse' | null = null
   const cancel = () => {
     tap = null
     stopMultiTouchWatch?.()
@@ -32,6 +33,7 @@ export function usePingTooltipTouch(host: Ref<HTMLElement | null>, enabled: Read
   const reset = () => {
     cancel()
     suppressed = null
+    input = null
   }
 
   watch([host, enabled], ([element, active], _, onCleanup) => {
@@ -39,6 +41,22 @@ export function usePingTooltipTouch(host: Ref<HTMLElement | null>, enabled: Read
     if (!element || !active)
       return
     const supportsTouchEvents = 'ontouchstart' in window
+    const fromTouch = (event: MouseEvent) => (event as MouseEvent & { sourceCapabilities?: { firesTouchEvents: boolean } }).sourceCapabilities?.firesTouchEvents === true
+    const pointerInput = (event: PointerEvent) => {
+      if (event.pointerType === 'touch')
+        input = 'touch'
+      else if (event.pointerType === 'mouse' && !fromTouch(event))
+        input = 'mouse'
+    }
+    const compatibilityLeave = (event: MouseEvent) => {
+      // A touch can emit mouseout/mouseleave after release or pointercancel,
+      // including during native scrolling. Filter before BOTH the host's hide
+      // handler and ECharts' HTML shell/globalout handlers can schedule hiding.
+      // This is per-owner input provenance, not a timer: a real mouse pointer
+      // over/move/out immediately restores ordinary desktop leave handling.
+      if (input === 'touch' || fromTouch(event))
+        event.stopImmediatePropagation()
+    }
     const selectedText = () => {
       const selection = window.getSelection()
       return Boolean(selection && !selection.isCollapsed && element.contains(selection.anchorNode))
@@ -101,6 +119,7 @@ export function usePingTooltipTouch(host: Ref<HTMLElement | null>, enabled: Read
       suppressed = { x, y, at: performance.now() }
     }
     const pointerDown = (event: PointerEvent) => {
+      pointerInput(event)
       // A new independent input is immediately allowed after a dismissed tap.
       suppressed = null
       if (event.pointerType !== 'touch')
@@ -112,6 +131,7 @@ export function usePingTooltipTouch(host: Ref<HTMLElement | null>, enabled: Read
       begin(event.target, event.clientX, event.clientY, event.pointerId)
     }
     const pointerMove = (event: PointerEvent) => {
+      pointerInput(event)
       if (tap?.pointerId === event.pointerId)
         move(event.clientX, event.clientY)
     }
@@ -124,6 +144,7 @@ export function usePingTooltipTouch(host: Ref<HTMLElement | null>, enabled: Read
         finish(event, event.clientX, event.clientY)
     }
     const touchStart = (event: TouchEvent) => {
+      input = 'touch'
       suppressed = null
       if (event.touches.length !== 1) {
         cancel()
@@ -163,6 +184,9 @@ export function usePingTooltipTouch(host: Ref<HTMLElement | null>, enabled: Read
         tap.scrolled = true
     }
     const suppressMouse = (event: MouseEvent) => {
+      // Legacy mouse-only browsers have no pointer events to establish modality.
+      if (!('PointerEvent' in window) && !fromTouch(event))
+        input = 'mouse'
       if (!suppressed || performance.now() - suppressed.at > COMPATIBILITY_MOUSE_WINDOW)
         return
       if (Math.hypot(event.clientX - suppressed.x, event.clientY - suppressed.y) > TAP_DISTANCE)
@@ -174,6 +198,10 @@ export function usePingTooltipTouch(host: Ref<HTMLElement | null>, enabled: Read
         suppressed = null
     }
     const listeners: Array<[string, EventListener, boolean]> = [
+      ['pointerover', pointerInput as EventListener, true],
+      ['pointerout', pointerInput as EventListener, true],
+      ['mouseout', compatibilityLeave as EventListener, true],
+      ['mouseleave', compatibilityLeave as EventListener, true],
       ['pointerdown', pointerDown as EventListener, true],
       ['pointermove', pointerMove as EventListener, true],
       ['pointerup', pointerUp as EventListener, false],
