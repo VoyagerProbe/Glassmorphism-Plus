@@ -38,17 +38,34 @@ test('Plus documentation keeps its own version identity and preserves upstream a
   const upstream = readRootFile('UPSTREAM.md')
   const credits = readRootFile('CREDITS.md')
   const license = readRootFile('LICENSE')
+  const { version } = JSON.parse(readRootFile('komari-theme.json')) as { version: string }
+  const packageMetadata = JSON.parse(readRootFile('package.json')) as { version: string }
+  const currentStatus = readme.split('## 🚦 项目状态')[1]?.split('## 📸 预览')[0] ?? ''
+  const installSection = readme.split('## 📦 安装与升级')[1]?.split('\n## ')[0] ?? ''
 
   expect(readme).toContain('# 🌌 Komari Glassmorphism Plus')
-  expect(readme).toContain('当前 Plus 版本')
-  expect(readme).toContain('**v2.8.0**')
+  expect(version).toMatch(/^\d+\.\d+\.\d+$/)
+  expect(packageMetadata.version).toBe(version)
+  expect(currentStatus.match(/^\| 当前 Plus 版本\s*\|\s*\*\*v([^（*]+)(?:（[^）]+）)?\*\*/m)?.[1]).toBe(version)
+  expect(currentStatus.match(/^### ✨ 最新版本 · v([^（\s]+)(?:（[^）]+）)?$/m)?.[1]).toBe(version)
+  expect(currentStatus).toContain(`${version}/Glassmorphism-Plus-release-${version}.zip`)
   expect(readme).toContain('sanrokamlan Glassmorphism v3.3.7')
-  expect(readme).toContain('Glassmorphism-Plus-release-2.8.0.zip')
+  expect(installSection).toContain(`Glassmorphism-Plus-release-${version}.zip`)
+  expect(installSection).toContain(`https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v${version}`)
   expect(readme).toContain('Source code (zip)')
   expect(readme).not.toMatch(/^#{2,}\s+(?:\S.*)?v3\.\d/m)
 
   const changelogVersions = Array.from(changelog.matchAll(/^## \[([^\]]+)\]/gm), match => match[1])
-  expect(changelogVersions).toEqual(['2.8.0', '2.7.4', '2.7.3', '2.7.2', '2.7.1', '2.7.0', '2.6.0', '2.5.0', '2.3.1', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.4.0', '1.3.6', '1.3.5', '1.3.4', '1.3.3', '1.3.2', '1.3.1', '1.3.0', '1.2.1'])
+  expect(changelogVersions[0]).toBe(version)
+  const protectedHistory = ['2.8.1', '2.8.0', '2.7.4', '2.7.3', '2.7.2', '2.7.1', '2.7.0', '2.6.0', '2.5.0', '2.3.1', '2.3.0', '2.2.0', '2.1.0', '2.0.0', '1.4.0', '1.3.6', '1.3.5', '1.3.4', '1.3.3', '1.3.2', '1.3.1', '1.3.0', '1.2.1']
+  expect(changelogVersions.slice(changelogVersions.indexOf(protectedHistory[0]!))).toEqual(protectedHistory)
+  expect(new Set(changelogVersions).size).toBe(changelogVersions.length)
+  expect(changelogVersions.every(v => /^\d+\.\d+\.\d+$/.test(v))).toBe(true)
+  expect(changelogVersions).toEqual([...changelogVersions].sort((a, b) => {
+    const left = a.split('.').map(Number)
+    const right = b.split('.').map(Number)
+    return right[0]! - left[0]! || right[1]! - left[1]! || right[2]! - left[2]!
+  }))
   expect(upstream).toContain('Current upstream baseline')
   expect(upstream).toContain('v3.3.7')
   expect(credits).toContain('VoyagerProbe')
@@ -923,14 +940,19 @@ test('v2.7.0 uses the latest finalized selected Ping sample as the relative disp
 
   const requestCountBeforeLocalUi = chartMetricCalls.length
   const echarts = chart.locator('.echarts')
-  const chartBounds = await echarts.boundingBox()
-  expect(chartBounds).not.toBeNull()
-  if (!chartBounds)
-    throw new Error('Ping chart bounds are unavailable')
-  const toggleMiddleLegend = () => page.mouse.click(
-    chartBounds.x + chartBounds.width / 2,
-    chartBounds.y + chartBounds.height - 14,
-  )
+  const toggleMiddleLegend = async () => {
+    // The dual plot can scroll inside the dialog. A raw boundingBox includes
+    // clipped pixels; the old bottom coordinate hit the backdrop and closed it.
+    await echarts.scrollIntoViewIfNeeded()
+    const chartBounds = await echarts.boundingBox()
+    expect(chartBounds).not.toBeNull()
+    if (!chartBounds)
+      throw new Error('Ping chart bounds are unavailable')
+    const point = { x: chartBounds.x + chartBounds.width / 2, y: chartBounds.y + chartBounds.height - 14 }
+    expect(await echarts.evaluate((element, p) => element.contains(document.elementFromPoint(p.x, p.y)), point)).toBe(true)
+    await page.mouse.click(point.x, point.y)
+    await expect(dialog).toBeVisible()
+  }
 
   await toggleMiddleLegend()
   await expect(chart).toHaveAttribute('data-ping-chart-visible-task-ids', '101,303')
@@ -1021,14 +1043,23 @@ test('Ping-only 7-day and 14-day ranges use their own Metric windows and do not 
   const dialog = await openPrimaryPingDialog(page)
   const rangeTabs = dialog.locator('[data-ping-chart] [role="tab"]')
   await expect(rangeTabs).toHaveText(['1 小时', '6 小时', '12 小时', '1 天', '7 天', '14 天', '30 天', '自定义'])
+  const expectCommittedDomain = async (params: Record<string, unknown>) => {
+    const chart = dialog.locator('[data-ping-chart]')
+    const start = Date.parse(String(params.start))
+    const end = Date.parse(String(params.end))
+    // A request event precedes the response/render commit. Do not capture an
+    // old DOM attribute once and then wait forever for the new view to equal it.
+    await expect.poll(() => chart.evaluate((element) => {
+      const value = (name: string) => Number(element.getAttribute(`data-ping-chart-${name}`))
+      return { start: value('window-start'), end: value('window-end'), displayStart: value('display-start'), hasFinalized: value('latest-finalized') > 0, endsAtFinalized: value('display-end') === value('latest-finalized') }
+    })).toEqual({ start, end, displayStart: start, hasFinalized: true, endsAtFinalized: true })
+  }
 
   for (const [label, hours] of [['6 小时', 6], ['12 小时', 12], ['1 天', 24], ['7 天', 168], ['14 天', 336], ['1 小时', 1]] as const) {
     pingMetricCalls.length = 0
     await rangeTabs.getByText(label, { exact: true }).click()
     await expect.poll(() => pingMetricCalls.map(readPingRangeHours)).toEqual([hours])
-    const chart = dialog.locator('[data-ping-chart]')
-    await expect(chart).toHaveAttribute('data-ping-chart-display-start', await chart.getAttribute('data-ping-chart-window-start') ?? '')
-    await expect(chart).toHaveAttribute('data-ping-chart-display-end', await chart.getAttribute('data-ping-chart-latest-finalized') ?? '')
+    await expectCommittedDomain(pingMetricCalls[0]!)
   }
 
   pingMetricCalls.length = 0
@@ -1053,8 +1084,7 @@ test('Ping-only 7-day and 14-day ranges use their own Metric windows and do not 
     const end = Number(await chart.getAttribute('data-ping-chart-window-end'))
     return (end - start) / 3_600_000
   }).toBe(720)
-  await expect(chart).toHaveAttribute('data-ping-chart-display-start', await chart.getAttribute('data-ping-chart-window-start') ?? '')
-  await expect(chart).toHaveAttribute('data-ping-chart-display-end', await chart.getAttribute('data-ping-chart-latest-finalized') ?? '')
+  await expectCommittedDomain(thirtyDay)
   expect(thirtyDay.max_points).toBe(6000)
   expect(thirtyDay.metric_keys).toEqual(['ping.latency_ms', 'ping.loss'])
 
@@ -1322,6 +1352,8 @@ test('mobile viewport keeps Ping dialogs and route transitions above the page ca
 
 test('brand metadata and shared footer keep current identity and a compact version line', async ({ page }) => {
   const themeManifest = JSON.parse(readFileSync(new URL('../../komari-theme.json', import.meta.url), 'utf8')) as Record<string, unknown>
+  const version = String(themeManifest.version)
+  expect(version).toMatch(/^\d+\.\d+\.\d+$/)
   const packageMetadata = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as Record<string, unknown>
   const originalGlassmorphismManifest = { name: 'Komari Glassmorphism', short: 'Glassmorphism' }
 
@@ -1329,13 +1361,12 @@ test('brand metadata and shared footer keep current identity and a compact versi
     name: 'Komari Glassmorphism Plus',
     short: 'glassmorphism-plus',
     description: 'A customized Glassmorphism theme for Komari, based on the original theme by sanrokamlan.',
-    version: '2.8.0',
     author: 'VoyagerProbe',
     url: 'https://github.com/VoyagerProbe/Glassmorphism-Plus',
   })
   expect(packageMetadata).toMatchObject({
     name: 'komari-theme-glassmorphism-plus',
-    version: '2.8.0',
+    version,
     author: { name: 'VoyagerProbe', url: 'https://github.com/VoyagerProbe' },
     homepage: 'https://github.com/VoyagerProbe/Glassmorphism-Plus',
   })
@@ -1380,10 +1411,10 @@ test('brand metadata and shared footer keep current identity and a compact versi
 
   const footer = page.locator('footer')
   await expect(footer.getByRole('link', { name: 'Glassmorphism Plus' })).toHaveAttribute('href', 'https://github.com/VoyagerProbe/Glassmorphism-Plus')
-  await expect(footer.getByText('v2.8.0 · VoyagerProbe', { exact: true }).first()).toBeVisible()
+  await expect(footer.getByText(`v${version} · VoyagerProbe`, { exact: true }).first()).toBeVisible()
   await expect(footer).not.toContainText('Based on the original theme')
   await page.goto(`/instance/${PRIMARY_NODE_UUID}`)
-  await expect(footer.getByText('v2.8.0 · VoyagerProbe', { exact: true }).first()).toBeVisible()
+  await expect(footer.getByText(`v${version} · VoyagerProbe`, { exact: true }).first()).toBeVisible()
   await expect(footer).not.toContainText('Based on the original theme')
   await expect(footer).not.toContainText('unknown')
 })
@@ -1671,14 +1702,17 @@ for (const background of [
       cardBorderColor: getComputedStyle(element).borderColor,
       infoShadows: Array.from(element.querySelectorAll('.node-card-info-surface'), item => getComputedStyle(item).boxShadow),
       stripShadows: Array.from(element.querySelectorAll('.node-card-ping-task-strip'), item => getComputedStyle(item).boxShadow),
+      fills: Array.from(element.querySelectorAll('.node-card-info-surface,.node-card-ping-task-strip'), item => getComputedStyle(item).backgroundColor),
       contained: element.scrollWidth <= element.clientWidth + 1,
     }))
     expect(styles.cardBorderWidth).toBe('1px')
     expect(styles.cardBorderColor).not.toBe('rgba(0, 0, 0, 0)')
     expect(styles.infoShadows).toHaveLength(3)
-    expect(styles.infoShadows.every(shadow => shadow.includes('inset'))).toBe(true)
+    expect(styles.infoShadows.every(shadow => shadow === 'none')).toBe(true)
     expect(styles.stripShadows).toHaveLength(3)
-    expect(styles.stripShadows.every(shadow => shadow.includes('inset'))).toBe(true)
+    expect(styles.stripShadows.every(shadow => shadow === 'none')).toBe(true)
+    expect(styles.fills).toHaveLength(6)
+    expect(styles.fills.every(fill => fill === 'rgba(226, 232, 240, 0.76)')).toBe(true)
     expect(styles.contained).toBe(true)
 
     await expect(page.locator('.background-container')).toBeVisible()
@@ -3182,6 +3216,7 @@ test.describe('node-card per-node ping task bindings', () => {
             borderWidth: style.borderWidth,
             borderColor: style.borderColor,
             boxShadow: style.boxShadow,
+            backgroundColor: style.backgroundColor,
           }
         }
         return {
@@ -3201,8 +3236,10 @@ test.describe('node-card per-node ping task bindings', () => {
         expect(surfaceStyles.strips.every(style => style.boxShadow === 'none')).toBe(true)
       }
       else {
-        expect(surfaceStyles.info.every(style => style.boxShadow.includes('inset'))).toBe(true)
-        expect(surfaceStyles.strips.every(style => style.boxShadow.includes('inset'))).toBe(true)
+        // v2.8.1 intentionally replaces the inner inset with the default
+        // light control fill; retain the outer border and all geometry checks.
+        expect(surfaceStyles.info.every(style => style.boxShadow === 'none' && style.backgroundColor === 'rgba(226, 232, 240, 0.76)')).toBe(true)
+        expect(surfaceStyles.strips.every(style => style.boxShadow === 'none' && style.backgroundColor === 'rgba(226, 232, 240, 0.76)')).toBe(true)
       }
 
       const layouts = await strips.evaluateAll(elements => elements.map((element) => {

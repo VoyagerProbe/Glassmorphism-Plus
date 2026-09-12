@@ -16,7 +16,7 @@ concurrency:
 jobs:
   screenshots:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -36,7 +36,9 @@ jobs:
         run: bun run test:visual
 
       - name: Upload visual differences
-        if: failure()
+        # Also retain the machine-readable full-suite result on success.
+        # Hard job cancellation can still prevent this step from running.
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v6
         with:
           name: visual-regression-diffs
