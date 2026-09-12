@@ -25,13 +25,13 @@
 
 | 项目               | 当前状态                                                                                                               |
 | :----------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v2.8.1（正式发布）**                                                                                     |
+| 当前 Plus 版本     | **v2.8.1（正式发布）**                                                                                                 |
 | 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7) |
 | 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                        |
 | 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                             |
 | 已验证 Komari 版本 | **1.4.3**                                                                                                              |
 | 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                         |
-| 源码发布           | GitHub `main` 与 `v2.8.1` Release；附加唯一、已验证的客户安装包                                                    |
+| 源码发布           | GitHub `main` 与 `v2.8.1` Release；附加唯一、已验证的客户安装包                                                        |
 | 本地安装包         | `2.8.1/Glassmorphism-Plus-release-2.8.1.zip`                                                                           |
 
 Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用自己的版本体系；上游 v3.3.7 仅代表当前同步基线，并非 Plus 的版本号。同步来源、选择性合并和署名详见 [UPSTREAM.md](UPSTREAM.md)。
