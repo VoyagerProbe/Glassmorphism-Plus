@@ -63,3 +63,47 @@ jobs:
             playwright-report/
           if-no-files-found: ignore
           retention-days: 14
+
+  webkit-tooltip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        run: |
+          git ls-files --error-unmatch bun.lock
+          bun install --frozen-lockfile
+          git diff --exit-code -- bun.lock
+
+      - name: Install WebKit
+        run: bunx playwright install --with-deps webkit
+
+      - name: Build mobile test artifact
+        run: KOMARI_SKIP_PACKAGE=1 bun run build-only
+
+      - name: Verify WebKit mobile Tooltip lifecycle
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/webkit-tooltip-summary.json
+        # Native CDP drag is Chromium-only; WebKit exercises browser tap,
+        # cancellation classification, DOM scroll retention and modal cleanup.
+        run: >-
+          node node_modules/@playwright/test/cli.js test
+          --config playwright.webkit.config.ts --project webkit-iphone
+          --grep 'touch scrolling survives compatibility leave|gesture guards reject out-and-back|five modal cycles preserve dual chart|ten cycles preserve chart state|tap dismisses|mobile long-list numeric'
+          --reporter=line,json
+
+      - name: Upload WebKit Tooltip results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: webkit-tooltip-results
+          path: test-results/
+          if-no-files-found: error
+          retention-days: 14
