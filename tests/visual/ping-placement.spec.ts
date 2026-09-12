@@ -1,6 +1,10 @@
 import type { Locator, Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import { installKomariFixture, PRIMARY_NODE_UUID } from './fixtures/komari'
+import { attachTooltipEvents, observeTooltipEvents } from './fixtures/ping-tooltip-diagnostics'
+
+test.beforeEach(observeTooltipEvents)
+test.afterEach(attachTooltipEvents)
 
 test.use({ launchOptions: { ignoreDefaultArgs: ['--hide-scrollbars'] } })
 const fractions = [5, 50, 95]

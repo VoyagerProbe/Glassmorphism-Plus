@@ -2,6 +2,10 @@ import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import { pingTooltipLoss } from '../../src/utils/pingChartPresentation'
 import { installKomariFixture, PRIMARY_NODE_UUID } from './fixtures/komari'
+import { attachTooltipEvents, observeTooltipEvents } from './fixtures/ping-tooltip-diagnostics'
+
+test.beforeEach(observeTooltipEvents)
+test.afterEach(attachTooltipEvents)
 
 // Headless Chromium normally hides native scrollbars; retain them for drag coverage.
 test.use({ launchOptions: { ignoreDefaultArgs: ['--hide-scrollbars'] } })
