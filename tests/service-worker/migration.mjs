@@ -145,7 +145,9 @@ async function main() {
     const entryA = zipFiles(zipA).get('dist/index.html').toString().match(entryPattern)[1]
     const entryC = filesC.get('dist/index.html').toString().match(entryPattern)[1]
     assert.notEqual(entryA, entryC)
-    const context = await browser.newContext({ serviceWorkers: 'allow' })
+    // Official i18next detects navigator language; CI defaults to English.
+    // Keep the real Chinese login/save UI locators deterministic across hosts.
+    const context = await browser.newContext({ serviceWorkers: 'allow', locale: 'zh-CN' })
     context.on('request', request => outstanding.set(request, { host: new URL(request.url()).hostname, path: new URL(request.url()).pathname, worker: Boolean(request.serviceWorker()) }))
     context.on('requestfinished', request => outstanding.delete(request))
     context.on('requestfailed', request => outstanding.delete(request))
