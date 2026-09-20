@@ -17,6 +17,8 @@
 **[本地开发](#️-本地开发)** ·
 **[版本历史](CHANGELOG.md)**
 
+![Glassmorphism 原作者 sanrokamlan 主题预览](https://raw.githubusercontent.com/VoyagerProbe/Glassmorphism-Plus/main/docs/preview.png)
+
 </div>
 
 ---
