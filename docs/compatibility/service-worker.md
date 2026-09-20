@@ -44,7 +44,8 @@ Safari 黑屏尚只是现象报告。若设备收到正确 JS 后出现语法或
 - 初始探针使用真实 v2.8.1 和原 v2.8.2 ZIP、官方 fix1 Worker 与同 origin／同 profile，重现旧入口 MIME 故障；Linux [初始路由证据](https://github.com/VoyagerProbe/Glassmorphism-Plus/actions/runs/35499586322) 已通过。这不是最终候选全矩阵结论。
 - 常驻回归使用真实历史 A，B 为当前构建移除兼容资源的测试包，C 为当前构建，D 为实际改变入口 bytes 与内容哈希文件名的测试产物。B/D 仅为隔离 fixture，不是历史原包或新 Release。未清站点资料、未勾 Bypass、未用 mock 替代旧官方 Worker。
 - 覆盖恢复页迁移、单个有害 HTML 失效、其余 532 个预快取内容保留、合成 Cookie／偏好／绑定／IndexedDB／api-cache 哨兵、不同 scope Worker、后台实际未保存输入与保存读回、后续入口变化、官方主题往返、无 SW API／存储拒绝／离线／开放重定向边界及自然更新。
-- 单元模拟仅验证安全拒绝边界，不冒充真实 Worker 集成。Playwright WebKit 的能力结果与原 Safari 分开报告；完整已有 Visual Regression／WebKit UI 保护仍需通过，不过滤或降低断言。
+- [Linux 完整迁移及 WebKit 证据](https://github.com/VoyagerProbe/Glassmorphism-Plus/actions/runs/35501590287) 已通过：Chromium 自然更新保留原 `/sw.js?existing-query=1`，第一导航仍为旧外壳，激活后再一次正常导航取得当前入口；真实受限启动模式仍拒绝第三方恢复资源，回到正常模式后重新取得兼容 Worker。Linux 和 Windows 的 Playwright WebKit 均实际启用 SW 并通过迁移，不使用 `serviceWorkers: 'block'`。
+- 单元模拟仅验证安全拒绝边界，不冒充真实 Worker 集成。仅新 HTML 提示测试注入入口／API 网络失败，分别断言显示／不显示恢复提示。完整已有 Code Quality、Visual Regression 与 WebKit UI 保护仍是发布前独立门槛，不过滤或降低断言；它们也不能代替原 Safari 实机确认。
 - 合成数据库、浏览器 profile、日志和原始响应均留在 Git 与客户 ZIP 之外。安装 ZIP 只包含 manifest、preview 和 dist，兼容资源必须原样进入 dist 并通过校验。
 
 候选包发布后，请分别在原 Safari 普通标签、私密浏览及主屏幕 Web App（若使用）记录结果；未使用的模式记未测试。无需预先清除网站数据。若恢复页未完成，反馈其简短状态；若已完成仍黑屏，提供首条错误／失败 JS 路径，遮住凭据。
