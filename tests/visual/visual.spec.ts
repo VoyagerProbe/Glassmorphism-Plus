@@ -2819,7 +2819,7 @@ test.describe('node-card per-node ping task bindings', () => {
     await page.setViewportSize({ width: 1280, height: 720 })
     const fixture = await installKomariFixture(page, {
       fakeTimers: true,
-      clockNow: PING_ARBITRARY_PHASE_CLOCK,
+      clockNow: '2026-07-25T12:00:00.000+08:00',
       nodeCardPingTaskBindings: primaryBinding(202),
       nodeCardPingFixture: {
         metric: 'valid',
@@ -2839,6 +2839,9 @@ test.describe('node-card per-node ping task bindings', () => {
         ],
       },
     })
+    // Freeze before navigation: install() alone keeps advancing with wall time.
+    // A slower runner must not cross :34 while asserting the earlier retry.
+    await page.clock.pauseAt(new Date(PING_ARBITRARY_PHASE_CLOCK))
     await openStablePage(page)
 
     await expectNodeCardPingBucketState(page, 'latency', PING_PREVIOUS_BUCKET, 'data')
@@ -2850,7 +2853,10 @@ test.describe('node-card per-node ping task bindings', () => {
     // The backend does not expose the :22 sample until :34. The next bounded
     // retry sees the same raw timestamp; no logic may rewrite it to :00.
     await fixture.advanceTime(14_000)
+    expect(await page.evaluate(() => Date.now())).toBe(Date.parse(PING_ARBITRARY_PHASE_API_VISIBLE))
     await expectNodeCardPingBucketState(page, 'latency', PING_INGESTION_BUCKET, 'pending')
+    // Let the existing bounded retry finish naturally after the frozen boundary.
+    await page.clock.resume()
     await fixture.advanceTime(6_000)
     await expectNodeCardPingBucketState(page, 'latency', PING_INGESTION_BUCKET, 'data')
     await expectNodeCardPingTooltip(page, 'latency', '12:00–12:03\n延迟：13 ms\n丢包：0.0%\n最新样本：12:00:22')
