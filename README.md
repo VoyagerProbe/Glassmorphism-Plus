@@ -25,7 +25,7 @@
 
 | 项目               | 当前状态                                                                                                               |
 | :----------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v2.8.2（正式发布）**                                                                                                 |
+| 当前 Plus 版本     | **v2.8.2（预发布／同版本兼容修复）**                                                                                   |
 | 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7) |
 | 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                        |
 | 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                             |
@@ -40,7 +40,8 @@ Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用�
 
 - 增加 Komari 1.4.3、1.5.0 与 1.5.0-fix1 官方发行二进制的兼容验证，覆盖主题安装、公开数据、历史图表、HTTP／WebSocket 与配置往返。
 - 增加 GPU 可选字段、真实零值与 Ping Metric 契约保护测试；保留 v2.8.1 产品实现、双图、公开备注与触控行为，本轮没有改写数据读取、缓存或调度。
-- 明确旧官方 PWA Worker 的导航缓存限制：1.5.0 和 fix1 的已受控浏览器仍可能显示默认主题，不能将全新浏览器正常等同于旧缓存已修复。详见[兼容说明](docs/compatibility/komari-1.5.md)。
+- 增加同地址无 fetch 拦截的 Worker 兼容层和独立恢复入口，覆盖已确认的旧外壳／旧入口 MIME 故障链；保留用户资料，仅精确失效已识别的有害旧 HTML 条目。根作用域的前台与后台改为在线访问，不再提供原 Worker 的离线外壳／运行时缓存能力。
+- iPhone iOS 27 原 Safari 黑屏原因与候选迁移仍待实机确认，不自动晋升 Latest；路径、测试范围、主题往返条件见[启动兼容说明](docs/compatibility/service-worker.md)。原始后端兼容验证见[历史验证记录](docs/compatibility/komari-1.5.md)。
 
 ---
 
@@ -91,7 +92,7 @@ _历史数据的实际可查看范围取决于后端保留时间及已有采样�
 ### 重要说明
 
 - **v2.8.2 Release 附加且只附加一个已验证的 installer asset：** `Glassmorphism-Plus-release-2.8.2.zip`。
-- 请从 [v2.8.2 Release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.2) 下载该安装包。当前 Stable／Latest 为 v2.8.2。
+- 请从 [v2.8.2 Pre-release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.2) 重新下载同名兼容修复安装包，不沿用之前保存的 ZIP。本轮不晋升 Latest，等待 Safari 实机确认。
 - GitHub 自动生成的 **Source code (zip)** 是源码快照，**不是** Komari 可安装主题包。
 - Komari 的远程仓库导入流程应使用正式 Release 中的 installer asset；仍不要用 GitHub 自动生成的源码压缩包代替。
 

@@ -32,6 +32,22 @@
       }
     </style>
     <script>
+      // Only an explicit entry-module resource failure reveals this local help.
+      // It cannot run in old cached HTML and never reloads any page.
+      window.addEventListener(
+        'error',
+        function (event) {
+          var target = event.target
+          if (!target || target.tagName !== 'SCRIPT' || target.type !== 'module') return
+          var entry = new URL(target.src, location.href)
+          if (entry.origin !== location.origin || !/^\/assets\/index-[^/]+\.js$/.test(entry.pathname)) return
+          var notice = document.getElementById('plus-startup-help')
+          if (notice) notice.hidden = false
+        },
+        true,
+      )
+    </script>
+    <script>
       ;(function () {
         try {
           var officialAppRoute = /^\/(admin|terminal|manage)(\/|$)/
@@ -87,6 +103,20 @@
       当前 iOS 浏览器内核版本过低，请升级到 iOS 15.4 或更高版本后访问。
     </div>
     <div id="app"></div>
+    <div
+      id="plus-startup-help"
+      hidden
+      role="alert"
+      style="
+        padding: 24px;
+        font:
+          16px/1.6 system-ui,
+          sans-serif;
+      "
+    >
+      入口脚本加载失败，原因可能是网络、旧页面或资源不匹配。
+      <a href="/themes/glassmorphism-plus/dist/plus-recovery.html">打开浏览器兼容恢复</a>。 此操作不会自动刷新其他页面。
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -17,6 +17,7 @@ const ZIP_STORED = 0
 const ZIP_DEFLATED = 8
 const PATH_SEPARATOR_RE = /[\\/]/
 const WINDOWS_DRIVE_PREFIX_RE = /^[A-Z]:/i
+const ENTRY_ASSET_RE = /(?:src|href)="(\/assets\/[^"?#]+\.(?:js|css))"/g
 
 const EXCLUDED_DIRECTORY_NAMES = new Set([
   '.cache',
@@ -55,6 +56,7 @@ const EXCLUDED_FILE_SUFFIXES = [
 
 interface ThemeManifest {
   version?: unknown
+  short?: unknown
 }
 
 interface ZipEntry {
@@ -300,6 +302,33 @@ function collectExpectedInstallerEntries(projectRoot: string): ExpectedInstaller
   }
 
   walkDist(sourceDistPath, 'dist/')
+
+  // Stable compatibility resources are a runtime contract, not debug artifacts.
+  // Reassess the migration before ever removing them from a future Plus build.
+  const manifest = JSON.parse(readFileSync(sourceManifestPath, 'utf8')) as ThemeManifest
+  if (manifest.short === 'glassmorphism-plus') {
+    for (const name of ['sw.js', 'plus-recovery.html', 'plus-recovery.js']) {
+      const original = resolve(projectRoot, 'public', name)
+      const built = files.get(`dist/${name}`)
+      assertSourceFile(original, 'Compatibility source')
+      if (!built || sha256(readFileSync(built)) !== sha256(readFileSync(original))) {
+        throw new Error(`Missing or stale compatibility runtime resource: ${name}`)
+      }
+    }
+    const recovery = readFileSync(files.get('dist/plus-recovery.html')!, 'utf8')
+    if (!recovery.includes('src="./plus-recovery.js"') || recovery.includes('type="module"') || recovery.includes('/assets/')) {
+      throw new Error('Recovery HTML must remain independent of the application module graph')
+    }
+    const entry = files.get('dist/index.html')
+    if (!entry) {
+      throw new Error('Installer is missing its application HTML')
+    }
+    const html = readFileSync(entry, 'utf8')
+    const moduleResources = [...html.matchAll(ENTRY_ASSET_RE)]
+    if (!moduleResources.length || moduleResources.some(match => !files.has(`dist${match[1]}`))) {
+      throw new Error('Application HTML references a missing entry/preload/style resource')
+    }
+  }
 
   if (![...files.keys()].some(entryName => entryName.startsWith('dist/'))) {
     throw new Error('Source dist/ contains no files')

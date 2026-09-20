@@ -23,18 +23,31 @@ jobs:
         run: |
           bun install --frozen-lockfile
           git diff --exit-code -- bun.lock
-      - name: Chromium for actual Worker migration
-        run: bunx playwright install --with-deps chromium
+      - name: Browser engines for compatibility checks
+        run: bunx playwright install --with-deps chromium webkit
+      - name: Compatibility lifecycle and safety contracts
+        run: node --test tests/service-worker/worker.test.mjs
+      - name: Build current candidate (no release artifact overwrite)
+        env:
+          KOMARI_SKIP_PACKAGE: '1'
+        run: bun run build-only
       - name: Official fix1 route and old-profile evidence
         env:
           KOMARI_SW_LAB_ROOT: ${{ runner.temp }}/plus-sw-lab
           KOMARI_SW_FIXTURES: ${{ runner.temp }}/plus-sw-inputs
-        run: node tests/service-worker/route-probe.mjs
+        run: node tests/service-worker/migration.mjs
+      - name: WebKit capability, recovery and current UI
+        env:
+          KOMARI_SW_LAB_ROOT: ${{ runner.temp }}/plus-sw-lab
+          KOMARI_SW_FIXTURES: ${{ runner.temp }}/plus-sw-inputs
+        run: node tests/service-worker/webkit.mjs
       - name: Sanitized migration result only
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v6
         with:
-          name: service-worker-route-evidence
-          path: ${{ runner.temp }}/plus-sw-lab/*/route-probe.json
+          name: service-worker-migration-evidence
+          path: |
+            ${{ runner.temp }}/plus-sw-lab/*/migration.json
+            ${{ runner.temp }}/plus-sw-lab/*/webkit-compat.json
           if-no-files-found: error
           retention-days: 14

@@ -2,12 +2,20 @@
 
 本文件只记录 **Glassmorphism Plus** 自己的发行版本。原始 Glassmorphism 的版本历史请查看[上游仓库](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases)；Plus 的选择性同步记录见 [UPSTREAM.md](UPSTREAM.md)。
 
-## [2.8.2] - 2026-09-20
+## [2.8.2] - 2026-09-20（预发布／同版本兼容修复）
+
+- 新增稳定 `/sw.js` 无 fetch 兼容层，使已安装的旧根 Worker 可经原 URL 更新；不创建新的全站注册、不代理请求、不自动导航其他标签页。
+- 新增独立浏览器恢复页，验证本实例注册与交付资源后，由用户触发一次更新，确认激活与接管再返回首页；不把 update 返回等同于完成。
+- 默认保留存储；官方主题往返实测证明固定 revision 会复用旧 Plus 外壳，因此仅删除精确 cache／revision／已核对 HTML SHA 匹配的单个旧首页条目，不删除 api-cache 或任何用户资料。
+- 根作用域前台及后台不再使用原 Worker 的离线外壳和运行时缓存。在线恢复、升级、后台与资料保护测试详见[兼容说明](docs/compatibility/service-worker.md)；原 iPhone Safari 仍待实机验证，不保证所有黑屏原因相同。
+- 当前 HTML 仅在入口模块明确载入失败时显示恢复链接，不以网络慢或 API 超时触发恢复。
+
+以下为最初 v2.8.2 后端适配验证记录，后续启动兼容改动以上述内容为准：
 
 - 验证同一主题安装包在 Komari 1.4.3、1.5.0 与 1.5.0-fix1 官方发行二进制上的安装、公开节点、Metric／Legacy 历史、HTTP／WebSocket 和管理员配置往返。
 - 增加 GPU 状态可选字段、真实零值和 Ping Metric 时间／丢包语义契约测试。1.5.0 的 GPU 最新值修正来自后端，Plus 沿用原有有效字段，不新增 GPU 面板或请求。
 - 记录同 origin 官方 PWA 缓存与 1.5.0 → fix1 升级限制；Plus 不注销 Worker、不清空浏览器数据、不宣称修复所有 PWA 场景。
-- 产品源码、样式、Ping／Tooltip、缓存、调度、依赖和内置 admin-app 保持 v2.8.1 不变；本版本已正式发布。
+- 最初适配轮产品源码、样式、Ping／Tooltip、缓存、调度、依赖和内置 admin-app 保持 v2.8.1 不变；本轮新增限定的启动兼容层，仍不改动这些业务模块。
 
 ## [2.8.1] - 2026-09-12
 

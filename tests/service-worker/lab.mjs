@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { Buffer } from 'node:buffer'
 import { spawn } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
-import { chmodSync, createWriteStream, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs'
+import { chmodSync, createWriteStream, existsSync, mkdirSync, openSync, readFileSync, renameSync, rmdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, resolve } from 'node:path'
 import process from 'node:process'
@@ -17,7 +17,6 @@ const labEnvironmentKeys = /^(?:PATH|SystemRoot|WINDIR|TEMP|TMP|APPDATA|LOCALAPP
 // Historical customer installers and the official binary stay outside the repo.
 export const fixtures = {
   A: { url: 'https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/download/v2.8.1/Glassmorphism-Plus-release-2.8.1.zip', sha: '72ee887c777bc54bab3ba6709944d600cd390478de28cab8ac52f89128ba27a4' },
-  B: { url: 'https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/download/v2.8.2/Glassmorphism-Plus-release-2.8.2.zip', sha: 'efd3b24217b6b9bed5cf3ed1784c278dde081c42e45619bc68af5b6d476dea0c' },
 }
 
 export async function download(url, file, expected) {
@@ -104,7 +103,8 @@ export async function createLab() {
   })
   const base = `http://127.0.0.1:${port}`
   const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => labEnvironmentKeys.test(key)))
-  const child = spawn(binary, ['server', '--listen', `127.0.0.1:${port}`, '--database', './data/komari.db'], { cwd: root, env, windowsHide: true, stdio: ['ignore', openSync(resolve(root, 'server.log'), 'a'), openSync(resolve(root, 'server-error.log'), 'a')] })
+  const launch = () => spawn(binary, ['server', '--listen', `127.0.0.1:${port}`, '--database', './data/komari.db'], { cwd: root, env, windowsHide: true, stdio: ['ignore', openSync(resolve(root, 'server.log'), 'a'), openSync(resolve(root, 'server-error.log'), 'a')] })
+  let child = launch()
   let cookie = ''
   async function request(path, { body, auth = false, method = body === undefined ? 'GET' : 'POST', raw = false } = {}) {
     const headers = auth ? { Cookie: cookie } : {}
@@ -120,6 +120,34 @@ export async function createLab() {
       child.kill()
       await exit
     }
+  }
+  async function restartMode(restricted) {
+    await stop()
+    const metrics = resolve(root, 'data/metrics.db')
+    const backup = resolve(root, 'data/metrics-sw-test-backup.db')
+    assert(metrics.startsWith(`${root}/`) || metrics.startsWith(`${root}\\`))
+    if (restricted) {
+      assert(!existsSync(backup))
+      renameSync(metrics, backup)
+      // An empty directory at this disposable DB path causes genuine recovery.
+      mkdirSync(metrics)
+    }
+    else {
+      // Only removes the exact empty directory created immediately above.
+      rmdirSync(metrics)
+      renameSync(backup, metrics)
+    }
+    child = launch()
+    for (let attempt = 0; attempt < 120; attempt++) {
+      try {
+        const response = await fetch(`${base}${restricted ? '/api/admin/database-recovery/auth' : '/api/install/status'}`)
+        if (response.ok && response.headers.get('content-type')?.includes('json'))
+          return
+      }
+      catch {}
+      await delay(250)
+    }
+    throw new Error('Disposable restart mode did not become ready')
   }
   try {
     let ready = false
@@ -138,6 +166,17 @@ export async function createLab() {
     await delay(1200)
     const login = await request('/api/login', { body: { username, password }, raw: true })
     cookie = login.headers.get('set-cookie').split(';')[0]
+    // Synthetic fixture state: the first-run notice must not steal form focus.
+    // This is never sent to an existing/user instance.
+    await request('/api/admin/settings/', { auth: true, body: { eula_accepted: true } })
+    const auxiliary = new Map()
+    function fixtureFile(path, content) {
+      assert(path.startsWith('sw-test-') && !path.includes('..') && !path.includes('\\') && !path.includes(':'))
+      auxiliary.set(path, content)
+      const target = resolve(root, 'data/theme/glassmorphism-plus/dist', path)
+      mkdirSync(dirname(target), { recursive: true })
+      writeFileSync(target, content)
+    }
     async function upload(path) {
       const bytes = readFileSync(path)
       const init = await request('/api/admin/upload/init', { auth: true, body: { purpose: 'theme', size: bytes.length, filename: 'Glassmorphism-Plus.zip' } })
@@ -150,6 +189,7 @@ export async function createLab() {
       }
       const result = await request('/api/admin/upload/merge', { auth: true, body: { upload_id: init.data.upload_id } })
       assert.equal(result.data.short, 'glassmorphism-plus')
+      for (const [path, content] of auxiliary) fixtureFile(path, content)
       return { bytes: bytes.length, sha256: digest(bytes), short: result.data.short }
     }
     const setTheme = theme => request(`/api/admin/theme/set?theme=${encodeURIComponent(theme)}`, { auth: true })
@@ -157,7 +197,7 @@ export async function createLab() {
       const f = fixtures[label]
       return download(f.url, resolve(downloads, `${label}-${f.sha}.zip`), f.sha)
     }
-    return { root, base, request, upload, setTheme, archive, stop, credentials: { username, password }, cookie, binaryHash: expected }
+    return { root, base, request, upload, setTheme, archive, fixtureFile, restartMode, stop, credentials: { username, password }, cookie, binaryHash: expected }
   }
   catch (error) {
     await stop()
