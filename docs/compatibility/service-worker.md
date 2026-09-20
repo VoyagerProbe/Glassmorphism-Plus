@@ -1,6 +1,6 @@
 # v2.8.2 启动与旧 Worker 兼容
 
-状态：同版本 Pre-release 兼容修复。需重新下载同名客户 ZIP 导入；不是 v2.8.3，不自动恢复 Latest。用户反馈实际使用当前正常；原 iPhone Safari 普通／私密／主屏幕 Web App 尚未完整实测，不能将 Chromium 或 Playwright WebKit 结果写成所有 Safari 已恢复。
+状态：v2.8.2 已完成用户实际使用测试，并经明确授权正式发布为 Stable／Latest；安装包与最终预发布测试包字节一致。原 iPhone Safari 普通／私密／主屏幕 Web App 的完整实测范围仍未确认，不能将 Chromium 或 Playwright WebKit 结果写成所有 Safari 已恢复。
 
 ## 已知事故与边界
 

@@ -2,7 +2,7 @@
 
 本文件只记录 **Glassmorphism Plus** 自己的发行版本。原始 Glassmorphism 的版本历史请查看[上游仓库](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases)；Plus 的选择性同步记录见 [UPSTREAM.md](UPSTREAM.md)。
 
-## [2.8.2] - 2026-09-20（预发布／同版本兼容修复）
+## [2.8.2] - 2026-09-20（正式发布）
 
 - 新增稳定 `/sw.js` 无 fetch 兼容层，使已安装的旧根 Worker 可经原 URL 更新；不创建新的全站注册、不代理请求、不自动导航其他标签页。
 - 同版本精简：移除独立手动恢复页面、专用脚本与首页提示；兼容 `/sw.js` 字节及安装／激活逻辑不变，旧注册仍通过浏览器标准生命周期自然更新，无需额外页面。
