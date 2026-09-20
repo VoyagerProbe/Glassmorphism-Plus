@@ -218,12 +218,26 @@ test('built index and dynamic imports contain no dangling local asset references
   const indexPath = resolve(DIST_ROOT, 'index.html')
   const html = readFileSync(indexPath, 'utf8')
   const missing: string[] = []
+  const manifest = JSON.parse(readFileSync(resolve(DIST_ROOT, '../komari-theme.json'), 'utf8')) as { short: string }
+  expect(manifest.short).toMatch(/^[a-z0-9-]+$/)
+  const themeDistPrefix = `/themes/${manifest.short}/dist/`
+  // Komari serves this exact theme-file route from the installed dist directory.
+  // Keep checking the target file; treating the URL as a disk path is incorrect.
+  const resolveDistReference = (reference: string): string => resolve(
+    DIST_ROOT,
+    reference.startsWith(themeDistPrefix)
+      ? reference.slice(themeDistPrefix.length)
+      : reference.replace(/^\/+/, ''),
+  )
+  expect(resolveDistReference(`${themeDistPrefix}plus-recovery.html`)).toBe(resolve(DIST_ROOT, 'plus-recovery.html'))
+  expect(resolveDistReference('/themes/another-theme/dist/plus-recovery.html')).toBe(resolve(DIST_ROOT, 'themes/another-theme/dist/plus-recovery.html'))
+  expect(existsSync(resolveDistReference(`${themeDistPrefix}missing-recovery-fixture.html`))).toBe(false)
 
   for (const match of html.matchAll(/(?:href|src)=["']([^"']+)["']/g)) {
     const reference = match[1]
     if (!reference.startsWith('/') || reference.startsWith('//'))
       continue
-    const localPath = resolve(DIST_ROOT, reference.replace(/^\/+/, ''))
+    const localPath = resolveDistReference(reference)
     if (!existsSync(localPath))
       missing.push(`${indexPath} -> ${reference}`)
   }
@@ -235,7 +249,7 @@ test('built index and dynamic imports contain no dangling local asset references
       if (/^(?:https?:)?\/\//.test(reference))
         continue
       const localPath = reference.startsWith('/')
-        ? resolve(DIST_ROOT, reference.replace(/^\/+/, ''))
+        ? resolveDistReference(reference)
         : resolve(dirname(scriptPath), reference)
       if (!existsSync(localPath))
         missing.push(`${scriptPath} -> ${reference}`)
