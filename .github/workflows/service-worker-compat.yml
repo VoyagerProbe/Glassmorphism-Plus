@@ -1,0 +1,40 @@
+name: Service Worker Compatibility
+
+on:
+  push:
+    branches:
+      - main
+      - compat/v2.8.2-sw
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  linux-original-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - name: Locked dependencies
+        run: |
+          bun install --frozen-lockfile
+          git diff --exit-code -- bun.lock
+      - name: Chromium for actual Worker migration
+        run: bunx playwright install --with-deps chromium
+      - name: Official fix1 route and old-profile evidence
+        env:
+          KOMARI_SW_LAB_ROOT: ${{ runner.temp }}/plus-sw-lab
+          KOMARI_SW_FIXTURES: ${{ runner.temp }}/plus-sw-inputs
+        run: node tests/service-worker/route-probe.mjs
+      - name: Sanitized migration result only
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: service-worker-route-evidence
+          path: ${{ runner.temp }}/plus-sw-lab/*/route-probe.json
+          if-no-files-found: error
+          retention-days: 14
