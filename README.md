@@ -25,7 +25,7 @@
 
 | 项目               | 当前状态                                                                                                               |
 | :----------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v2.8.2（预发布／同版本兼容修复）**                                                                                   |
+| 当前 Plus 版本     | **v2.8.2（预发布）**                                                                                                   |
 | 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7) |
 | 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                        |
 | 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                             |
@@ -40,8 +40,8 @@ Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用�
 
 - 增加 Komari 1.4.3、1.5.0 与 1.5.0-fix1 官方发行二进制的兼容验证，覆盖主题安装、公开数据、历史图表、HTTP／WebSocket 与配置往返。
 - 增加 GPU 可选字段、真实零值与 Ping Metric 契约保护测试；保留 v2.8.1 产品实现、双图、公开备注与触控行为，本轮没有改写数据读取、缓存或调度。
-- 增加同地址无 fetch 拦截的 Worker 兼容层和独立恢复入口，覆盖已确认的旧外壳／旧入口 MIME 故障链；保留用户资料，仅精确失效已识别的有害旧 HTML 条目。根作用域的前台与后台改为在线访问，不再提供原 Worker 的离线外壳／运行时缓存能力。
-- iPhone iOS 27 原 Safari 黑屏原因与候选迁移仍待实机确认，不自动晋升 Latest；路径、测试范围、主题往返条件见[启动兼容说明](docs/compatibility/service-worker.md)。原始后端兼容验证见[历史验证记录](docs/compatibility/komari-1.5.md)。
+- 保留同地址 `/sw.js` 兼容 Worker，修复旧首页缓存导致的启动黑屏；移除独立手动恢复页面与提示，普通用户无需额外恢复页面或清除网站数据。前台与后台采用在线访问，不再使用原 Worker 的离线外壳／运行时缓存。
+- 用户反馈当前使用正常；原 iPhone Safari 各浏览／PWA 状态尚未完整实测，本版保持预发布。自然更新、资料保护与主题往返边界见[启动兼容说明](docs/compatibility/service-worker.md)，原始后端验证见[历史记录](docs/compatibility/komari-1.5.md)。
 
 ---
 
@@ -147,7 +147,7 @@ dist/
 | **1.2.6–1.4.2** | **Best effort**          | 保留能力检测与 Legacy fallback，但没有对每个中间版本执行完整回归矩阵。                           |
 | **1.2.5**       | **Not tested**           | 保留旧 records／Ping fallback；该版本缺少当前主要 `queryMetrics` 能力，不作完整兼容承诺。        |
 
-兼容状态描述的是当前测试证据，不等同于对整个 `1.2.x` 或 `1.5.x` 系列的统一保证。上述实装使用隔离 SQLite 与合成节点，不代表所有数据库、反代或实体手机均已验证。官方 PWA 状态、新浏览器与升级路径分别记录于[兼容说明](docs/compatibility/komari-1.5.md)；Plus 不清空浏览器数据，也不接管官方 Worker。部署前请先在测试环境检查首页、节点详情、Ping、累计流量和管理页面。
+兼容状态描述的是当前测试证据，不等同于对整个 `1.2.x` 或 `1.5.x` 系列的统一保证。上述实装使用隔离 SQLite 与合成节点，不代表所有数据库、反代或实体手机均已验证。上述官方 PWA 限制为[最初适配记录](docs/compatibility/komari-1.5.md)；当前同地址 Worker 兼容层及离线能力影响见[启动兼容说明](docs/compatibility/service-worker.md)，不清空浏览器数据。部署前请先在测试环境检查首页、节点详情、Ping、累计流量和管理页面。
 
 ---
 

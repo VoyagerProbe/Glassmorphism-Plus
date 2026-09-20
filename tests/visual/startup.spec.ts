@@ -229,9 +229,14 @@ test('built index and dynamic imports contain no dangling local asset references
       ? reference.slice(themeDistPrefix.length)
       : reference.replace(/^\/+/, ''),
   )
-  expect(resolveDistReference(`${themeDistPrefix}plus-recovery.html`)).toBe(resolve(DIST_ROOT, 'plus-recovery.html'))
-  expect(resolveDistReference('/themes/another-theme/dist/plus-recovery.html')).toBe(resolve(DIST_ROOT, 'themes/another-theme/dist/plus-recovery.html'))
-  expect(existsSync(resolveDistReference(`${themeDistPrefix}missing-recovery-fixture.html`))).toBe(false)
+  expect(resolveDistReference(`${themeDistPrefix}sw.js`)).toBe(resolve(DIST_ROOT, 'sw.js'))
+  expect(resolveDistReference('/themes/another-theme/dist/sw.js')).toBe(resolve(DIST_ROOT, 'themes/another-theme/dist/sw.js'))
+  expect(existsSync(resolveDistReference(`${themeDistPrefix}missing-resource-fixture.html`))).toBe(false)
+  expect(existsSync(resolve(DIST_ROOT, 'sw.js'))).toBe(true)
+  expect(existsSync(resolve(DIST_ROOT, 'plus-recovery.html'))).toBe(false)
+  expect(existsSync(resolve(DIST_ROOT, 'plus-recovery.js'))).toBe(false)
+  expect(html).not.toContain('plus-recovery')
+  expect(html).not.toContain('plus-startup-help')
 
   for (const match of html.matchAll(/(?:href|src)=["']([^"']+)["']/g)) {
     const reference = match[1]

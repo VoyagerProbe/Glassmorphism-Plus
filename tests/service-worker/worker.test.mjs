@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
-import { webcrypto } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { createHash, webcrypto } from 'node:crypto'
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 // Native Node runner: the project does not depend on Vitest.
 // eslint-disable-next-line test/no-import-node-test
@@ -85,7 +85,7 @@ it('denied Cache Storage does not block online activation', async () => {
 it('diagnostic cannot supply deletion targets, URLs or executable operations', async () => {
   const worker = fixture()
   const replies = []
-  const valid = { data: 'PLUS_COMPAT_STATUS_V1', source: { url: `${origin}/themes/glassmorphism-plus/dist/plus-recovery.html` }, ports: [{ postMessage: data => replies.push(data) }] }
+  const valid = { data: 'PLUS_COMPAT_STATUS_V1', source: { url: `${origin}/` }, ports: [{ postMessage: data => replies.push(data) }] }
   worker.handlers.message({ ...valid, data: { action: 'delete', target: '*' } })
   worker.handlers.message({ ...valid, source: { url: 'https://other.invalid/' } })
   worker.handlers.message({ ...valid, source: { url: `${origin}/admin` } })
@@ -95,4 +95,15 @@ it('diagnostic cannot supply deletion targets, URLs or executable operations', a
   assert.equal(replies[0].compatibilityId, 'plus-online-v1')
   assert.equal(replies[0].mode, 'online-no-fetch')
   assert.deepEqual(worker.calls, [])
+})
+
+it('manual recovery removal preserves the exact compatible worker and original bootstrap', () => {
+  assert.equal(createHash('sha256').update(code).digest('hex'), '472d42cd35619cde31ba3378b3c1b1ed12a7687152e37b7d131b67902814d527')
+  for (const name of ['plus-recovery.html', 'plus-recovery.js'])
+    assert.equal(existsSync(resolve(project, 'public', name)), false)
+  const html = readFileSync(resolve(project, 'index.html'), 'utf8')
+  assert(!html.includes('plus-recovery') && !html.includes('plus-startup-help'))
+  assert(!html.includes('serviceWorker') && !html.includes('caches.'))
+  assert(html.includes('var officialAppRoute') && html.includes('catch (error)'))
+  assert(html.includes('src="/src/main.ts"'))
 })

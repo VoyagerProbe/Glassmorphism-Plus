@@ -36,7 +36,7 @@ jobs:
           KOMARI_SW_LAB_ROOT: ${{ runner.temp }}/plus-sw-lab
           KOMARI_SW_FIXTURES: ${{ runner.temp }}/plus-sw-inputs
         run: node tests/service-worker/migration.mjs
-      - name: WebKit capability, recovery and current UI
+      - name: WebKit natural worker migration and current UI
         env:
           KOMARI_SW_LAB_ROOT: ${{ runner.temp }}/plus-sw-lab
           KOMARI_SW_FIXTURES: ${{ runner.temp }}/plus-sw-inputs

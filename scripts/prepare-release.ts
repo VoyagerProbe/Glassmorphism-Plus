@@ -307,7 +307,7 @@ function collectExpectedInstallerEntries(projectRoot: string): ExpectedInstaller
   // Reassess the migration before ever removing them from a future Plus build.
   const manifest = JSON.parse(readFileSync(sourceManifestPath, 'utf8')) as ThemeManifest
   if (manifest.short === 'glassmorphism-plus') {
-    for (const name of ['sw.js', 'plus-recovery.html', 'plus-recovery.js']) {
+    for (const name of ['sw.js']) {
       const original = resolve(projectRoot, 'public', name)
       const built = files.get(`dist/${name}`)
       assertSourceFile(original, 'Compatibility source')
@@ -315,15 +315,19 @@ function collectExpectedInstallerEntries(projectRoot: string): ExpectedInstaller
         throw new Error(`Missing or stale compatibility runtime resource: ${name}`)
       }
     }
-    const recovery = readFileSync(files.get('dist/plus-recovery.html')!, 'utf8')
-    if (!recovery.includes('src="./plus-recovery.js"') || recovery.includes('type="module"') || recovery.includes('/assets/')) {
-      throw new Error('Recovery HTML must remain independent of the application module graph')
+    for (const name of ['plus-recovery.html', 'plus-recovery.js']) {
+      if (files.has(`dist/${name}`)) {
+        throw new Error(`Retired manual recovery resource must not be packaged: ${name}`)
+      }
     }
     const entry = files.get('dist/index.html')
     if (!entry) {
       throw new Error('Installer is missing its application HTML')
     }
     const html = readFileSync(entry, 'utf8')
+    if (html.includes('plus-recovery') || html.includes('plus-startup-help')) {
+      throw new Error('Application HTML must not reference the retired manual recovery UI')
+    }
     const moduleResources = [...html.matchAll(ENTRY_ASSET_RE)]
     if (!moduleResources.length || moduleResources.some(match => !files.has(`dist${match[1]}`))) {
       throw new Error('Application HTML references a missing entry/preload/style resource')

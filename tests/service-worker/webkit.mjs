@@ -5,7 +5,7 @@ import process from 'node:process'
 import { expect } from '@playwright/test'
 import { webkit } from 'playwright'
 import { createLab, makeZip } from './lab.mjs'
-import { candidateFiles } from './migration.mjs'
+import { candidateFiles, naturalUpgrade } from './migration.mjs'
 
 async function main() {
   const lab = await createLab()
@@ -28,20 +28,22 @@ async function main() {
       result.limitation = 'This Playwright WebKit build exposes no Service Worker API; it cannot validate an original Safari profile migration.'
     }
     await lab.upload(await makeZip(candidateFiles(), resolve(lab.root, 'webkit-C.zip')))
-    await page.goto(`${lab.base}/themes/glassmorphism-plus/dist/plus-recovery.html`)
     if (result.capability.swApi) {
-      await page.locator('#update').click()
-      await expect(page.locator('#status')).toContainText('已完成：', { timeout: 55000 })
+      await naturalUpgrade(page)
       result.realMigration = true
+      result.manualUpdateCalled = false
+      result.recoveryPageVisited = false
     }
     else {
-      await expect(page.locator('#update')).toBeDisabled()
-      await expect(page.locator('#status')).toContainText('不支持此恢复操作')
+      await page.goto(lab.base)
     }
-    await page.locator('#home').click()
     await page.waitForFunction(() => Boolean(document.querySelector('#app')?.__vue_app__))
     assert(!(await page.content()).includes('index-v5LVT8Hh.js'))
-    result.recoveryAndCurrentUi = true
+    await expect(page.locator('#plus-startup-help')).toHaveCount(0)
+    const again = await page.reload()
+    assert.equal(again.fromServiceWorker(), false)
+    await page.waitForFunction(() => Boolean(document.querySelector('#app')?.__vue_app__))
+    result.naturalMigrationAndCurrentUi = true
   }
   finally {
     writeFileSync(resolve(lab.root, 'webkit-compat.json'), JSON.stringify(result, null, 2))

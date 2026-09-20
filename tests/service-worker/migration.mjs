@@ -10,10 +10,11 @@ import { createLab, digest, makeZip, project, zipFiles } from './lab.mjs'
 
 const entryPattern = /<script\s[^>]*src=["']([^"']*\/assets\/index-[^"']+\.js)["']/
 const moduleErrorPattern = /MIME|module script/
-const recoveryPath = '/themes/glassmorphism-plus/dist/plus-recovery.html'
+const packagedWorkerPath = '/themes/glassmorphism-plus/dist/sw.js'
 const indexKey = '/index.html?__WB_REVISION__=01deecf312fd6fdfacc090ce81267cba'
 const javascriptPattern = /javascript/
 const htmlPattern = /text\/html/
+const offlinePattern = /ERR_INTERNET_DISCONNECTED/
 
 export function candidateFiles() {
   const files = new Map([
@@ -31,8 +32,11 @@ export function candidateFiles() {
     }
   }
   walk('dist')
-  for (const name of ['sw.js', 'plus-recovery.html', 'plus-recovery.js'])
+  for (const name of ['sw.js'])
     assert.equal(digest(files.get(`dist/${name}`)), digest(readFileSync(resolve(project, 'public', name))))
+  for (const name of ['plus-recovery.html', 'plus-recovery.js'])
+    assert(!files.has(`dist/${name}`))
+  assert(!files.get('dist/index.html').toString().includes('plus-recovery'))
   return files
 }
 
@@ -43,7 +47,7 @@ async function active(page) {
   })
 }
 
-async function compatibility(page) {
+export async function compatibility(page) {
   return page.evaluate(async () => {
     const worker = navigator.serviceWorker.controller
     if (!worker)
@@ -62,6 +66,17 @@ async function compatibility(page) {
       worker.postMessage('PLUS_COMPAT_STATUS_V1', [channel.port2])
     })
   })
+}
+
+export async function naturalUpgrade(page) {
+  // Only normal navigation triggers the browser's standard update check.
+  // Status messages observe activation; they cannot initiate an update.
+  const first = await page.reload()
+  await expect.poll(() => compatibility(page), { timeout: 30000 }).toBe('plus-online-v1')
+  const current = await page.reload()
+  assert.equal(current.fromServiceWorker(), false)
+  await page.waitForFunction(() => Boolean(document.querySelector('#app')?.__vue_app__))
+  return { first, current }
 }
 
 async function seed(page) {
@@ -139,7 +154,7 @@ async function main() {
     const filesC = candidateFiles()
     const zipC = await makeZip(filesC, resolve(lab.root, 'C.zip'))
     const filesB = new Map(filesC)
-    for (const name of ['sw.js', 'plus-recovery.html', 'plus-recovery.js']) filesB.delete(`dist/${name}`)
+    filesB.delete('dist/sw.js')
     const zipB = await makeZip(filesB, resolve(lab.root, 'B-test-only.zip'))
     const zipA = await lab.archive('A')
     const entryA = zipFiles(zipA).get('dist/index.html').toString().match(entryPattern)[1]
@@ -215,10 +230,8 @@ async function main() {
       assert.match(response.headers.get('content-type'), javascriptPattern)
       assert.equal(digest(Buffer.from(await response.arrayBuffer())), digest(filesC.get('dist/sw.js')))
     }
-    const recovery = await page.goto(lab.base + recoveryPath)
-    assert.equal(recovery.fromServiceWorker(), false)
-    await page.locator('#update').click()
-    await expect(page.locator('#status')).toContainText('已完成：', { timeout: 55000 })
+    const migrated = await naturalUpgrade(page)
+    assert((await migrated.current.text()).includes(entryC))
     assert.equal(adminNavigations, 0)
     assert.equal(otherNavigations, 0)
     assert.equal(await admin.locator('input[type="text"]').first().inputValue(), 'preserve-unsaved-form')
@@ -226,9 +239,7 @@ async function main() {
     assert.equal(await unrelated.evaluate(() => navigator.serviceWorker.controller.scriptURL), `${lab.base}/sw-test-unrelated/worker.js`)
     const afterInventory = await cacheInventory(page)
     assert.deepEqual(afterInventory, inventory.filter(([key]) => key !== indexKey))
-    record('independent recovery and exact-only invalidation', { activated: true, noOtherNavigation: true, sentinelsUnchanged: true, removedEntries: [indexKey], otherPrecacheEntriesUnchanged: afterInventory.length })
-    await page.locator('#home').click()
-    await page.waitForFunction(() => Boolean(document.querySelector('#app')?.__vue_app__))
+    record('natural migration and exact-only invalidation', { activated: true, manualUpdateCalled: false, recoveryPageVisited: false, noOtherNavigation: true, sentinelsUnchanged: true, removedEntries: [indexKey], otherPrecacheEntriesUnchanged: afterInventory.length })
     assert((await page.content()).includes(entryC))
     const current = await page.reload()
     assert.equal(current.fromServiceWorker(), false)
@@ -259,27 +270,18 @@ async function main() {
     record('same profile next build', { entryChanged: true, bytesChanged: true, mounted: true, sentinelsUnchanged: true })
 
     await lab.setTheme('default')
-    await page.goto(lab.base + recoveryPath)
-    await page.evaluate(async () => {
-      const registration = await navigator.serviceWorker.getRegistration('/')
-      window.__previousWorker = registration.active
-      await registration.update()
-    })
-    await expect.poll(() => page.evaluate(async () => {
-      const registration = await navigator.serviceWorker.getRegistration('/')
-      return registration.active !== window.__previousWorker && registration.active?.state === 'activated'
-    }), { timeout: 30000 }).toBe(true)
+    await page.goto(lab.base)
+    await expect.poll(async () => {
+      const inventory = new Map(await cacheInventory(page))
+      return inventory.has(indexKey) && inventory.get(indexKey) !== '442422019562099f6c7200fa42882823278afaaaa45882b263b00469ba649d47' && await compatibility(page) === null && await active(page)
+    }, { timeout: 30000 }).toBe(true)
     const official = await page.goto(lab.base)
     assert(official.fromServiceWorker())
     assert(!(await official.text()).includes(entryA))
     assert(!(await official.text()).includes(entryC))
     assert((await official.text()).includes('entry-index-'))
     await lab.setTheme('glassmorphism-plus')
-    await page.goto(lab.base + recoveryPath)
-    await page.locator('#update').click()
-    await expect(page.locator('#status')).toContainText('已完成：', { timeout: 55000 })
-    await page.locator('#home').click()
-    await page.waitForFunction(() => Boolean(document.querySelector('#app')?.__vue_app__))
+    await naturalUpgrade(page)
     assert((await page.content()).includes(entryD))
     assert.deepEqual(await sentinels(page), before)
     record('official and Plus roundtrip', { officialMountedShell: true, plusCorrectEntry: true, sentinelsUnchanged: true })
@@ -287,53 +289,44 @@ async function main() {
 
     const fresh = await browser.newContext()
     const freshPage = await fresh.newPage()
-    await freshPage.goto(`${lab.base}${recoveryPath}?return=https%3A%2F%2Fexample.invalid`)
-    await freshPage.locator('#update').click()
-    await expect(freshPage.locator('#status')).toContainText('没有发现旧根组件')
-    assert.equal(await freshPage.locator('#home').getAttribute('href'), `${lab.base}/`)
+    await freshPage.goto(lab.base)
+    await freshPage.waitForFunction(() => Boolean(document.querySelector('#app')?.__vue_app__))
     assert.equal(await freshPage.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length), 0)
     await fresh.setOffline(true)
-    await freshPage.locator('#update').click()
-    await expect(freshPage.locator('#status')).toContainText('当前离线')
+    await assert.rejects(() => freshPage.reload(), offlinePattern)
     await fresh.setOffline(false)
-    await freshPage.locator('#home').click()
+    await freshPage.goto(lab.base)
     await freshPage.waitForFunction(() => Boolean(document.querySelector('#app')?.__vue_app__))
-    await expect(freshPage.locator('#plus-startup-help')).toBeHidden()
-    record('new visitor, offline and redirect boundary', { noNewRegistration: true, offlineNotSuccess: true, fixedSameOriginReturn: true })
+    await expect(freshPage.locator('#plus-startup-help')).toHaveCount(0)
+    for (const name of ['plus-recovery.html', 'plus-recovery.js'])
+      assert.equal((await fetch(`${lab.base}/themes/glassmorphism-plus/dist/${name}`)).status, 404)
+    await freshPage.close()
+    const reopened = await fresh.newPage()
+    await reopened.goto(lab.base)
+    await reopened.waitForFunction(() => Boolean(document.querySelector('#app')?.__vue_app__))
+    record('new visitor, offline, reopen and removal', { noNewRegistration: true, offlineNavigationFails: true, onlineBootsAgain: true, reopenedBoots: true, retiredFiles404: true })
     await fresh.close()
 
-    // Fault injection is limited to the supplemental new-HTML startup message;
-    // the migration cases above always use real installed files and workers.
-    const entryFailure = await browser.newContext()
-    const entryFailurePage = await entryFailure.newPage()
-    await entryFailure.route(`**${entryD}`, route => route.abort('failed'))
-    await entryFailurePage.goto(lab.base)
-    await expect(entryFailurePage.locator('#plus-startup-help')).toBeVisible()
-    await entryFailure.close()
+    // API failure remains separate from worker migration; no recovery UI exists.
     const apiFailure = await browser.newContext()
     await apiFailure.route('**/api/**', route => route.abort('failed'))
     const apiFailurePage = await apiFailure.newPage()
     await apiFailurePage.goto(lab.base)
     await apiFailurePage.waitForFunction(() => Boolean(document.querySelector('#app')?.__vue_app__))
-    await expect(apiFailurePage.locator('#plus-startup-help')).toBeHidden()
+    await expect(apiFailurePage.locator('#plus-startup-help')).toHaveCount(0)
     await apiFailure.close()
-    record('supplemental new HTML guard', { entryFailureShowsRecovery: true, apiFailureDoesNotTriggerRecovery: true, faultInjectionOnlyInThisCase: true })
+    record('API failure isolation', { mountsWithoutRecoveryUi: true, faultInjectionOnlyInThisCase: true })
 
     const unsupported = await browser.newContext()
     await unsupported.addInitScript(() => Object.defineProperty(navigator, 'serviceWorker', { value: undefined }))
     const unsupportedPage = await unsupported.newPage()
-    await unsupportedPage.goto(lab.base + recoveryPath)
-    await expect(unsupportedPage.locator('#update')).toBeDisabled()
-    await unsupportedPage.locator('#home').click()
+    await unsupportedPage.goto(lab.base)
     await unsupportedPage.waitForFunction(() => Boolean(document.querySelector('#app')?.__vue_app__))
     await unsupported.close()
     const denied = await browser.newContext()
     await denied.addInitScript(() => Object.defineProperty(navigator, 'serviceWorker', { value: { getRegistration: () => Promise.reject(new DOMException('Synthetic storage denial', 'SecurityError')) } }))
     const deniedPage = await denied.newPage()
-    await deniedPage.goto(lab.base + recoveryPath)
-    await deniedPage.locator('#update').click()
-    await expect(deniedPage.locator('#status')).toContainText('未完成：')
-    await deniedPage.locator('#home').click()
+    await deniedPage.goto(lab.base)
     await deniedPage.waitForFunction(() => Boolean(document.querySelector('#app')?.__vue_app__))
     await denied.close()
     record('browser capability fallbacks', { noSwApiBoots: true, storageDeniedBoots: true, syntheticApiDenialOnly: true })
@@ -341,14 +334,14 @@ async function main() {
     lab.fixtureFile('sw-test-unknown.js', 'globalThis.addEventListener("install", e => e.waitUntil(globalThis.skipWaiting())); globalThis.addEventListener("activate", e => e.waitUntil(globalThis.clients.claim()));')
     const unknown = await browser.newContext()
     const unknownPage = await unknown.newPage()
-    await unknownPage.goto(lab.base + recoveryPath)
+    await unknownPage.goto(lab.base)
     await unknownPage.evaluate(() => navigator.serviceWorker.register('/sw-test-unknown.js', { scope: '/' }))
     await unknownPage.waitForFunction(() => Boolean(navigator.serviceWorker.controller))
-    await unknownPage.locator('#update').click()
-    await expect(unknownPage.locator('#status')).toContainText('不是本实例已知组件地址')
+    await unknownPage.reload()
+    await unknownPage.waitForFunction(() => Boolean(document.querySelector('#app')?.__vue_app__))
     assert.equal(await unknownPage.evaluate(() => navigator.serviceWorker.controller.scriptURL), `${lab.base}/sw-test-unknown.js`)
     await unknown.close()
-    record('unrelated registrations', { differentScopeWorkerPreserved: true, unknownRootWorkerRefused: true })
+    record('unrelated registrations', { differentScopeWorkerPreserved: true, unknownRootWorkerUnchanged: true })
 
     // Independent profile: no recovery-page click or manual update invocation.
     await lab.upload(zipA)
@@ -374,8 +367,8 @@ async function main() {
     assert.equal(await naturalPage.evaluate(() => navigator.serviceWorker.controller.scriptURL), `${lab.base}/sw.js?existing-query=1`)
     record('natural update independent old profile', { manualUpdateCalled: false, existingQueryPreserved: true, firstNavigationWasStale: firstVisitHtml.includes(entryA), furtherNavigationAfterActivation: 1, correctCurrentEntry: true })
     await lab.restartMode(true)
-    assert.equal((await fetch(lab.base + recoveryPath)).status, 404)
-    assert.equal((await fetch(lab.base + recoveryPath, { headers: { Cookie: lab.cookie } })).status, 404)
+    assert.equal((await fetch(lab.base + packagedWorkerPath)).status, 404)
+    assert.equal((await fetch(lab.base + packagedWorkerPath, { headers: { Cookie: lab.cookie } })).status, 404)
     assert.equal(digest(Buffer.from(await (await fetch(`${lab.base}/sw.js`)).arrayBuffer())), 'fd95bcb0ac27ebd032d3afd1f76379a6b8361b7d0ec4ef3046a55aa8b83b251a')
     const protectedPage = await naturalPage.goto(`${lab.base}/database-recovery`)
     assert(!(await protectedPage.text()).includes('src="/registerSW.js"'))
@@ -383,12 +376,9 @@ async function main() {
     assert.equal(protectedAPI.status, 401)
     await lab.restartMode(false)
     assert.equal(digest(Buffer.from(await (await fetch(`${lab.base}/sw.js`)).arrayBuffer())), digest(filesC.get('dist/sw.js')))
-    await naturalPage.goto(lab.base + recoveryPath)
-    await naturalPage.locator('#update').click()
-    await expect(naturalPage.locator('#status')).toContainText('已完成：', { timeout: 55000 })
-    await naturalPage.locator('#home').click()
-    await naturalPage.waitForFunction(() => Boolean(document.querySelector('#app')?.__vue_app__))
-    record('genuine restricted startup', { themeRecoveryDeniedForGuestAndAdmin: true, officialWorkerRetained: true, registrationTagStripped: true, unauthenticatedRecoveryApiDenied: true, returnedNormalWorkerMatchesCandidate: true })
+    await naturalPage.goto(lab.base)
+    await naturalUpgrade(naturalPage)
+    record('genuine restricted startup', { themeWorkerDeniedForGuestAndAdmin: true, officialWorkerRetained: true, registrationTagStripped: true, unauthenticatedRecoveryApiDenied: true, returnedNormalWorkerMatchesCandidate: true })
     await natural.close()
     report.complete = true
     record('matrix complete', { complete: true })
@@ -398,10 +388,10 @@ async function main() {
     report.workerStates = []
     for (const context of browser?.contexts() || []) {
       for (const page of context.pages()) {
-        if (new URL(page.url()).pathname === recoveryPath) {
+        if (page.url().startsWith(lab.base)) {
           report.workerStates.push(await page.evaluate(async () => {
             const registration = await navigator.serviceWorker.getRegistration('/')
-            return { active: registration?.active?.state, waiting: registration?.waiting?.state, installing: registration?.installing?.state, controlledByActive: navigator.serviceWorker.controller === registration?.active, status: document.getElementById('status')?.textContent }
+            return { active: registration?.active?.state, waiting: registration?.waiting?.state, installing: registration?.installing?.state, controlledByActive: navigator.serviceWorker.controller === registration?.active }
           }))
         }
       }
