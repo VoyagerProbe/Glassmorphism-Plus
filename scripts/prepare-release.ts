@@ -259,10 +259,12 @@ function assertSourceFile(sourcePath: string, label: string): void {
 function collectExpectedInstallerEntries(projectRoot: string): ExpectedInstallerEntries {
   const sourceManifestPath = resolve(projectRoot, THEME_MANIFEST_FILE)
   const sourcePreviewPath = resolve(projectRoot, 'docs/preview.png')
+  const sourceLicensePath = resolve(projectRoot, 'LICENSE')
   const sourceDistPath = resolve(projectRoot, 'dist')
 
   assertSourceFile(sourceManifestPath, 'Source metadata')
   assertSourceFile(sourcePreviewPath, 'Source preview')
+  assertSourceFile(sourceLicensePath, 'Source license')
 
   if (!existsSync(sourceDistPath)) {
     throw new Error(`Source dist/ does not exist: ${sourceDistPath}`)
@@ -277,6 +279,7 @@ function collectExpectedInstallerEntries(projectRoot: string): ExpectedInstaller
   const files = new Map<string, string>([
     [THEME_MANIFEST_FILE, sourceManifestPath],
     ['preview.png', sourcePreviewPath],
+    ['LICENSE', sourceLicensePath],
   ])
 
   const walkDist = (directory: string, zipPrefix: string): void => {

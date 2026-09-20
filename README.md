@@ -118,15 +118,18 @@ bun run release:prepare
 <version>/Glassmorphism-Plus-release-<version>.zip
 ```
 
-安装 ZIP 根目录直接包含：
+更新后的本地构建包根目录直接包含：
 
 ```text
 komari-theme.json
 preview.png
+LICENSE
 dist/
 ```
 
 随后在 Komari 后台进入“主题管理 → 上传主题”，选择该 ZIP 并启用 **Komari Glassmorphism Plus**。
+
+本次打包修正会原样附带上游 LICENSE，并校验内容一致性；已发布的 v2.8.2 安装包未包含 LICENSE，本次没有替换它，修正需随后续获准发布的版本交付。
 
 ### 方式二：使用 GitHub Release 安装包
 
@@ -138,6 +141,10 @@ dist/
 - v1.x 的单任务绑定会自动兼容为 v2 的一任务配置，原始 v1 key 不会被重写或删除。
 - 上传新 ZIP 后确认站点名称、首页布局、`pingsettings`、节点详情和 Ping 长范围数据。
 - Komari 后台显示的主题版本取自根目录 [`komari-theme.json`](komari-theme.json) 的 `version`。
+
+### Komari 官方 Theme Market
+
+本项目尚未收录。上架检查与提交前置事项见 [Theme Market 检查报告](docs/theme-market.md)，[表单资料](docs/theme-market-submission.md)仅供维护者本人提交。市场跟进 GitHub 正式 Latest；新版本仍先发布为 Pre-release，测试确认后再由维护者转正。
 
 ---
 

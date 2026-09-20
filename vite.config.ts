@@ -1,6 +1,6 @@
 import type { Plugin } from 'vite'
 import { execSync } from 'node:child_process'
-import { existsSync, readFileSync, renameSync, unlinkSync } from 'node:fs'
+import { existsSync, lstatSync, readFileSync, renameSync, unlinkSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { relative, resolve } from 'node:path'
 import process from 'node:process'
@@ -55,6 +55,7 @@ function getCommitHash(): string {
  * theme.zip
  * ├── komari-theme.json
  * ├── preview.png
+ * ├── LICENSE
  * └── dist/
  */
 function komariThemeZip(): Plugin {
@@ -69,6 +70,7 @@ function komariThemeZip(): Plugin {
 
       const distDir = resolve(__dirname, 'dist')
       const previewPath = resolve(__dirname, 'docs/preview.png')
+      const licensePath = resolve(__dirname, 'LICENSE')
       const themeManifest = readThemeManifest()
       const releasePaths = ensureReleaseWorkspace(__dirname, getThemeVersion())
       const { installerPath: outputPath } = releasePaths
@@ -84,6 +86,11 @@ function komariThemeZip(): Plugin {
 
       if (existsSync(partialOutputPath)) {
         throw new Error(`Refusing to reuse an existing partial installer: ${partialOutputPath}`)
+      }
+
+      // 安装包必须附带原始许可证，且不能通过符号链接引入其他文件。
+      if (!existsSync(licensePath) || !lstatSync(licensePath).isFile() || lstatSync(licensePath).isSymbolicLink()) {
+        throw new Error('Installer requires the original LICENSE as a regular file')
       }
 
       const output = fs.createWriteStream(partialOutputPath, { flags: 'wx' })
@@ -146,6 +153,7 @@ function komariThemeZip(): Plugin {
         archive.pipe(output)
 
         archive.file(themeJsonPath, { name: 'komari-theme.json' })
+        archive.file(licensePath, { name: 'LICENSE' })
 
         if (existsSync(previewPath)) {
           archive.file(previewPath, { name: 'preview.png' })
