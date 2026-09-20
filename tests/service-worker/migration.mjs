@@ -296,8 +296,26 @@ async function main() {
     await fresh.setOffline(false)
     await freshPage.locator('#home').click()
     await freshPage.waitForFunction(() => Boolean(document.querySelector('#app')?.__vue_app__))
+    await expect(freshPage.locator('#plus-startup-help')).toBeHidden()
     record('new visitor, offline and redirect boundary', { noNewRegistration: true, offlineNotSuccess: true, fixedSameOriginReturn: true })
     await fresh.close()
+
+    // Fault injection is limited to the supplemental new-HTML startup message;
+    // the migration cases above always use real installed files and workers.
+    const entryFailure = await browser.newContext()
+    const entryFailurePage = await entryFailure.newPage()
+    await entryFailure.route(`**${entryD}`, route => route.abort('failed'))
+    await entryFailurePage.goto(lab.base)
+    await expect(entryFailurePage.locator('#plus-startup-help')).toBeVisible()
+    await entryFailure.close()
+    const apiFailure = await browser.newContext()
+    await apiFailure.route('**/api/**', route => route.abort('failed'))
+    const apiFailurePage = await apiFailure.newPage()
+    await apiFailurePage.goto(lab.base)
+    await apiFailurePage.waitForFunction(() => Boolean(document.querySelector('#app')?.__vue_app__))
+    await expect(apiFailurePage.locator('#plus-startup-help')).toBeHidden()
+    await apiFailure.close()
+    record('supplemental new HTML guard', { entryFailureShowsRecovery: true, apiFailureDoesNotTriggerRecovery: true, faultInjectionOnlyInThisCase: true })
 
     const unsupported = await browser.newContext()
     await unsupported.addInitScript(() => Object.defineProperty(navigator, 'serviceWorker', { value: undefined }))
@@ -336,6 +354,10 @@ async function main() {
     const naturalPage = await natural.newPage()
     await naturalPage.goto(`${lab.base}/admin`)
     await expect.poll(() => active(naturalPage), { timeout: 120000 }).toBe(true)
+    // Existing query-bearing registration is set up while A is installed.
+    // After C installation, only the browser's natural update check is used.
+    await naturalPage.evaluate(() => navigator.serviceWorker.register('/sw.js?existing-query=1', { scope: '/' }))
+    await expect.poll(() => naturalPage.evaluate(() => navigator.serviceWorker.controller?.scriptURL), { timeout: 30000 }).toBe(`${lab.base}/sw.js?existing-query=1`)
     assert((await (await naturalPage.goto(lab.base)).text()).includes(entryA))
     await lab.upload(zipB)
     assert((await (await naturalPage.reload()).text()).includes(entryA))
@@ -347,7 +369,8 @@ async function main() {
     assert.equal(afterActivation.fromServiceWorker(), false)
     assert((await afterActivation.text()).includes(entryC))
     await naturalPage.waitForFunction(() => Boolean(document.querySelector('#app')?.__vue_app__))
-    record('natural update independent old profile', { manualUpdateCalled: false, firstNavigationWasStale: firstVisitHtml.includes(entryA), furtherNavigationAfterActivation: 1, correctCurrentEntry: true })
+    assert.equal(await naturalPage.evaluate(() => navigator.serviceWorker.controller.scriptURL), `${lab.base}/sw.js?existing-query=1`)
+    record('natural update independent old profile', { manualUpdateCalled: false, existingQueryPreserved: true, firstNavigationWasStale: firstVisitHtml.includes(entryA), furtherNavigationAfterActivation: 1, correctCurrentEntry: true })
     await lab.restartMode(true)
     assert.equal((await fetch(lab.base + recoveryPath)).status, 404)
     assert.equal((await fetch(lab.base + recoveryPath, { headers: { Cookie: lab.cookie } })).status, 404)

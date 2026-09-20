@@ -140,7 +140,7 @@ export async function createLab() {
     child = launch()
     for (let attempt = 0; attempt < 120; attempt++) {
       try {
-        const response = await fetch(`${base}${restricted ? '/api/admin/database-recovery/auth' : '/api/install/status'}`)
+        const response = await fetch(`${base}${restricted ? '/api/admin/database-recovery/auth' : '/api/version'}`)
         if (response.ok && response.headers.get('content-type')?.includes('json'))
           return
       }

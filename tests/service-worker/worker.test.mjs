@@ -2,8 +2,10 @@ import assert from 'node:assert/strict'
 import { webcrypto } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+// Native Node runner: the project does not depend on Vitest.
+// eslint-disable-next-line test/no-import-node-test
+import { it } from 'node:test'
 import vm from 'node:vm'
-import { it } from 'vitest'
 import { project } from './lab.mjs'
 
 const code = readFileSync(resolve(project, 'public/sw.js'), 'utf8')
