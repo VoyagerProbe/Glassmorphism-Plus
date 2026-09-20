@@ -25,22 +25,22 @@
 
 | 项目               | 当前状态                                                                                                               |
 | :----------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v2.8.1（正式发布）**                                                                                                 |
+| 当前 Plus 版本     | **v2.8.2（预发布）**                                                                                                   |
 | 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7) |
 | 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                        |
 | 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                             |
-| 已验证 Komari 版本 | **1.4.3**                                                                                                              |
+| 已验证 Komari 版本 | **1.4.3、1.5.0、1.5.0-fix1**（普通浏览；旧 PWA 限制见下文）                                                            |
 | 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                         |
-| 源码发布           | GitHub `main` 与 `v2.8.1` Release；附加唯一、已验证的客户安装包                                                        |
-| 本地安装包         | `2.8.1/Glassmorphism-Plus-release-2.8.1.zip`                                                                           |
+| 源码发布           | GitHub `main` 与 `v2.8.2` Pre-release；附加唯一、已验证的客户安装包                                                    |
+| 本地安装包         | `2.8.2/Glassmorphism-Plus-release-2.8.2.zip`                                                                           |
 
 Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用自己的版本体系；上游 v3.3.7 仅代表当前同步基线，并非 Plus 的版本号。同步来源、选择性合并和署名详见 [UPSTREAM.md](UPSTREAM.md)。
 
-### ✨ 最新版本 · v2.8.1
+### ✨ 最新版本 · v2.8.2（预发布）
 
-- 优化浅色主题首页节点卡片的内部信息块与 Ping 容器，以柔和的填充背景取代明显硬边框。
-- 首页节点卡片新增公开备注标签，与在线时长、价格保持同款样式；空备注自动隐藏，长文本单行截断，不显示私有备注。
-- 修复移动端共享 Tooltip 滚动时可能被兼容 mouseleave 提前关闭的问题，保留轻点关闭与桌面鼠标交互。
+- 增加 Komari 1.4.3、1.5.0 与 1.5.0-fix1 官方发行二进制的兼容验证，覆盖主题安装、公开数据、历史图表、HTTP／WebSocket 与配置往返。
+- 增加 GPU 可选字段、真实零值与 Ping Metric 契约保护测试；保留 v2.8.1 产品实现、双图、公开备注与触控行为，本轮没有改写数据读取、缓存或调度。
+- 明确旧官方 PWA Worker 的导航缓存限制：1.5.0 和 fix1 的已受控浏览器仍可能显示默认主题，不能将全新浏览器正常等同于旧缓存已修复。详见[兼容说明](docs/compatibility/komari-1.5.md)。
 
 ---
 
@@ -90,8 +90,8 @@ _历史数据的实际可查看范围取决于后端保留时间及已有采样�
 
 ### 重要说明
 
-- **v2.8.1 Release 附加且只附加一个已验证的 installer asset：** `Glassmorphism-Plus-release-2.8.1.zip`。
-- 当前 Latest 为 v2.8.1。请从 [v2.8.1 Release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.1) 下载已验证的安装包。
+- **v2.8.2 Pre-release 附加且只附加一个已验证的 installer asset：** `Glassmorphism-Plus-release-2.8.2.zip`。
+- 本轮测试请从 [v2.8.2 Pre-release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.2) 下载该安装包。当前 Stable／Latest 仍为 v2.8.1；v2.8.2 等待用户实际测试，不自动晋升正式版。
 - GitHub 自动生成的 **Source code (zip)** 是源码快照，**不是** Komari 可安装主题包。
 - Komari 的远程仓库导入流程应使用正式 Release 中的 installer asset；仍不要用 GitHub 自动生成的源码压缩包代替。
 
@@ -138,13 +138,15 @@ dist/
 
 ## 🧩 兼容性
 
-| Komari 版本     | 状态            | 说明                                                                                      |
-| :-------------- | :-------------- | :---------------------------------------------------------------------------------------- |
-| **1.4.3**       | **Verified**    | 本项目当前主要实机与回归目标。Metric Store、每节点 Ping 绑定和历史查询已验证。            |
-| **1.2.6–1.4.2** | **Best effort** | 保留能力检测与 Legacy fallback，但没有对每个中间版本执行完整回归矩阵。                    |
-| **1.2.5**       | **Not tested**  | 保留旧 records／Ping fallback；该版本缺少当前主要 `queryMetrics` 能力，不作完整兼容承诺。 |
+| Komari 版本     | 状态                     | 说明                                                                                             |
+| :-------------- | :----------------------- | :----------------------------------------------------------------------------------------------- |
+| **1.4.3**       | **Verified**             | 官方二进制隔离实装；公开数据、Metric／Legacy、配置、HTTP／WebSocket 保护回归通过。               |
+| **1.5.0**       | **Verified with limits** | 普通浏览与图表／配置通过；已有官方 PWA Worker 的普通刷新可能仍返回默认主题。                     |
+| **1.5.0-fix1**  | **Verified with limits** | 普通浏览与图表／配置通过；WebKit 手机仿真通过。同 origin 从 1.5.0 升级仍复现旧 Worker 导航限制。 |
+| **1.2.6–1.4.2** | **Best effort**          | 保留能力检测与 Legacy fallback，但没有对每个中间版本执行完整回归矩阵。                           |
+| **1.2.5**       | **Not tested**           | 保留旧 records／Ping fallback；该版本缺少当前主要 `queryMetrics` 能力，不作完整兼容承诺。        |
 
-兼容状态描述的是当前测试证据，不等同于对整个 `1.2.x` 系列的统一保证。部署到未验证版本前，请先在测试环境检查首页、节点详情、Ping、累计流量和管理页面。
+兼容状态描述的是当前测试证据，不等同于对整个 `1.2.x` 或 `1.5.x` 系列的统一保证。上述实装使用隔离 SQLite 与合成节点，不代表所有数据库、反代或实体手机均已验证。官方 PWA 状态、新浏览器与升级路径分别记录于[兼容说明](docs/compatibility/komari-1.5.md)；Plus 不清空浏览器数据，也不接管官方 Worker。部署前请先在测试环境检查首页、节点详情、Ping、累计流量和管理页面。
 
 ---
 
@@ -172,12 +174,19 @@ bun run release:prepare
 
 ## 📝 版本历史
 
-当前版本更新见上方「最新版本 · v2.8.1」。
+当前版本更新见上方「最新版本 · v2.8.2」。
 
 <details>
 <summary><strong>📚 查看历史版本更新</strong></summary>
 
 <br>
+
+### v2.8.1
+
+- 正式发布；保留当前 Stable／Latest 状态。
+- 优化浅色主题首页节点卡片的内部信息块与 Ping 容器，以柔和的填充背景取代明显硬边框。
+- 首页节点卡片新增公开备注标签，与在线时长、价格保持同款样式；空备注自动隐藏，长文本单行截断，不显示私有备注。
+- 修复移动端共享 Tooltip 滚动时可能被兼容 mouseleave 提前关闭的问题，保留轻点关闭与桌面鼠标交互。
 
 ### v2.8.0
 

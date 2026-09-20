@@ -2,6 +2,13 @@
 
 本文件只记录 **Glassmorphism Plus** 自己的发行版本。原始 Glassmorphism 的版本历史请查看[上游仓库](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases)；Plus 的选择性同步记录见 [UPSTREAM.md](UPSTREAM.md)。
 
+## [2.8.2] - 2026-09-20
+
+- 验证同一主题安装包在 Komari 1.4.3、1.5.0 与 1.5.0-fix1 官方发行二进制上的安装、公开节点、Metric／Legacy 历史、HTTP／WebSocket 和管理员配置往返。
+- 增加 GPU 状态可选字段、真实零值和 Ping Metric 时间／丢包语义契约测试。1.5.0 的 GPU 最新值修正来自后端，Plus 沿用原有有效字段，不新增 GPU 面板或请求。
+- 记录同 origin 官方 PWA 缓存与 1.5.0 → fix1 升级限制；Plus 不注销 Worker、不清空浏览器数据、不宣称修复所有 PWA 场景。
+- 产品源码、样式、Ping／Tooltip、缓存、调度、依赖和内置 admin-app 保持 v2.8.1 不变；本版本为 Pre-release，待用户实际测试后晋升，Latest 保持 v2.8.1。
+
 ## [2.8.1] - 2026-09-12
 
 - 优化浅色主题首页节点卡片内部信息块与 Ping 容器，使用现有可自定义的控制面板填色，弱化硬边框；保持原尺寸、深色面板与 Ping 趋势条不变。
