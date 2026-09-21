@@ -39,6 +39,8 @@ export interface VisualFixtureOptions {
   preserveStorageOnReload?: boolean
   adminAccess?: 'admin' | 'guest' | 'forbidden'
   hidePingTaskBindingEntry?: boolean
+  hideAdminEntryWhenLoggedOut?: boolean
+  visitorAuditEnabled?: boolean
   siteName?: string
   disablePageAnimation?: boolean
   pingRecordPreserveTime?: number
@@ -1052,7 +1054,7 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
     stopEarth: true,
     visitorInfoEnabled: true,
     colorVisionMode: options.colorVisionFriendly ? '色觉友好' : '标准',
-    hideAdminEntryWhenLoggedOut: false,
+    hideAdminEntryWhenLoggedOut: options.hideAdminEntryWhenLoggedOut ?? false,
     hidePriceWhenLoggedOut: false,
     disablePageAnimation: options.disablePageAnimation ?? true,
     backgroundEnabled: options.backgroundEnabled ?? false,
@@ -1152,7 +1154,7 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
         sitename: siteName,
         theme: 'Glassmorphism',
         theme_settings: settings,
-        visitor_audit_enabled: false,
+        visitor_audit_enabled: options.visitorAuditEnabled ?? false,
       },
     }),
   }))

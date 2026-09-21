@@ -4,6 +4,7 @@ import { computed, inject, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import VisitorInfo from '@/components/VisitorInfo.vue'
 import { useVisitorAudit } from '@/composables/useVisitorAudit'
 import { useAppStore } from '@/stores/app'
@@ -106,44 +107,54 @@ const sitename = computed(() => appStore.siteName)
           {{ sitename }}
         </h3>
       </div>
-      <div class="ml-1 flex shrink-0 items-center gap-0.5 sm:gap-2" data-testid="header-actions">
-        <div
-          class="inline-flex shrink-0 items-center rounded-lg bg-background/35 p-0.5 ring-1 ring-border/40"
-          role="group"
-          aria-label="主题模式"
-          data-testid="header-theme-group"
-        >
-          <Button
-            v-for="button in themeButtons"
-            :key="button.mode"
-            variant="ghost"
-            size="icon-sm"
-            class="rounded-md"
-            :class="appStore.selectedThemeMode === button.mode && 'bg-background/80 text-selection shadow-sm ring-1 ring-border/60'"
-            :aria-label="button.title"
-            :title="button.title"
-            :aria-pressed="appStore.selectedThemeMode === button.mode"
-            :data-testid="`theme-mode-${button.mode}`"
-            @click="selectThemeMode(button.mode)"
+      <TooltipProvider :delay-duration="200">
+        <div class="ml-1 flex shrink-0 items-center gap-0.5 sm:gap-2" data-testid="header-actions">
+          <div
+            class="inline-flex shrink-0 items-center rounded-lg bg-background/35 p-0.5 ring-1 ring-border/40"
+            role="group"
+            aria-label="主题模式"
+            data-testid="header-theme-group"
           >
-            <Icon :icon="button.icon" :width="18" :height="18" />
-          </Button>
+            <Tooltip v-for="button in themeButtons" :key="`theme-${button.mode}`">
+              <TooltipTrigger as-child>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  class="rounded-md"
+                  :class="appStore.selectedThemeMode === button.mode && 'bg-background/80 text-selection shadow-sm ring-1 ring-border/60'"
+                  :aria-label="button.title"
+                  :aria-pressed="appStore.selectedThemeMode === button.mode"
+                  :data-testid="`theme-mode-${button.mode}`"
+                  @click="selectThemeMode(button.mode)"
+                >
+                  <Icon :icon="button.icon" :width="18" :height="18" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" :side-offset="6" :collision-padding="8" data-header-tooltip>
+                {{ button.title }}
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <Tooltip v-for="button in actionButtons" :key="`action-${button.action}`">
+            <TooltipTrigger as-child>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                :aria-label="button.title"
+                :data-testid="button.action === 'openPingCenter' ? 'ping-center-entry' : undefined"
+                :aria-pressed="button.pressed"
+                :class="button.pressed && 'bg-background/70 text-selection'"
+                @click="handleButtonClick(button.action)"
+              >
+                <Icon :icon="button.icon" :width="18" :height="18" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" :side-offset="6" :collision-padding="8" data-header-tooltip>
+              {{ button.title }}
+            </TooltipContent>
+          </Tooltip>
         </div>
-        <Button
-          v-for="button in actionButtons"
-          :key="button.action"
-          variant="ghost"
-          size="icon-sm"
-          :aria-label="button.title"
-          :title="button.title"
-          :data-testid="button.action === 'openPingCenter' ? 'ping-center-entry' : undefined"
-          :aria-pressed="button.pressed"
-          :class="button.pressed && 'bg-background/70 text-selection'"
-          @click="handleButtonClick(button.action)"
-        >
-          <Icon :icon="button.icon" :width="18" :height="18" />
-        </Button>
-      </div>
+      </TooltipProvider>
     </div>
   </div>
 </template>

@@ -1459,11 +1459,12 @@ for (const scenario of [
     const entry = page.getByTestId('ping-center-entry')
     await expect(entry).toHaveCount(scenario.visible ? 1 : 0)
     if (scenario.visible) {
-      await expect(entry).toHaveAttribute('title', '延迟监测中心')
+      await expect(entry).not.toHaveAttribute('title', /\S/)
       await expect(entry).toHaveAttribute('aria-label', '延迟监测中心')
       await entry.hover()
       await page.waitForTimeout(300)
-      await expect(page.locator('[data-slot="tooltip-content"]')).toHaveCount(0)
+      await expect(page.locator('[data-header-tooltip]:visible')).toHaveCount(1)
+      await expect(page.locator('[data-header-tooltip]:visible')).toContainText('延迟监测中心')
     }
     await expect(page.getByRole('group', { name: '主题模式' })).toBeVisible()
   })
@@ -1481,13 +1482,14 @@ test('v2.7.1 header exposes the three direct theme choices before the unchanged 
   for (const accessibleName of expectedLabels) {
     const button = page.getByRole('button', { name: accessibleName, exact: true })
     await expect(button).toBeVisible()
-    await expect(button).toHaveAttribute('title', accessibleName)
+    await expect(button).not.toHaveAttribute('title', /\S/)
     await expect(button).toHaveAttribute('aria-label', accessibleName)
     await button.focus()
     await expect(button).toBeFocused()
     await button.hover()
     await page.waitForTimeout(300)
-    await expect(page.locator('[data-slot="tooltip-content"]')).toHaveCount(0)
+    await expect(page.locator('[data-header-tooltip]:visible')).toHaveCount(1)
+    await expect(page.locator('[data-header-tooltip]:visible')).toContainText(accessibleName)
   }
 })
 
