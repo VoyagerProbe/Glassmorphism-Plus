@@ -27,7 +27,7 @@
 
 | 项目               | 当前状态                                                                                                               |
 | :----------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v2.8.3（正式发布）**                                                                                                  |
+| 当前 Plus 版本     | **v2.8.3（正式发布）**                                                                                                 |
 | 当前稳定 Latest    | [v2.8.3](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.3)                                       |
 | 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7) |
 | 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                        |
