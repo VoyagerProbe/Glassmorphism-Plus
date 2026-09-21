@@ -2,7 +2,7 @@
 
 ## 当前跟进：只更新既有条目（2026-09-21）
 
-正式目录已收录本主题，当前为 v2.8.2。下面旧的首次提交表单仅作历史记录，不要重复提交。v2.8.3 保持 Pre-release，市场不会因此自动切换稳定安装包。
+正式目录已收录本主题，2026-09-21 核对时仍为 v2.8.2。v2.8.3 已晋升正式 Latest，安装包满足现有自动更新条件，等待官方周期检查及更新 PR 合并。下面旧的首次提交表单仅作历史记录，不要重复提交。
 
 如需同步新简介，请由维护者本人按官方流程更新既有条目：
 
@@ -10,9 +10,9 @@
 - 仓库：<https://github.com/VoyagerProbe/Glassmorphism-Plus>。
 - 原 description：`A customized Glassmorphism theme for Komari, based on the original theme by sanrokamlan.`
 - 新 description：`Enhanced Komari Glassmorphism based on sanrokamlan’s original.`
-- 仅更新现有主题的说明，不新增大小写不同的主题、不将目录下载改为预发布，也不改旧包 SHA-256。
+- 仅更新现有主题的说明，不新增大小写不同的主题；版本／下载／SHA-256 留给官方 Release 更新流程，市场 preview 保持原条目。
 
-当前自动更新流程只同步版本、下载地址和 SHA-256，新简介不会仅凭 Release 自动同步。Codex 没有代为提交官方 Issue／PR。首次审计及许可证处理历史见[检查报告](theme-market.md)。
+当前自动更新流程只同步版本、下载地址和 SHA-256，不同步 description 或 preview。README 新首页图片不是市场预览图变更。以上资料供维护者本人更新既有条目，Codex 没有代为提交官方 Issue／PR 或触发 workflow。当前状态及历史审计见[检查报告](theme-market.md)。
 
 ---
 
