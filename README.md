@@ -27,8 +27,8 @@
 
 | 项目               | 当前状态                                                                                                               |
 | :----------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v2.8.3（预发布）**                                                                                                   |
-| 当前稳定 Latest    | [v2.8.2](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.2)                                       |
+| 当前 Plus 版本     | **v2.8.3（正式发布）**                                                                                                 |
+| 当前稳定 Latest    | [v2.8.3](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.3)                                       |
 | 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7) |
 | 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                        |
 | 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                             |
@@ -41,11 +41,11 @@ Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用�
 
 ### ✨ 最新版本 · v2.8.3
 
-- 首页 Ping 趋势标签改为蓝色／紫色圆点加普通文字，去除小框与底色；保持四种卡片尺寸、固定 20 格及原有数据和触控交互。
-- 精简页脚版本提示，仅保留版本号与维护者，不再额外显示提交短哈希。
-- 更新主题英文简介，保持已上架的 `glassmorphism-plus` 标识、配置与升级兼容。
-- 延续 `/sw.js` 黑屏兼容处理和在线访问策略；安装包原样附带既有 LICENSE。
-- 同版本修复：恢复顶部工具按钮的美化提示（深色模式浅底深字），移除重复的原生提示，保留按钮操作、无障碍名称和其他数据提示行为。请重新下载安装包并导入，修复包保持 Pre-release，等待重新实测。
+- 优化首页 Ping 延迟／丢包标签，改为蓝色／紫色圆点配合文字显示，保持固定 20 格及原有数据和触控交互。
+- 恢复首页右上角工具按钮的美化提示，移除重复的浏览器原生提示，保留按钮操作与无障碍名称。
+- 精简页脚版本信息，不再显示提交短哈希。
+- 更新主题英文简介，并继续保持 `glassmorphism-plus` 市场身份与升级兼容。
+- 保留 `/sw.js` 黑屏兼容处理、在线访问策略及现有主题设置。
 
 ---
 
@@ -95,8 +95,8 @@ _历史数据的实际可查看范围取决于后端保留时间及已有采样�
 
 ### 重要说明
 
-- **[v2.8.3 预发布](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.3)只附加一个客户安装包：** `Glassmorphism-Plus-release-2.8.3.zip`。
-- 当前 Stable／Latest 为 [v2.8.2](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.2)。v2.8.3 为同版本 Tooltip 修复包，需重新下载并导入；不是此前已测试安装包的相同字节，安装后请重新验证。
+- **[v2.8.3 正式版](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.3)只附加一个客户安装包：** `Glassmorphism-Plus-release-2.8.3.zip`。
+- 当前 Stable／Latest 为 [v2.8.3](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.3)。
 - GitHub 自动生成的 **Source code (zip)** 是源码快照，**不是** Komari 可安装主题包。
 - Komari 的远程仓库导入流程应使用正式 Release 中的 installer asset；仍不要用 GitHub 自动生成的源码压缩包代替。
 
@@ -144,7 +144,7 @@ v2.8.3 安装包原样附带既有 LICENSE，并校验内容一致性；已发�
 
 ### Komari 官方 Theme Market
 
-本项目已收录，标识保持 `glassmorphism-plus`。v2.8.3 已改回 Pre-release；2026-09-21 核对时市场目录仍为 v2.8.2，本轮不修改其稳定安装包或校验值。市场只自动同步正式 Latest 的版本／下载／校验值，不同步简介或预览图；README 首页图片不影响市场 preview。新简介的[人工更新资料](docs/theme-market-submission.md)供维护者本人更新既有条目，核验记录见 [Theme Market 检查报告](docs/theme-market.md)。
+本项目已收录，标识保持 `glassmorphism-plus`。v2.8.3 已正式发布为 Stable／Latest；2026-09-21 核对时市场目录仍为 v2.8.2，后续更新须等待官方自动流程及 PR 合并。市场只自动同步正式 Latest 的版本／下载／校验值，不同步简介或预览图；README 首页图片不影响市场 preview。新简介的[人工更新资料](docs/theme-market-submission.md)供维护者本人更新既有条目，核验记录见 [Theme Market 检查报告](docs/theme-market.md)。
 
 ---
 

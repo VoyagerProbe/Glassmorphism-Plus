@@ -4,9 +4,11 @@
 
 已只读核对正式目录 commit `9608c03aaceff433e4bbd99df3acfba23fe3035b`：本主题已收录，唯一标识 `glassmorphism-plus`，仓库 `VoyagerProbe/Glassmorphism-Plus`，目录版本仍为 2.8.2。**不要重复首次提交。** 下文 2026-09-20 的结论保留为当时审计记录，不代表当前收录状态。
 
-v2.8.3 已由用户改回 Pre-release，本轮进行同版本 Header Tooltip 修复，需重新下载安装包并验证。当前 Latest 与市场条目仍为 v2.8.2，本轮不修改该稳定包及其 SHA，也不写入官方市场。此前晋升时核验的旧 v2.8.3 包为 7,645,662 bytes、SHA-256 `26eca9ca88d3adcc3ba4aec5dcc1f718fecd47b800438222de4102ef40b1000c`，仅作历史记录，不是本轮修复包摘要。
+v2.8.3 已正式晋升 Stable／Latest，沿用最终 Header Tooltip 修复包，不重建、不替换资产、不移动 tag。唯一安装包 `Glassmorphism-Plus-release-2.8.3.zip` 的 asset ID 为 `578850324`、大小为 7,645,587 bytes；晋升前后实际下载 SHA-256 均为 `5f2395ef9dad6aa4280d951d60692200f712cf16eec9485c4f4b684f5d03541b`，结构、manifest、LICENSE 与兼容 Worker 校验通过。市场仍为 v2.8.2，本轮未修改其历史资产或官方目录。
 
 当前[自动更新脚本](https://github.com/komari-monitor/theme-market/blob/9608c03aaceff433e4bbd99df3acfba23fe3035b/scripts/update-theme-releases.mjs)读取正式 Latest，只写入 `version`、`download`、`sha256`，支持唯一版本化 ZIP 回退，不同步 `description` 或 `preview`。[官方 workflow](https://github.com/komari-monitor/theme-market/blob/9608c03aaceff433e4bbd99df3acfba23fe3035b/.github/workflows/update-theme-releases.yml)约每六小时运行，创建／更新 PR 后仍需合并；本次核验时现有自动更新 [PR #103](https://github.com/komari-monitor/theme-market/pull/103) 尚未包含 Plus v2.8.3，市场目录不能视为已更新。
+
+已针对现有条目只读执行该版本官方 `updateTheme` 决策函数：旧资产名在新 tag 下返回 404，随后唯一 v2.8.3 ZIP 返回 200；真实下载的 manifest short 精确匹配 `glassmorphism-plus`、version 为 `2.8.3`、SHA 与正式包一致。仅在本地内存中产生版本／下载／校验值更新，确认具备自动更新输入条件，没有写入官方目录或触发 workflow。
 
 README 首页预览换图仅影响文档，市场 preview 继续使用原 `docs/preview.png` URL。新简介的人工更新资料见[市场跟进](theme-market-submission.md)。本轮没有向官方市场写入、提交 Issue／PR 或触发 workflow；下文历史审计保持原状。
 
