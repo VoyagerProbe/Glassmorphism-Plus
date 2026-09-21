@@ -1360,7 +1360,7 @@ test('brand metadata and shared footer keep current identity and a compact versi
   expect(themeManifest).toMatchObject({
     name: 'Komari Glassmorphism Plus',
     short: 'glassmorphism-plus',
-    description: 'A customized Glassmorphism theme for Komari, based on the original theme by sanrokamlan.',
+    description: 'Enhanced Komari Glassmorphism based on sanrokamlan’s original.',
     author: 'VoyagerProbe',
     url: 'https://github.com/VoyagerProbe/Glassmorphism-Plus',
   })
