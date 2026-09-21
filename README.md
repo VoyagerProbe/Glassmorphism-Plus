@@ -95,7 +95,7 @@ _历史数据的实际可查看范围取决于后端保留时间及已有采样�
 
 ### 重要说明
 
-- **v2.8.3 预发布只附加一个客户安装包：** `Glassmorphism-Plus-release-2.8.3.zip`。
+- **[v2.8.3 预发布](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.3)只附加一个客户安装包：** `Glassmorphism-Plus-release-2.8.3.zip`。
 - 当前 Stable／Latest 为 [v2.8.2](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.2)。v2.8.3 为同版本 Tooltip 修复包，需重新下载并导入；不是此前已测试安装包的相同字节，安装后请重新验证。
 - GitHub 自动生成的 **Source code (zip)** 是源码快照，**不是** Komari 可安装主题包。
 - Komari 的远程仓库导入流程应使用正式 Release 中的 installer asset；仍不要用 GitHub 自动生成的源码压缩包代替。
