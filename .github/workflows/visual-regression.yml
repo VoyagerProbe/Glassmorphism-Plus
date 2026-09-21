@@ -99,6 +99,12 @@ jobs:
           --grep 'touch scrolling survives compatibility leave|gesture guards reject out-and-back|five modal cycles preserve dual chart|ten cycles preserve chart state|tap dismisses|mobile long-list numeric'
           --reporter=line,json
 
+      - name: Verify localized Ping labels and footer on WebKit
+        run: >-
+          node node_modules/@playwright/test/cli.js test tests/visual/release-2.8.3.spec.ts
+          --config playwright.webkit.config.ts --project webkit-iphone
+          --output=test-results/webkit-labels
+
       - name: Upload WebKit Tooltip results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v6

@@ -27,10 +27,13 @@ jobs:
         run: bunx playwright install --with-deps chromium webkit
       - name: Compatibility lifecycle and safety contracts
         run: node --test tests/service-worker/worker.test.mjs
-      - name: Build current candidate (no release artifact overwrite)
-        env:
-          KOMARI_SKIP_PACKAGE: '1'
+      - name: Build current installer in the disposable runner
         run: bun run build-only
+      - name: Real fix1 installed release upgrade and metadata
+        env:
+          KOMARI_SW_LAB_ROOT: ${{ runner.temp }}/plus-sw-lab
+          KOMARI_SW_FIXTURES: ${{ runner.temp }}/plus-sw-inputs
+        run: node tests/service-worker/release-upgrade.mjs
       - name: Official fix1 route and old-profile evidence
         env:
           KOMARI_SW_LAB_ROOT: ${{ runner.temp }}/plus-sw-lab
@@ -49,5 +52,6 @@ jobs:
           path: |
             ${{ runner.temp }}/plus-sw-lab/*/migration.json
             ${{ runner.temp }}/plus-sw-lab/*/webkit-compat.json
+            ${{ runner.temp }}/plus-sw-lab/*/release-upgrade.json
           if-no-files-found: error
           retention-days: 14

@@ -201,7 +201,7 @@ function barTooltip(point: NodeCardPingHistoryPoint): string {
     @click.stop="emit('click')"
   >
     <div class="node-card-ping-task-header min-w-0 text-[10px] leading-none sm:text-[11px]">
-      <span class="node-card-ping-status-dot size-1.5 rounded-full" :class="statusClass" />
+      <span class="node-card-ping-status-dot" :class="statusClass" />
       <span class="node-card-ping-task-identity min-w-0">
         <button
           type="button"
@@ -248,7 +248,7 @@ function barTooltip(point: NodeCardPingHistoryPoint): string {
       </DataTooltip>
     </div>
     <div class="node-card-ping-trend-row" data-node-ping-panel="latency" data-node-ping-trend="latency">
-      <span class="node-card-ping-trend-label" data-node-ping-header="latency">延迟</span>
+      <span class="node-card-ping-trend-label" data-node-ping-header="latency"><span class="node-card-ping-trend-dot" aria-hidden="true" />延迟</span>
       <span class="node-card-ping-bucket-grid" data-node-ping-bars="latency">
         <template v-for="(point, index) in history" :key="`latency-${index}`">
           <DataTooltip
@@ -287,7 +287,7 @@ function barTooltip(point: NodeCardPingHistoryPoint): string {
       </span>
     </div>
     <div class="node-card-ping-trend-row" data-node-ping-panel="loss" data-node-ping-trend="loss">
-      <span class="node-card-ping-trend-label" data-node-ping-header="loss">丢包</span>
+      <span class="node-card-ping-trend-label" data-node-ping-header="loss"><span class="node-card-ping-trend-dot" aria-hidden="true" />丢包</span>
       <span class="node-card-ping-bucket-grid" data-node-ping-bars="loss">
         <template v-for="(point, index) in history" :key="`loss-${index}`">
           <DataTooltip

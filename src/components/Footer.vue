@@ -7,7 +7,6 @@ import { getSharedApi } from '@/utils/api'
 const api = getSharedApi()
 
 const buildVersion = __BUILD_VERSION__
-const buildGitHash = __BUILD_GIT_HASH__
 const themeMaintainer = 'VoyagerProbe'
 const themeRepository = 'https://github.com/VoyagerProbe/Glassmorphism-Plus'
 
@@ -23,10 +22,7 @@ onMounted(async () => {
 })
 
 const formattedServerVersion = computed(() => serverVersion.value?.version ?? '')
-const themeBuildDetails = computed(() => {
-  const identity = `v${buildVersion} · ${themeMaintainer}`
-  return buildGitHash === 'unknown' ? identity : `${identity}\n${buildGitHash}`
-})
+const themeBuildDetails = `v${buildVersion} · ${themeMaintainer}`
 </script>
 
 <template>

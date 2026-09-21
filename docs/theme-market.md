@@ -1,5 +1,15 @@
 # Komari 官方 Theme Market 检查报告
 
+## 当前状态补充（2026-09-21）
+
+已只读核对正式目录 commit `9608c03aaceff433e4bbd99df3acfba23fe3035b`：本主题已收录，唯一标识 `glassmorphism-plus`，仓库 `VoyagerProbe/Glassmorphism-Plus`，目录版本仍为 2.8.2。**不要重复首次提交。** 下文 2026-09-20 的结论保留为当时审计记录，不代表当前收录状态。
+
+v2.8.3 为新建 Pre-release，不改旧 tag、ZIP 或目录校验值；使用已批准的 LICENSE 随包修正。当前[自动更新脚本](https://github.com/komari-monitor/theme-market/blob/9608c03aaceff433e4bbd99df3acfba23fe3035b/scripts/update-theme-releases.mjs)读取正式 Latest，只写入 `version`、`download`、`sha256`，支持唯一版本化 ZIP 回退，不同步 `description`。预发布不会自动取代目录的稳定安装包；新简介的人工更新资料见[市场跟进](theme-market-submission.md)。本轮没有向官方市场写入或提交 Issue／PR。
+
+Komari 1.5.0-fix1 实际后台的设置按钮使用 `settings.theme` 传入 `theme.settings_with_name`；manifest 的 `name` 与 `configuration.name` 不控制此按钮。为保持升级身份，按钮仍为 `glassmorphism-plus设置`，未添加显示字段、注入脚本或修改官方后台。
+
+---
+
 检查日期：2026-09-20。官方仓库检查基线：`667e7a7177eddac5a04383c0d45325a807da2b32`。这是上架准备，不是新版本发布，也不是已上架声明。
 
 ## 1. 最终结论

@@ -2,6 +2,13 @@
 
 本文件只记录 **Glassmorphism Plus** 自己的发行版本。原始 Glassmorphism 的版本历史请查看[上游仓库](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases)；Plus 的选择性同步记录见 [UPSTREAM.md](UPSTREAM.md)。
 
+## [2.8.3] - 2026-09-21（Pre-release）
+
+- 首页 Ping 趋势行改用蓝色／紫色圆点配合“延迟／丢包”文字，去除标签描边与底色；圆点与任务标题状态点共用 6px 尺寸，保持四种卡片尺寸、固定 20 格与既有数据及交互逻辑。
+- 页脚版本提示仅显示版本号与维护者，不再附加 Git 提交短哈希；保留项目链接、Komari 版本提示和构建追溯机制。
+- 主题简介更新为 `Enhanced Komari Glassmorphism based on sanrokamlan’s original.`；保持 `glassmorphism-plus` 身份与全部配置项。官方后台按钮直接使用当前主题标识，本轮不修改其大小写。
+- 沿用兼容 `/sw.js` 和在线访问策略，不恢复手动恢复页或官方离线外壳；安装包原样附带既有 LICENSE。市场稳定版本仍为 v2.8.2，新简介需单独更新现有目录条目，详见[市场跟进资料](docs/theme-market-submission.md)。
+
 ## [2.8.2] - 2026-09-20（正式发布）
 
 - 新增稳定 `/sw.js` 无 fetch 兼容层，使已安装的旧根 Worker 可经原 URL 更新；不创建新的全站注册、不代理请求、不自动导航其他标签页。

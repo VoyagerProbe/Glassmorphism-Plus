@@ -526,6 +526,7 @@ header {
 /* ===== NodeCard Ping fixed 20-bucket rails ===== */
 
 .node-card-ping-task-strip {
+  --ping-dot-size: 6px;
   --ping-bucket-height: 4px;
   --ping-bucket-gap: 2px;
   --ping-row-gap: 3px;
@@ -569,13 +570,21 @@ header {
 .node-card-ping-task-header {
   display: grid;
   min-height: 11px;
-  grid-template-columns: 6px minmax(0, 1fr) minmax(48px, max-content) minmax(48px, max-content) 16px;
+  grid-template-columns: var(--ping-dot-size) minmax(0, 1fr) minmax(48px, max-content) minmax(48px, max-content) 16px;
   align-items: center;
   column-gap: 4px;
 }
 
 .node-card-ping-status-dot {
   grid-column: 1;
+}
+
+.node-card-ping-status-dot,
+.node-card-ping-trend-dot {
+  width: var(--ping-dot-size);
+  height: var(--ping-dot-size);
+  flex: none;
+  border-radius: 50%;
 }
 
 .node-card-ping-status-dot-outage {
@@ -718,15 +727,14 @@ header {
   display: inline-flex;
   box-sizing: border-box;
   width: fit-content;
-  min-width: 26px;
+  min-width: 0;
   height: var(--ping-trend-row-height);
   align-items: center;
-  justify-content: center;
-  border: 1px solid color-mix(in srgb, currentcolor 28%, transparent);
-  border-radius: 3px;
-  background: color-mix(in srgb, currentcolor 7%, transparent);
+  gap: 4px;
+  color: var(--color-muted-foreground);
+  white-space: nowrap;
   font-size: 9px;
-  font-weight: 650;
+  font-weight: 400;
   line-height: 1;
 }
 
@@ -734,14 +742,12 @@ header {
   font-size: 8px;
 }
 
-.node-card-ping-trend-row[data-node-ping-trend='latency'] .node-card-ping-trend-label,
-.node-card-ping-trend-row[data-node-ping-panel='latency'] .node-card-ping-trend-label {
-  color: color-mix(in srgb, var(--color-info) 82%, var(--color-foreground));
+.node-card-ping-trend-label[data-node-ping-header='latency'] .node-card-ping-trend-dot {
+  background-color: color-mix(in srgb, var(--color-info) 82%, var(--color-foreground));
 }
 
-.node-card-ping-trend-row[data-node-ping-trend='loss'] .node-card-ping-trend-label,
-.node-card-ping-trend-row[data-node-ping-panel='loss'] .node-card-ping-trend-label {
-  color: color-mix(in srgb, #a855f7 70%, var(--color-foreground));
+.node-card-ping-trend-label[data-node-ping-header='loss'] .node-card-ping-trend-dot {
+  background-color: color-mix(in srgb, #a855f7 70%, var(--color-foreground));
 }
 
 .node-card-ping-bucket-grid {

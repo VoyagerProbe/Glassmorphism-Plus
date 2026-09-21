@@ -1,5 +1,21 @@
 # Komari Theme Market Issue Form 填写资料
 
+## 当前跟进：只更新既有条目（2026-09-21）
+
+正式目录已收录本主题，当前为 v2.8.2。下面旧的首次提交表单仅作历史记录，不要重复提交。v2.8.3 保持 Pre-release，市场不会因此自动切换稳定安装包。
+
+如需同步新简介，请由维护者本人按官方流程更新既有条目：
+
+- short：`glassmorphism-plus`（保持不变）。
+- 仓库：<https://github.com/VoyagerProbe/Glassmorphism-Plus>。
+- 原 description：`A customized Glassmorphism theme for Komari, based on the original theme by sanrokamlan.`
+- 新 description：`Enhanced Komari Glassmorphism based on sanrokamlan’s original.`
+- 仅更新现有主题的说明，不新增大小写不同的主题、不将目录下载改为预发布，也不改旧包 SHA-256。
+
+当前自动更新流程只同步版本、下载地址和 SHA-256，新简介不会仅凭 Release 自动同步。Codex 没有代为提交官方 Issue／PR。首次审计及许可证处理历史见[检查报告](theme-market.md)。
+
+---
+
 检查日期：2026-09-20。以下内容仅供用户本人填写，Codex 未提交任何官方 Issue 或 PR。
 
 ## 提交前状态

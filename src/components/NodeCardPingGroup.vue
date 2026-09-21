@@ -88,13 +88,13 @@ function handleUnavailableSlotClick(): void {
       >
         <span class="node-card-ping-task-header truncate">探测任务 {{ slot }} · 等待采样</span>
         <span class="node-card-ping-trend-row" data-node-ping-panel="latency">
-          <span class="node-card-ping-trend-label" data-node-ping-header="latency">延迟</span>
+          <span class="node-card-ping-trend-label" data-node-ping-header="latency"><span class="node-card-ping-trend-dot" aria-hidden="true" />延迟</span>
           <span class="node-card-ping-bucket-grid" data-node-ping-bars="latency">
             <span v-for="bar in placeholderBars" :key="`pending-latency-${bar}`" class="node-card-ping-bucket-hitbox" data-node-ping-bar data-node-ping-state="pending" data-node-ping-severity="waiting"><i class="node-card-ping-bucket-fill" data-node-ping-bucket-fill /></span>
           </span>
         </span>
         <span class="node-card-ping-trend-row" data-node-ping-panel="loss">
-          <span class="node-card-ping-trend-label" data-node-ping-header="loss">丢包</span>
+          <span class="node-card-ping-trend-label" data-node-ping-header="loss"><span class="node-card-ping-trend-dot" aria-hidden="true" />丢包</span>
           <span class="node-card-ping-bucket-grid" data-node-ping-bars="loss">
             <span v-for="bar in placeholderBars" :key="`pending-loss-${bar}`" class="node-card-ping-bucket-hitbox" data-node-ping-bar data-node-ping-state="pending" data-node-ping-severity="waiting"><i class="node-card-ping-bucket-fill" data-node-ping-bucket-fill /></span>
           </span>
@@ -122,8 +122,8 @@ function handleUnavailableSlotClick(): void {
           @click.stop="handleUnavailableSlotClick"
         >
           <span class="node-card-ping-task-header flex min-w-0 items-center gap-1.5"><span class="size-1.5 shrink-0 rounded-full" :class="catalog.error.value ? 'bg-destructive' : 'bg-amber-500'" /><span class="min-w-0 flex-1 truncate">探测任务 {{ slot.slotIndex + 1 }}</span><span class="shrink-0">{{ slot.reason }}</span></span>
-          <span class="node-card-ping-trend-row" data-node-ping-panel="latency"><span class="node-card-ping-trend-label" data-node-ping-header="latency">延迟</span><span class="node-card-ping-bucket-grid" data-node-ping-bars="latency"><span v-for="bar in placeholderBars" :key="`latency-${bar}`" class="node-card-ping-bucket-hitbox" data-node-ping-bar :data-node-ping-state="catalog.error.value ? 'error' : 'invalid'" :data-node-ping-severity="catalog.error.value ? 'error' : 'neutral'"><i class="node-card-ping-bucket-fill" data-node-ping-bucket-fill /></span></span></span>
-          <span class="node-card-ping-trend-row" data-node-ping-panel="loss"><span class="node-card-ping-trend-label" data-node-ping-header="loss">丢包</span><span class="node-card-ping-bucket-grid" data-node-ping-bars="loss"><span v-for="bar in placeholderBars" :key="`loss-${bar}`" class="node-card-ping-bucket-hitbox" data-node-ping-bar :data-node-ping-state="catalog.error.value ? 'error' : 'invalid'" :data-node-ping-severity="catalog.error.value ? 'error' : 'neutral'"><i class="node-card-ping-bucket-fill" data-node-ping-bucket-fill /></span></span></span>
+          <span class="node-card-ping-trend-row" data-node-ping-panel="latency"><span class="node-card-ping-trend-label" data-node-ping-header="latency"><span class="node-card-ping-trend-dot" aria-hidden="true" />延迟</span><span class="node-card-ping-bucket-grid" data-node-ping-bars="latency"><span v-for="bar in placeholderBars" :key="`latency-${bar}`" class="node-card-ping-bucket-hitbox" data-node-ping-bar :data-node-ping-state="catalog.error.value ? 'error' : 'invalid'" :data-node-ping-severity="catalog.error.value ? 'error' : 'neutral'"><i class="node-card-ping-bucket-fill" data-node-ping-bucket-fill /></span></span></span>
+          <span class="node-card-ping-trend-row" data-node-ping-panel="loss"><span class="node-card-ping-trend-label" data-node-ping-header="loss"><span class="node-card-ping-trend-dot" aria-hidden="true" />丢包</span><span class="node-card-ping-bucket-grid" data-node-ping-bars="loss"><span v-for="bar in placeholderBars" :key="`loss-${bar}`" class="node-card-ping-bucket-hitbox" data-node-ping-bar :data-node-ping-state="catalog.error.value ? 'error' : 'invalid'" :data-node-ping-severity="catalog.error.value ? 'error' : 'neutral'"><i class="node-card-ping-bucket-fill" data-node-ping-bucket-fill /></span></span></span>
         </button>
       </template>
     </div>

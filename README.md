@@ -27,25 +27,24 @@
 
 | 项目               | 当前状态                                                                                                               |
 | :----------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v2.8.2（正式发布）**                                                                                                 |
+| 当前 Plus 版本     | **v2.8.3（预发布／Pre-release）**                                                                                      |
+| 当前稳定 Latest    | [v2.8.2](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.2)                                       |
 | 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7) |
 | 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                        |
 | 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                             |
 | 已验证 Komari 版本 | **1.4.3、1.5.0、1.5.0-fix1**（普通浏览；旧 PWA 限制见下文）                                                            |
 | 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                         |
-| 源码发布           | GitHub `main` 与 `v2.8.2` Release；附加唯一、已验证的客户安装包                                                        |
-| 本地安装包         | `2.8.2/Glassmorphism-Plus-release-2.8.2.zip`                                                                           |
+| 源码发布           | GitHub `main` 与 `v2.8.3` Pre-release；附加唯一、已验证的客户安装包                                                    |
+| 本地安装包         | `2.8.3/Glassmorphism-Plus-release-2.8.3.zip`                                                                           |
 
 Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用自己的版本体系；上游 v3.3.7 仅代表当前同步基线，并非 Plus 的版本号。同步来源、选择性合并和署名详见 [UPSTREAM.md](UPSTREAM.md)。
 
-### ✨ 最新版本 · v2.8.2
+### ✨ 最新版本 · v2.8.3
 
-- 完成 Komari 1.5.0／1.5.0-fix1 兼容验证，并继续兼容 1.4.3，覆盖主题安装、公开节点、历史图表、HTTP／WebSocket 与管理员配置。
-- 增加 GPU 可选字段、真实零值及 Ping Metric 时间／丢包语义保护测试，保持现有数据读取、缓存与调度逻辑不变。
-- 修复旧 Service Worker 缓存过期首页、引用失效 JS 导致的启动黑屏，保留同地址 `/sw.js` 兼容处理与浏览器自然更新路径。
-- 移除独立手动恢复页面、专用脚本及首页提示，正常使用无需额外恢复页面。
-- 保持登录状态、收藏、主题设置、三网 Ping 绑定、公开备注、双图与 Tooltip 触控交互不变，不清空用户资料。
-- 完善旧 Worker 迁移、跨构建升级、主题往返与数据保护测试；Chromium／WebKit、Code Quality、完整视觉回归及 Tooltip 测试通过。
+- 首页 Ping 趋势标签改为蓝色／紫色圆点加普通文字，去除小框与底色；保持四种卡片尺寸、固定 20 格及原有数据和触控交互。
+- 精简页脚版本提示，仅保留版本号与维护者，不再额外显示提交短哈希。
+- 更新主题英文简介，保持已上架的 `glassmorphism-plus` 标识、配置与升级兼容。
+- 延续 `/sw.js` 黑屏兼容处理和在线访问策略；安装包原样附带既有 LICENSE。本版为预发布，待实际测试确认后再转正式。
 
 ---
 
@@ -95,8 +94,8 @@ _历史数据的实际可查看范围取决于后端保留时间及已有采样�
 
 ### 重要说明
 
-- **v2.8.2 Release 附加且只附加一个已验证的 installer asset：** `Glassmorphism-Plus-release-2.8.2.zip`。
-- 请从 [v2.8.2 Release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.2) 下载该安装包。当前 Stable／Latest 为 v2.8.2，正式安装包与用户最后实际测试的预发布安装包完全相同。
+- **v2.8.3 Pre-release 只附加一个客户安装包：** `Glassmorphism-Plus-release-2.8.3.zip`。
+- 测试新版请从 [v2.8.3 Pre-release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.3) 下载并导入 ZIP；当前 Stable／Latest 仍为 [v2.8.2](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.2)，不要用“更新主题”获取 Latest 来代替预发布包导入。
 - GitHub 自动生成的 **Source code (zip)** 是源码快照，**不是** Komari 可安装主题包。
 - Komari 的远程仓库导入流程应使用正式 Release 中的 installer asset；仍不要用 GitHub 自动生成的源码压缩包代替。
 
@@ -129,7 +128,7 @@ dist/
 
 随后在 Komari 后台进入“主题管理 → 上传主题”，选择该 ZIP 并启用 **Komari Glassmorphism Plus**。
 
-本次打包修正会原样附带上游 LICENSE，并校验内容一致性；已发布的 v2.8.2 安装包未包含 LICENSE，本次没有替换它，修正需随后续获准发布的版本交付。
+v2.8.3 安装包原样附带既有 LICENSE，并校验内容一致性；已发布的 v2.8.2 安装包未包含 LICENSE，本轮不替换其历史资产。
 
 ### 方式二：使用 GitHub Release 安装包
 
@@ -144,7 +143,7 @@ dist/
 
 ### Komari 官方 Theme Market
 
-本项目尚未收录。上架检查与提交前置事项见 [Theme Market 检查报告](docs/theme-market.md)，[表单资料](docs/theme-market-submission.md)仅供维护者本人提交。市场跟进 GitHub 正式 Latest；新版本仍先发布为 Pre-release，测试确认后再由维护者转正。
+本项目已收录，目录当前稳定版本为 v2.8.2，标识为 `glassmorphism-plus`。v2.8.3 为预发布，暂不替代市场稳定版本。市场只自动跟进正式 Latest 的版本／下载／校验值，不自动同步简介；新描述的[人工更新资料](docs/theme-market-submission.md)供维护者本人更新既有条目，历史审计见 [Theme Market 检查报告](docs/theme-market.md)。
 
 ---
 
@@ -186,12 +185,21 @@ bun run release:prepare
 
 ## 📝 版本历史
 
-当前版本更新见上方「最新版本 · v2.8.2」。
+当前版本更新见上方「最新版本 · v2.8.3」。
 
 <details>
 <summary><strong>📚 查看历史版本更新</strong></summary>
 
 <br>
+
+### v2.8.2
+
+- 完成 Komari 1.5.0／1.5.0-fix1 兼容验证，并继续兼容 1.4.3，覆盖主题安装、公开节点、历史图表、HTTP／WebSocket 与管理员配置。
+- 增加 GPU 可选字段、真实零值及 Ping Metric 时间／丢包语义保护测试，保持现有数据读取、缓存与调度逻辑不变。
+- 修复旧 Service Worker 缓存过期首页、引用失效 JS 导致的启动黑屏，保留同地址 `/sw.js` 兼容处理与浏览器自然更新路径。
+- 移除独立手动恢复页面、专用脚本及首页提示，正常使用无需额外恢复页面。
+- 保持登录状态、收藏、主题设置、三网 Ping 绑定、公开备注、双图与 Tooltip 触控交互不变，不清空用户资料。
+- 完善旧 Worker 迁移、跨构建升级、主题往返与数据保护测试；Chromium／WebKit、Code Quality、完整视觉回归及 Tooltip 测试通过。
 
 ### v2.8.1
 
