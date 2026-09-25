@@ -57,6 +57,14 @@ async function main() {
             await agent('agent.pingResult', { task_id: task, value: i === 2 ? -1 : 9 + i })
         }
         await feed()
+        // Official backends batch agent samples before history is queryable.
+        // Establish genuine persisted history before a browser warms its cache.
+        await expect.poll(async () => {
+          const end = new Date(Date.now() + 60000).toISOString()
+          const start = new Date(Date.now() - 3600000).toISOString()
+          const history = await rpc('common:getRecords', { type: 'ping', uuid: client.uuid, start, end })
+          return new Set(history.records?.map(record => record.task_id)).size
+        }, { timeout: 15000, intervals: [250, 500, 1000] }).toBe(3)
         const settings = { themeMode: 'dark', themeColor: '#00c99c', hideEarth: true, disablePageAnimation: true, rpcTransportMode: 'http', nodeCardPingDisplayConfigV3: JSON.stringify({ schemaVersion: 3, global: { threeNetworkEnabled: true, taskIds: tasks }, nodes: {} }) }
         const saveSettings = body => lab.request('/api/admin/theme/settings?theme=glassmorphism-plus', { auth: true, body })
         await saveSettings(settings)

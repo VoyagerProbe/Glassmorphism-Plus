@@ -34,13 +34,14 @@ async function setup(page: Page, modal: boolean, touch: boolean, mode = 'regular
             entity_id: params.entity_id,
             tags: { task_id: String(t.id), task_name: t.name },
             interval_seconds: 60,
+            downsampled: true,
             count: 60,
             points: mode === 'empty'
               ? []
               : Array.from({ length: 60 }, (_, i) => {
                   const loss = mode === 'mixed' ? [0, 0.2, 1, null][i % 4]! : 0
                   const latency = mode === 'mixed' ? [0, 20, null, null][i % 4]! : 2 + n * 11 + i % 3
-                  return { time: new Date(start + (end - start) * (i + 1) / 60).toISOString(), value: metric_key === 'ping.loss' ? loss : latency === null ? null : latency * (1 - loss!) - loss!, count: loss === null ? 0 : 1 }
+                  return { time: new Date(start + (end - start) * (i + 1) / 60).toISOString(), value: metric_key === 'ping.loss' ? loss : latency === null ? null : latency * (1 - loss!) - loss!, count: loss === null ? 0 : 5 }
                 }),
           }))) }
     await route.fulfill({ json: { jsonrpc: '2.0', id, result } })
@@ -161,7 +162,7 @@ function assertLayout(state: any, dual: boolean) {
 
 for (const width of [360, 390, 1280]) {
   test.describe(`Ping axis ${width}`, () => {
-    test.use({ viewport: { width, height: 900 }, hasTouch: width < 500, isMobile: width < 500 })
+    test.use({ viewport: { width, height: 900 }, hasTouch: width < 500, isMobile: width < 500, deviceScaleFactor: width < 500 ? 3 : 1 })
     for (const modal of [false, true]) {
       test(`${modal ? 'modal' : 'detail'} dual to single keeps visible Canvas labels separated`, async ({ page }, info) => {
         // This scenario deliberately performs >30 native interactions, including
