@@ -2,10 +2,10 @@
 
 本文件只记录 **Glassmorphism Plus** 自己的发行版本。原始 Glassmorphism 的版本历史请查看[上游仓库](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases)；Plus 的选择性同步记录见 [UPSTREAM.md](UPSTREAM.md)。
 
-## [2.8.4] - 2026-09-25（预发布）
+## [2.8.4] - 2026-09-25（正式发布）
 
 - 修复 iPhone／移动端窄屏下，首页 Ping 完整弹窗与节点详情页关闭“丢包数据”后单图时间刻度重叠的问题：基础时间轴启用与双图一致的标签避让，不改变字体、时间轴类型、采样数据或查询范围。桌面端作为正常非回归基线。
-- 增加实际 ECharts 模型与 Canvas 标签位置回归，覆盖 360／375／390／393／430px 窄屏、连续切换、滚动返回、视窗变化、长时间窗、选择／图例、旋转、空数据、零值与真实丢包语义；Chromium 与 WebKit 通过，实体 iPhone Safari 待预发布安装后实测。
+- 增加实际 ECharts 模型与 Canvas 标签位置回归，覆盖 360／375／390／393／430px 窄屏、连续切换、滚动返回、视窗变化、长时间窗、选择／图例、旋转、空数据、零值与真实丢包语义；Chromium 与 WebKit 通过。
 - 完成固定 Komari 1.5.1 官方二进制的 Linux／Windows 同包隔离安装／升级验证，并保留 fix1、1.5.0、1.4.3 对照；具体范围见[兼容记录](docs/compatibility/komari-1.5.1.md)。未移植官方前端或改动后台。
 - 保留 Header Tooltip、Ping 圆点标签、页脚、配置与同地址 `/sw.js` 在线兼容策略；不修改依赖或发布其他版本。
 

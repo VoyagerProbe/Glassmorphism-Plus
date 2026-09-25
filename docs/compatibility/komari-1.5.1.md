@@ -8,7 +8,7 @@
 
 `tests/visual/ping-axis-layout.spec.ts` 分别观察实际 chart host、ECharts 宽度、DPR、visual viewport、Vue 输入、有效模型及轴视图的实际 Text 边界，并保留 Canvas 截图。它覆盖 360／375／390／393／430px、桌面、两个入口、同实例十次切换、初始单图对照、1h／12h／跨日／自定义、滚动返回、视窗高度变化、旋转、选择／图例、节点切换和 Tooltip。视窗模拟不等于操作实体 Safari 工具栏。短时间窗保留多个中间刻度；窄屏日期标签较宽时按实际容量避让，不只保留端点。空数据、0、部分／100% 丢包、null 与请求不变均有独立保护。
 
-Playwright WebKit 是引擎回归，不是用户原 iPhone Safari；本轮原设备实际操作仍待用户验证。
+用户已确认当前 v2.8.4 安装包实际使用测试正常，并授权正式发布。此次反馈未逐项记录设备、浏览器版本及普通／私密／PWA 模式，因此不扩写为所有 iPhone Safari 场景均已验证；Playwright WebKit 仍仅作为引擎回归证据。
 
 ## 固定上游来源
 
@@ -51,14 +51,14 @@ Windows 1.5.1 与 fix1 另用真实 Header 按钮验证访客进入官方登录�
 
 ## 发布与回归结果
 
-[v2.8.4 Pre-release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.4) 已发布，未设 Latest。上一候选完整 Chromium 的既有 NodeCard 连续空槽测试曾首次失败、重试后通过，未据此发布；原始失败证据保留，没有改写成无重试通过。
+[v2.8.4](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.4) 已经用户实际测试并正式晋升 Stable／Latest。晋升前后重新下载的安装包 SHA-256 均为上列值，asset ID `587771193`、大小与全部内容保持不变；本次不重建、不替换资产、不移动 tag。上一候选完整 Chromium 的既有 NodeCard 连续空槽测试曾首次失败、重试后通过，未据此发布；原始失败证据保留，没有改写成无重试通过。
 
 测试 fixture 已补充确定性同步：每次推进暂停的时钟后，等待本次触发的 RPC 完成、既有 Vue 刷新状态收敛及 DOM 提交，再读取 bucket；不等待未来周期 timer，不改变产品判定或放宽原断言。受控暂停响应的契约测试证明旧 helper 会提前返回，新 helper 不会额外推进时钟。原六槽测试连续 20 次、相邻测试 9 项均首次通过，零重试。
 
-最终提交的[完整视图回归](https://github.com/VoyagerProbe/Glassmorphism-Plus/actions/runs/36104178709)为 Chromium 303／303、Tooltip 定向 3／3；WebKit 时间轴 12／12、原 Tooltip 7／7、标签与页脚 11／11、Header 16／16，均首次通过，0 failure／0 retry／0 skip。[Code Quality](https://github.com/VoyagerProbe/Glassmorphism-Plus/actions/runs/36104178821)、[真实 Worker 迁移与升级](https://github.com/VoyagerProbe/Glassmorphism-Plus/actions/runs/36104178692)和官方 Linux 矩阵均在同一提交首次成功。敏感资料检查与回下载验证通过。后续仅同步发布文档，不移动 tag 或重新打包；实体 iPhone Safari 仍待用户安装后实测。
+最终提交的[完整视图回归](https://github.com/VoyagerProbe/Glassmorphism-Plus/actions/runs/36104178709)为 Chromium 303／303、Tooltip 定向 3／3；WebKit 时间轴 12／12、原 Tooltip 7／7、标签与页脚 11／11、Header 16／16，均首次通过，0 failure／0 retry／0 skip。[Code Quality](https://github.com/VoyagerProbe/Glassmorphism-Plus/actions/runs/36104178821)、[真实 Worker 迁移与升级](https://github.com/VoyagerProbe/Glassmorphism-Plus/actions/runs/36104178692)和官方 Linux 矩阵均在同一提交首次成功。正式晋升前再次核对同一生产提交的 CI、敏感资料与安装包；发布收尾仅同步文档，不改变上述生产质量证据。
 
 ## 不变边界
 
 Worker SHA-256 保持 `472d42cd35619cde31ba3378b3c1b1ed12a7687152e37b7d131b67902814d527`，无独立恢复页。继续采用[既有在线访问合同](service-worker.md)，不恢复官方离线外壳或运行时缓存，不新增注册／代理／全站清理。
 
-版本只新增 v2.8.4 Pre-release，稳定 Latest 与市场安装版本继续 v2.8.3。旧资产、主题 short、英文简介、LICENSE、原作者预览图及用户授权的 README 图片均保持。
+v2.8.4 已为 Stable／Latest；核验时官方市场目录仍为 v2.8.3，等待正常自动更新周期及 PR 合并，详见[市场记录](../theme-market.md)。旧资产、主题 short、英文简介、LICENSE、原作者预览图及用户授权的 README 图片均保持。

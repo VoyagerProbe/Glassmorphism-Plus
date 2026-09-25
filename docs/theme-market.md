@@ -2,9 +2,15 @@
 
 ## 当前状态补充（2026-09-25）
 
-只读核对目录 commit `1bee29cf00729f6ceb59fbec756a9807e28a33bc`：唯一 `glassmorphism-plus` 条目已更新为 v2.8.3，下载地址与 SHA-256 对应现有稳定包。简介仍是原市场文案；本轮不修改官方目录、Issue、PR 或 workflow。v2.8.4 保持 Pre-release，不作为市场 Latest 自动升级目标。下方旧状态保留为历史核验记录。
+v2.8.4 已经用户实际测试并晋升 Stable／Latest，沿用同一安装包，不重建、不移动 tag、不替换资产。唯一客户资产 `587771193` 为 `Glassmorphism-Plus-release-2.8.4.zip`，7,645,644 bytes；晋升前后重新下载 SHA-256 均为 `b044eefcd5df9124cdbb40061a9fab704c172142ac88df7cbf5d22930ba9c6a1`，根 manifest、LICENSE、preview 与兼容 Worker 校验通过。
 
-## 当前状态补充（2026-09-21）
+只读核对目录 commit `1bee29cf00729f6ceb59fbec756a9807e28a33bc`：唯一 `glassmorphism-plus` 条目仍为 v2.8.3；现有自动更新 [PR #112](https://github.com/komari-monitor/theme-market/pull/112) 尚未包含 Plus v2.8.4。市场同步须等待官方周期及 PR 合并，不能把本地验证当作已更新目录。
+
+在正式晋升前，以真实 Pre-release 元数据作为假定 Latest 输入，执行当前[官方更新函数](https://github.com/komari-monitor/theme-market/blob/1bee29cf00729f6ceb59fbec756a9807e28a33bc/scripts/update-theme-releases.mjs)的只读等价验证；晋升后再以实际 `/releases/latest` 重复确认。旧 `2.8.3.zip` 文件名在新 tag 下返回 404，唯一 `2.8.4.zip` 返回 200；根 manifest 的 short 精确匹配、version 为 `2.8.4`，实际下载 SHA 与上列相同。Windows 使用等价 ZIP 根 manifest 读取器，并由同一官方提交的完整安装包校验器独立验证；仅在本地内存产生 `version`、`download`、`sha256` 三项更新。
+
+[官方 workflow](https://github.com/komari-monitor/theme-market/blob/1bee29cf00729f6ceb59fbec756a9807e28a33bc/.github/workflows/update-theme-releases.yml)仍为每六小时检查，调度可能延迟。short 不变，目录排序与身份不变。description 仍为原市场文案；自动更新不写简介或 preview，新简介需维护者本人按[跟进资料](theme-market-submission.md)处理。本轮没有修改官方目录、提交 Issue／PR 或触发 workflow。下方旧状态保留为历史核验记录。
+
+## 历史状态补充（2026-09-21）
 
 已只读核对正式目录 commit `9608c03aaceff433e4bbd99df3acfba23fe3035b`：本主题已收录，唯一标识 `glassmorphism-plus`，仓库 `VoyagerProbe/Glassmorphism-Plus`，目录版本仍为 2.8.2。**不要重复首次提交。** 下文 2026-09-20 的结论保留为当时审计记录，不代表当前收录状态。
 
