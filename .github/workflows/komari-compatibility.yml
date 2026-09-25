@@ -27,7 +27,7 @@ jobs:
         run: bun run build
       - name: Locate versioned installer
         id: package
-        run: node -e 'const v = require("./komari-theme.json").version; require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `path=../${v}/Glassmorphism-Plus-release-${v}.zip\n`)'
+        run: node -e 'const v = require("./komari-theme.json").version; const p = require("node:path").resolve("..", v, `Glassmorphism-Plus-release-${v}.zip`); require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `path=${p}\n`)'
       - name: Official release matrix on the same ZIP
         env:
           KOMARI_SW_LAB_ROOT: ${{ runner.temp }}/plus-komari-lab
