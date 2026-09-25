@@ -43,17 +43,19 @@ Windows 1.5.1 与 fix1 另用真实 Header 按钮验证访客进入官方登录�
 
 官方后端会批次写入合成 Ping。测试先等待真实历史可查询才打开浏览器，防止测试自身提前缓存空结果；不修改产品缓存或后端写入。旧版详细验证仍保留于 [1.5.0／fix1 历史记录](komari-1.5.md)。
 
-候选来源为 `59533c65c56ddcdb72bad933419f58ac299672d2`，Bun 1.3.14、冻结 lockfile。Linux 验证后的 ZIP 与排除本机开发 `.env` 的 Windows 干净构建，全部 768 个安装文件字节一致；同一 ZIP 随后通过 Windows 矩阵与结构／CRC／资源闭包校验。开发 `.env` 已原样还原且不进入快照或安装包。
+最终发行来源为 `445bf02d0d58c0a8656e38faab79de30f213ed1a`，Bun 1.3.14、冻结 lockfile，并重新执行正式构建与 `release:prepare`。它相对产品候选 `59533c65c56ddcdb72bad933419f58ac299672d2` 只改测试、CI 和文档，生产运行输入没有变化。Linux 验证后的 ZIP 与排除本机开发 `.env` 的 Windows 干净构建，全部 768 个安装文件字节一致，且与产品候选的运行 payload 相同；同一最终 ZIP 随后再次通过 Windows 四版本矩阵、真实 Header 登入往返与结构／CRC／资源闭包校验。开发 `.env` 已原样还原且不进入快照或安装包。
 
 - 安装包：`Glassmorphism-Plus-release-2.8.4.zip`，7,645,644 bytes。
-- SHA-256：`efe3c3489431eeacde417fbb8b9a51323b1e9ff301a60545e37aca65cbb02064`。
-- [官方 Linux 同包矩阵](https://github.com/VoyagerProbe/Glassmorphism-Plus/actions/runs/36098318823)。
+- SHA-256：`b044eefcd5df9124cdbb40061a9fab704c172142ac88df7cbf5d22930ba9c6a1`，本地与 GitHub 回下载一致。
+- [官方 Linux 同包矩阵](https://github.com/VoyagerProbe/Glassmorphism-Plus/actions/runs/36104178695)。
 
-## 当前发布门禁
+## 发布与回归结果
 
-候选尚未发布。上一候选完整 Chromium 报告为 299 项首次通过、1 项既有 NodeCard 连续空槽测试重试后通过，未据此发布。新增时间轴测试与四后端兼容结果不受该既有测试阻塞影响。
+[v2.8.4 Pre-release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.4) 已发布，未设 Latest。上一候选完整 Chromium 的既有 NodeCard 连续空槽测试曾首次失败、重试后通过，未据此发布；原始失败证据保留，没有改写成无重试通过。
 
-测试 fixture 已补充确定性同步：每次推进暂停的时钟后，等待本次触发的 RPC 完成、既有 Vue 刷新状态收敛及 DOM 提交，再读取 bucket；不等待未来周期 timer，不改变产品判定或放宽原断言。受控暂停响应的契约测试证明旧 helper 会提前返回，新 helper 不会额外推进时钟。原六槽测试已连续 20 次首次通过，零重试；WebKit 时间轴 12 项首次通过。仍须在最终提交完成相邻测试与完整零重试 CI，之后才创建 tag 和 Pre-release；实体 iPhone Safari 留待安装后验证。
+测试 fixture 已补充确定性同步：每次推进暂停的时钟后，等待本次触发的 RPC 完成、既有 Vue 刷新状态收敛及 DOM 提交，再读取 bucket；不等待未来周期 timer，不改变产品判定或放宽原断言。受控暂停响应的契约测试证明旧 helper 会提前返回，新 helper 不会额外推进时钟。原六槽测试连续 20 次、相邻测试 9 项均首次通过，零重试。
+
+最终提交的[完整视图回归](https://github.com/VoyagerProbe/Glassmorphism-Plus/actions/runs/36104178709)为 Chromium 303／303、Tooltip 定向 3／3；WebKit 时间轴 12／12、原 Tooltip 7／7、标签与页脚 11／11、Header 16／16，均首次通过，0 failure／0 retry／0 skip。[Code Quality](https://github.com/VoyagerProbe/Glassmorphism-Plus/actions/runs/36104178821)、[真实 Worker 迁移与升级](https://github.com/VoyagerProbe/Glassmorphism-Plus/actions/runs/36104178692)和官方 Linux 矩阵均在同一提交首次成功。敏感资料检查与回下载验证通过。后续仅同步发布文档，不移动 tag 或重新打包；实体 iPhone Safari 仍待用户安装后实测。
 
 ## 不变边界
 

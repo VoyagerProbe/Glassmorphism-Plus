@@ -25,17 +25,17 @@
 
 ## 🚦 项目状态
 
-| 项目               | 当前状态                                                                                                               |
-| :----------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v2.8.4（预发布候选）**                                                                                               |
-| 当前稳定 Latest    | [v2.8.3](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.3)                                       |
-| 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7) |
-| 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                        |
-| 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                             |
-| 已验证 Komari 版本 | **1.4.3、1.5.0、1.5.0-fix1、1.5.1**（普通浏览；旧 PWA 限制见下文）                                                     |
-| 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                         |
-| 源码发布           | GitHub `main` 当前开发版本；v2.8.4 候选待最终验证后发布，稳定版仍为 v2.8.3                                             |
-| 本地安装包         | `2.8.4/Glassmorphism-Plus-release-2.8.4.zip`                                                                           |
+| 项目               | 当前状态                                                                                                                         |
+| :----------------- | :------------------------------------------------------------------------------------------------------------------------------- |
+| 当前 Plus 版本     | **v2.8.4（预发布）**                                                                                                             |
+| 当前稳定 Latest    | [v2.8.3](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.3)                                                 |
+| 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7)           |
+| 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                                  |
+| 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                                       |
+| 已验证 Komari 版本 | **1.4.3、1.5.0、1.5.0-fix1、1.5.1**（普通浏览；旧 PWA 限制见下文）                                                               |
+| 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                                   |
+| 源码发布           | GitHub `main` 与 [v2.8.4 Pre-release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.4)；稳定版仍为 v2.8.3 |
+| 本地安装包         | `2.8.4/Glassmorphism-Plus-release-2.8.4.zip`                                                                                     |
 
 Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用自己的版本体系；上游 v3.3.7 仅代表当前同步基线，并非 Plus 的版本号。同步来源、选择性合并和署名详见 [UPSTREAM.md](UPSTREAM.md)。
 
@@ -44,7 +44,7 @@ Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用�
 - 修复 iPhone／移动端窄屏下，首页 Ping 弹窗和节点详情页关闭“丢包数据”后时间刻度挤压、重叠的问题；桌面为非回归对照。
 - 单图沿用双图的时间标签避让策略，保持任务选择、时间范围、图例、原始采样与请求逻辑不变。
 - 完成 Komari 1.5.1 官方发行二进制兼容验证，核对 `/admin` 转址与同包升级，并保留三个旧版本对照；实际平台与范围见[兼容记录](docs/compatibility/komari-1.5.1.md)。
-- 保留 Header 美化提示、Ping 圆点标签、精简页脚、Service Worker 黑屏兼容及现有配置。当前为预发布候选，实体 iPhone Safari 待安装后实测。
+- 保留 Header 美化提示、Ping 圆点标签、精简页脚、Service Worker 黑屏兼容及现有配置。v2.8.4 已作为预发布提供，实体 iPhone Safari 待安装后实测。
 
 ---
 
