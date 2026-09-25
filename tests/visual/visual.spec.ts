@@ -3516,7 +3516,11 @@ test.describe('node-card per-node ping task bindings', () => {
         legacy: 'selected-empty',
       },
     })
+    // Freeze before application timers are registered. Each subsequent step
+    // waits for RPC consumption and the existing Vue refreshing prop to settle.
+    await page.clock.pauseAt(new Date(PING_INGESTION_CLOCK))
     await openStablePage(page)
+    await fixture.waitForPingRefreshSettled()
 
     const strip = primaryNodeCard(page).locator('[data-node-ping-task-id="202"]')
     const readRail = (metric: 'latency' | 'loss') => strip
@@ -3543,12 +3547,26 @@ test.describe('node-card per-node ping task bindings', () => {
     for (let index = 0; index < 6; index += 1) {
       // The first observation lands on the existing one-minute heartbeat after
       // the 40 s write/retry grace; later checks keep that phase each slot.
-      await fixture.advanceTime(index === 0 ? 240_000 : 180_000)
+      await fixture.advanceTimeAndDrain(index === 0 ? 240_000 : 180_000)
+      expect(await page.evaluate(() => Date.now())).toBe(Date.parse(PING_INGESTION_CLOCK) + 240_000 + index * 180_000)
       // Routed RPC continuations can finish after the stepped fake-clock helper
       // yields on slower CI hosts. Observe the actual successful finalization
       // before reading the full rails; do not advance into another slot.
       await expect(strip.locator(`[data-node-ping-bars="latency"] [data-node-ping-bucket-start="${previousCurrentStart}"]`))
         .toHaveAttribute('data-node-ping-state', 'confirmed-missing', { timeout: 15_000 })
+        .catch(async (cause) => {
+          await test.info().attach('empty-slot-synchronization', {
+            body: JSON.stringify({
+              cycle: index + 1,
+              previousCurrentStart,
+              diagnostics: await fixture.getPingRefreshDiagnostics(),
+              latency: await readRail('latency'),
+              loss: await readRail('loss'),
+            }),
+            contentType: 'application/json',
+          })
+          throw cause
+        })
       for (const metric of ['latency', 'loss'] as const) {
         const rail = await readRail(metric)
         expect(rail).toHaveLength(20)

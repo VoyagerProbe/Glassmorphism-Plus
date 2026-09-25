@@ -120,6 +120,7 @@ async function inspect(owner: Locator, action = 'inspect', argument: any = null)
       height: exposed.getHeight(),
       dpr: chart.getDevicePixelRatio(),
       host: element.getBoundingClientRect().toJSON(),
+      viewport: { width: window.innerWidth, height: window.innerHeight, visualWidth: window.visualViewport?.width, visualHeight: window.visualViewport?.height },
       input: node.props.option,
       grids,
       axes,
@@ -277,6 +278,56 @@ for (const width of [360, 390, 1280]) {
     }
   })
 }
+
+test.describe('Ping axis additional iPhone widths', () => {
+  test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 })
+  for (const modal of [false, true]) {
+    test(`${modal ? 'modal' : 'detail'} scroll and viewport changes preserve Canvas ticks at 375 393 430`, async ({ page }, info) => {
+      // Three widths, each with ten native toggles; not a larger data/backend matrix.
+      test.setTimeout(90_000)
+      const { owner, calls, errors } = await setup(page, modal, true)
+      const button = owner.getByRole('button', { name: '丢包数据', exact: true })
+      const initial = await inspect(owner)
+      const evidence = []
+      for (const width of [375, 393, 430]) {
+        await page.setViewportSize({ width, height: 812 })
+        await expect.poll(async () => {
+          const state = await inspect(owner)
+          return Math.abs(state.width - state.host.width)
+        }).toBeLessThan(1)
+        // Simulate viewport changes, not an actual Safari browser toolbar.
+        await owner.getByRole('button', { name: '全选', exact: true }).scrollIntoViewIfNeeded()
+        await owner.locator('x-vue-echarts').scrollIntoViewIfNeeded()
+        await page.setViewportSize({ width, height: 650 })
+        await button.scrollIntoViewIfNeeded()
+        const before = await inspect(owner)
+        assertLayout(before, true)
+        expect(before.dpr).toBe(3)
+        const requests = [...calls]
+        for (let index = 0; index < 10; index += 1) {
+          await button.tap()
+          const dual = index % 2 === 1
+          await expect.poll(async () => (await inspect(owner)).height).toBe(dual ? 528 : 288)
+          const state = await inspect(owner)
+          assertLayout(state, dual)
+          expect(state.id).toBe(initial.id)
+          expect(state.series.slice(0, 3).map((s: any) => s.data)).toEqual(before.series.slice(0, 3).map((s: any) => s.data))
+          expect(state.legend).toEqual(before.legend)
+          expect(state.axes[0].extent).toEqual(before.axes[0].extent)
+          expect(state.listeners).toEqual(before.listeners)
+          if (index === 0)
+            evidence.push({ width, state })
+        }
+        expect(calls).toEqual(requests)
+        await expect(owner).toHaveAttribute('data-ping-chart-visible-task-ids', '101,202,303')
+        await page.setViewportSize({ width, height: 812 })
+        assertLayout(await inspect(owner), true)
+      }
+      await info.attach('mobile-width-models', { body: JSON.stringify(evidence), contentType: 'application/json' })
+      expect(errors).toEqual([])
+    })
+  }
+})
 
 test.describe('Ping axis raw-data guards', () => {
   test.use({ viewport: { width: 390, height: 900 }, hasTouch: true })

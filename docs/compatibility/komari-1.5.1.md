@@ -4,9 +4,9 @@
 
 两个入口共用 `src/components/PingChart.vue`。锁定 ECharts 6.1.0、vue-echarts 8.0.1；既有 `replaceMerge` 已正确移除多余 grid、xAxis、yAxis、series，`autoresize` 的实际尺寸也与容器一致。
 
-旧版在 390px 的首页弹窗和详情页中，关闭丢包图后均出现可见时间标签相交。排除 Tooltip／axisPointer 后，实际模型仅一组轴，单图输入没有 `axisLabel.hideOverlap`，双图则明确启用了该项。因此只在基础时间轴补充 `hideOverlap: true`，保留既有布局、字号、time 轴、时间边界与更新策略，不重建图表、不重采样。
+用户实际观察发生于 iPhone／移动端窄屏，桌面端是正常非回归基线。旧版在 390px 的首页弹窗和详情页中，关闭丢包图后均出现可见时间标签相交。排除 Tooltip／axisPointer 后，实际模型仅一组轴，单图输入没有 `axisLabel.hideOverlap`，双图则明确启用了该项。因此只在基础时间轴补充 `hideOverlap: true`，保留既有布局、字号、time 轴、时间边界与更新策略，不重建图表、不重采样。
 
-`tests/visual/ping-axis-layout.spec.ts` 分别观察 Vue 输入、有效 ECharts 模型及轴视图的实际 Text 边界，并保留 Canvas 截图。它覆盖 360／390px、桌面、两个入口、同实例十次切换、初始单图对照、1h／12h／跨日／自定义、旋转、选择／图例、节点切换和 Tooltip。短时间窗保留多个中间刻度；窄屏日期标签较宽时按实际容量避让，不只保留端点。空数据、0、部分／100% 丢包、null 与请求不变均有独立保护。
+`tests/visual/ping-axis-layout.spec.ts` 分别观察实际 chart host、ECharts 宽度、DPR、visual viewport、Vue 输入、有效模型及轴视图的实际 Text 边界，并保留 Canvas 截图。它覆盖 360／375／390／393／430px、桌面、两个入口、同实例十次切换、初始单图对照、1h／12h／跨日／自定义、滚动返回、视窗高度变化、旋转、选择／图例、节点切换和 Tooltip。视窗模拟不等于操作实体 Safari 工具栏。短时间窗保留多个中间刻度；窄屏日期标签较宽时按实际容量避让，不只保留端点。空数据、0、部分／100% 丢包、null 与请求不变均有独立保护。
 
 Playwright WebKit 是引擎回归，不是用户原 iPhone Safari；本轮原设备实际操作仍待用户验证。
 
@@ -18,13 +18,42 @@ Playwright WebKit 是引擎回归，不是用户原 iPhone Safari；本轮原设
 
 未发现需要修改 Plus RPC、Metric／Legacy、缓存、调度、Header 跳转或内置 `admin-app` 的来源差异。是否兼容仍由真实发行二进制上的运行验证决定，不由源码差异替代。
 
+| 上游变化                      | Plus 依赖点               | 影响与实际证据                                                            |
+| ----------------------------- | ------------------------- | ------------------------------------------------------------------------- |
+| `/admin` → `/admin/dashboard` | Header 既有 `/admin` 入口 | 无需改动；1.5.1 返回 302，访客显示官方登录，管理员进入后台后可返回 Plus。 |
+| 前端来源固定为 fix1           | 官方后台与同地址静态资源  | 官方固定二进制安装验证通过；不移植浮动前端，`/sw.js` 仍为 Plus 兼容文件。 |
+| Linux `--strip-all`           | 主题导入、公开 RPC 与资源 | Linux 实际安装、历史图表和配置保存通过；无需主题 API／ZIP 格式适配。      |
+
 ## 可重复的发行验证
 
 `tests/compatibility/releases.mjs` 固定官方 Linux／Windows amd64 二进制 SHA；`tests/compatibility/komari-releases.mjs` 用同一个候选 ZIP 依次测试 1.5.1、1.5.0-fix1、1.5.0、1.4.3。只在本机／CI 隔离目录初始化合成账号、节点和 Ping 数据，不连接生产站点。
 
 门禁包括：真实同 short 的 v2.8.3 → v2.8.4 导入、全部安装文件字节一致、收藏／外观／绑定保留、实际 CPU 和非空 Ping 历史、两个图表入口与单／双图、HTTP／WebSocket、访客／管理员、配置保存与返回前台、1.5.1 `/admin` 302、资源 MIME 和 `/sw.js` 字节。
 
-首次提交时该发行矩阵仍待最终 CI 与候选包验证；通过后补充实际结果。旧版详细验证是历史记录，见 [1.5.0／fix1](komari-1.5.md)，不把历史结果冒充本次运行。
+2026-09-25 使用同一份候选 ZIP，在官方 Linux 和 Windows amd64 发行物上完成下列运行验证；并非四次打包，也不是只检查 HTTP 200。
+
+| 固定后端   | Linux | Windows | 本轮级别                                                                                                          |
+| ---------- | ----- | ------- | ----------------------------------------------------------------------------------------------------------------- |
+| 1.5.1      | 通过  | 通过    | 真实导入及 v2.8.3 升级、节点／CPU、两入口 Ping 历史与开关、HTTP／WebSocket、登录身份／保存／返回、资源与 Worker。 |
+| 1.5.0-fix1 | 通过  | 通过    | 同包直接对照，覆盖相同功能矩阵。                                                                                  |
+| 1.5.0      | 通过  | 通过    | 同包安装／升级与配置、图表、传输保护 smoke；未重复完整视觉套件。                                                  |
+| 1.4.3      | 通过  | 通过    | 同包安装／升级与配置、图表、传输保护 smoke；未重复完整视觉套件。                                                  |
+
+Windows 1.5.1 与 fix1 另用真实 Header 按钮验证访客进入官方登录、合成账号通过 UI 登录、已登入管理员进入 dashboard 与返回 Plus；不是路由 mock。测试使用隔离 SQLite，没有连接生产数据库或验证 PostgreSQL 专项部署。
+
+官方后端会批次写入合成 Ping。测试先等待真实历史可查询才打开浏览器，防止测试自身提前缓存空结果；不修改产品缓存或后端写入。旧版详细验证仍保留于 [1.5.0／fix1 历史记录](komari-1.5.md)。
+
+候选来源为 `59533c65c56ddcdb72bad933419f58ac299672d2`，Bun 1.3.14、冻结 lockfile。Linux 验证后的 ZIP 与排除本机开发 `.env` 的 Windows 干净构建，全部 768 个安装文件字节一致；同一 ZIP 随后通过 Windows 矩阵与结构／CRC／资源闭包校验。开发 `.env` 已原样还原且不进入快照或安装包。
+
+- 安装包：`Glassmorphism-Plus-release-2.8.4.zip`，7,645,644 bytes。
+- SHA-256：`efe3c3489431eeacde417fbb8b9a51323b1e9ff301a60545e37aca65cbb02064`。
+- [官方 Linux 同包矩阵](https://github.com/VoyagerProbe/Glassmorphism-Plus/actions/runs/36098318823)。
+
+## 当前发布门禁
+
+候选尚未发布。上一候选完整 Chromium 报告为 299 项首次通过、1 项既有 NodeCard 连续空槽测试重试后通过，未据此发布。新增时间轴测试与四后端兼容结果不受该既有测试阻塞影响。
+
+测试 fixture 已补充确定性同步：每次推进暂停的时钟后，等待本次触发的 RPC 完成、既有 Vue 刷新状态收敛及 DOM 提交，再读取 bucket；不等待未来周期 timer，不改变产品判定或放宽原断言。受控暂停响应的契约测试证明旧 helper 会提前返回，新 helper 不会额外推进时钟。原六槽测试已连续 20 次首次通过，零重试；WebKit 时间轴 12 项首次通过。仍须在最终提交完成相邻测试与完整零重试 CI，之后才创建 tag 和 Pre-release；实体 iPhone Safari 留待安装后验证。
 
 ## 不变边界
 

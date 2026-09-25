@@ -1,4 +1,5 @@
 import type { Page, Route } from '@playwright/test'
+import { expect } from '@playwright/test'
 
 const FIXED_NOW = '2026-07-25T12:00:00.000Z'
 const GIB = 1024 ** 3
@@ -135,6 +136,7 @@ export interface PingRpcTimelineSample {
 export interface PingRpcTimelineEntry {
   method: string
   requestAt: number
+  /** Fixture response construction time, not browser consumption/DOM completion. */
   responseAt: number
   params: Record<string, unknown>
   /** The real scheduled samples contained in this RPC response. */
@@ -156,6 +158,14 @@ export interface KomariFixtureController {
   pausePingResponses: () => () => void
   pauseAdminResponses: () => () => void
   advanceTime: (milliseconds: number) => Promise<void>
+  /** For paused-clock NodeCard tests only; drains each already-triggered refresh. */
+  advanceTimeAndDrain: (milliseconds: number) => Promise<void>
+  waitForPingRefreshSettled: () => Promise<void>
+  getPingRefreshDiagnostics: () => Promise<{
+    pendingRpcRoutes: number
+    state: Awaited<ReturnType<typeof readPingRefreshState>>
+    recentRpc: PingRpcTimelineEntry[]
+  }>
   /** In-memory only; no HAR, storage state, or browser profile is produced. */
   timeline: PingRpcTimelineEntry[]
   now: () => number
@@ -224,6 +234,39 @@ async function settleFakeClockWork(page: Page): Promise<void> {
     await Promise.resolve()
   })
   await new Promise<void>(resolve => setTimeout(resolve, 0))
+}
+
+/** Read existing Vue props only; no product hooks, globals or state mutations. */
+async function readPingRefreshState(page: Page) {
+  return page.evaluate(async () => {
+    interface VNode {
+      props?: { snapshot?: { refreshing: boolean, fetchedAt: number, taskId: string } }
+      component?: { subTree?: VNode, proxy?: { $nextTick: () => Promise<void> } }
+      suspense?: { activeBranch?: VNode }
+      children?: VNode[] | string
+    }
+    const root = (document.querySelector('#app') as (Element & { _vnode?: VNode }) | null)?._vnode
+    await root?.component?.proxy?.$nextTick()
+    const snapshots: Array<{ refreshing: boolean, fetchedAt: number, taskId: string }> = []
+    const visited = new Set<VNode>()
+    const visit = (node?: VNode) => {
+      if (!node || visited.has(node))
+        return
+      visited.add(node)
+      if (node.props?.snapshot)
+        snapshots.push(node.props.snapshot)
+      visit(node.component?.subTree)
+      visit(node.suspense?.activeBranch)
+      if (Array.isArray(node.children))
+        node.children.forEach(visit)
+    }
+    visit(root)
+    return {
+      now: Date.now(),
+      renderedStrips: document.querySelectorAll('[data-node-ping-task-id]').length,
+      snapshots: snapshots.map(({ refreshing, fetchedAt, taskId }) => ({ refreshing, fetchedAt, taskId })),
+    }
+  })
 }
 
 function parseFixtureTimestamp(value: string | number, label: string): number {
@@ -1027,6 +1070,33 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
   const pingResponseGate = createPingResponseGate()
   const adminResponseGate = createPingResponseGate()
   const pingTimeline: PingRpcTimelineEntry[] = []
+  let pendingRpcRoutes = 0
+  const getPingRefreshDiagnostics = async () => ({
+    pendingRpcRoutes,
+    state: await readPingRefreshState(page),
+    recentRpc: pingTimeline.slice(-12),
+  })
+  // Route completion alone is insufficient: response JSON, Legacy fallback and
+  // Vue commits can still be pending. Observe the existing refreshing prop too.
+  const waitForPingRefreshSettled = async () => {
+    try {
+      await expect.poll(async () => {
+        const state = await readPingRefreshState(page)
+        return {
+          pendingRpcRoutes,
+          refreshing: state.snapshots.filter(snapshot => snapshot.refreshing).length,
+          unobservedStrips: Math.max(0, state.renderedStrips - state.snapshots.length),
+        }
+      }, { message: 'Triggered fixture RPC and NodeCard Vue refresh must settle before the next fake tick', timeout: 10_000 }).toEqual({
+        pendingRpcRoutes: 0,
+        refreshing: 0,
+        unobservedStrips: 0,
+      })
+    }
+    catch (cause) {
+      throw new Error(`Fixture drain did not settle: ${JSON.stringify(await getPingRefreshDiagnostics())}`, { cause })
+    }
+  }
   let currentNow = parseFixtureTimestamp(options.clockNow ?? FIXED_NOW, 'clockNow')
   const readBrowserNow = async (): Promise<number> => {
     try {
@@ -1166,17 +1236,25 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
     contentType: 'application/json',
     body: JSON.stringify({ status: 'success', message: 'ok', data: { version: '1.2.6-visual', hash: 'visual' } }),
   }))
-  await page.route('**/rpc2', route => handleRpc(
-    route,
-    clientFixtures,
-    statusFixtures,
-    nodeCardPingFixture,
-    pingResponseGate,
-    options.missingCpuMetricHistory ?? false,
-    options.loadMetricFixture,
-    readBrowserNow,
-    pingTimeline,
-  ))
+  await page.route('**/rpc2', async (route) => {
+    pendingRpcRoutes += 1
+    try {
+      await handleRpc(
+        route,
+        clientFixtures,
+        statusFixtures,
+        nodeCardPingFixture,
+        pingResponseGate,
+        options.missingCpuMetricHistory ?? false,
+        options.loadMetricFixture,
+        readBrowserNow,
+        pingTimeline,
+      )
+    }
+    finally {
+      pendingRpcRoutes -= 1
+    }
+  })
   await page.route('**/api/admin/ping', async (route) => {
     await adminResponseGate.wait()
     if (adminAccess !== 'admin') {
@@ -1259,6 +1337,22 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
     getThemeSaveCount: () => themeSaveCount,
     pausePingResponses: () => pingResponseGate.pause(),
     pauseAdminResponses: () => adminResponseGate.pause(),
+    getPingRefreshDiagnostics,
+    waitForPingRefreshSettled,
+    advanceTimeAndDrain: async (milliseconds) => {
+      if (!options.fakeTimers)
+        throw new Error('advanceTimeAndDrain requires a paused fake clock')
+      await waitForPingRefreshSettled()
+      let remaining = milliseconds
+      while (remaining > 0) {
+        const step = Math.min(1_000, remaining)
+        await page.clock.fastForward(step)
+        currentNow += step
+        await waitForPingRefreshSettled()
+        remaining -= step
+      }
+      await readBrowserNow()
+    },
     advanceTime: async (milliseconds) => {
       if (options.fakeTimers) {
         // Step fake time at the scheduler's one-second cadence. A single large

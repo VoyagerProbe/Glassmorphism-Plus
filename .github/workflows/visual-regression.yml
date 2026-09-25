@@ -43,13 +43,14 @@ jobs:
           PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/tooltip-diagnostic/summary.json
         run: >-
           node node_modules/@playwright/test/cli.js test
+          --retries=0
           --grep 'five modal cycles preserve dual chart|gesture guards reject out-and-back|native Chromium touch drags and release'
           --output=test-results/tooltip-diagnostic/artifacts
           --reporter=line,json
 
       - name: Run complete visual regression suite
         # The focused diagnostic above does not filter or replace this suite.
-        run: node node_modules/@playwright/test/cli.js test
+        run: node node_modules/@playwright/test/cli.js test --retries=0
 
       - name: Upload visual differences
         # Also retain the machine-readable full-suite result on success.
@@ -95,6 +96,7 @@ jobs:
         # cancellation classification, DOM scroll retention and modal cleanup.
         run: >-
           node node_modules/@playwright/test/cli.js test
+          --retries=0
           --config playwright.webkit.config.ts --project webkit-iphone
           --grep 'touch scrolling survives compatibility leave|gesture guards reject out-and-back|five modal cycles preserve dual chart|ten cycles preserve chart state|tap dismisses|mobile long-list numeric'
           --reporter=line,json
@@ -102,26 +104,66 @@ jobs:
       - name: Verify localized Ping labels and footer on WebKit
         run: >-
           node node_modules/@playwright/test/cli.js test tests/visual/release-2.8.3.spec.ts
+          --retries=0
           --config playwright.webkit.config.ts --project webkit-iphone
           --output=test-results/webkit-labels
 
       - name: Verify Header Tooltips on WebKit desktop and touch
         run: >-
           node node_modules/@playwright/test/cli.js test tests/visual/header-tooltip.spec.ts
+          --retries=0
           --config playwright.webkit.config.ts
           --output=test-results/webkit-header
-
-      - name: Verify Ping axis layout and switching on WebKit
-        run: >-
-          node node_modules/@playwright/test/cli.js test tests/visual/ping-axis-layout.spec.ts
-          --config playwright.webkit.config.ts --project webkit-iphone
-          --output=test-results/webkit-ping-axis
 
       - name: Upload WebKit Tooltip results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v6
         with:
           name: webkit-tooltip-results
+          path: test-results/
+          if-no-files-found: error
+          retention-days: 14
+
+  webkit-ping-axis:
+    # Keep the expanded narrow-screen matrix separate from the existing Tooltip
+    # job's bounded budget; neither suite is filtered out or allowed to retry.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        run: |
+          git ls-files --error-unmatch bun.lock
+          bun install --frozen-lockfile
+          git diff --exit-code -- bun.lock
+
+      - name: Install WebKit
+        run: bunx playwright install --with-deps webkit
+
+      - name: Build mobile test artifact
+        run: KOMARI_SKIP_PACKAGE=1 bun run build-only
+
+      - name: Verify Ping axes on WebKit mobile
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/webkit-ping-axis-summary.json
+        run: >-
+          node node_modules/@playwright/test/cli.js test tests/visual/ping-axis-layout.spec.ts
+          --config playwright.webkit.config.ts --project webkit-iphone
+          --retries=0 --reporter=line,json
+          --output=test-results/webkit-ping-axis
+
+      - name: Upload WebKit Ping axis results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: webkit-ping-axis-results
           path: test-results/
           if-no-files-found: error
           retention-days: 14

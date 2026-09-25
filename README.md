@@ -27,24 +27,24 @@
 
 | 项目               | 当前状态                                                                                                               |
 | :----------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v2.8.4（预发布）**                                                                                                   |
+| 当前 Plus 版本     | **v2.8.4（预发布候选）**                                                                                               |
 | 当前稳定 Latest    | [v2.8.3](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.3)                                       |
 | 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7) |
 | 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                        |
 | 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                             |
-| 已验证 Komari 版本 | **1.4.3、1.5.0、1.5.0-fix1**（普通浏览；旧 PWA 限制见下文）                                                            |
+| 已验证 Komari 版本 | **1.4.3、1.5.0、1.5.0-fix1、1.5.1**（普通浏览；旧 PWA 限制见下文）                                                     |
 | 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                         |
-| 源码发布           | GitHub `main` 与 `v2.8.4` Pre-release；客户安装包与验证范围见对应发布记录                                              |
+| 源码发布           | GitHub `main` 当前开发版本；v2.8.4 候选待最终验证后发布，稳定版仍为 v2.8.3                                             |
 | 本地安装包         | `2.8.4/Glassmorphism-Plus-release-2.8.4.zip`                                                                           |
 
 Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用自己的版本体系；上游 v3.3.7 仅代表当前同步基线，并非 Plus 的版本号。同步来源、选择性合并和署名详见 [UPSTREAM.md](UPSTREAM.md)。
 
 ### ✨ 最新版本 · v2.8.4
 
-- 修复首页 Ping 弹窗和节点详情页关闭“丢包数据”后，时间刻度挤压、重叠的问题。
+- 修复 iPhone／移动端窄屏下，首页 Ping 弹窗和节点详情页关闭“丢包数据”后时间刻度挤压、重叠的问题；桌面为非回归对照。
 - 单图沿用双图的时间标签避让策略，保持任务选择、时间范围、图例、原始采样与请求逻辑不变。
-- 增加 Komari 1.5.1 官方发行二进制兼容检查，核对 `/admin` 转址与同包升级；实际验证范围见[兼容记录](docs/compatibility/komari-1.5.1.md)。
-- 保留 Header 美化提示、Ping 圆点标签、精简页脚、Service Worker 黑屏兼容及现有配置。本版本保持预发布。
+- 完成 Komari 1.5.1 官方发行二进制兼容验证，核对 `/admin` 转址与同包升级，并保留三个旧版本对照；实际平台与范围见[兼容记录](docs/compatibility/komari-1.5.1.md)。
+- 保留 Header 美化提示、Ping 圆点标签、精简页脚、Service Worker 黑屏兼容及现有配置。当前为预发布候选，实体 iPhone Safari 待安装后实测。
 
 ---
 
@@ -149,15 +149,16 @@ v2.8.3 安装包原样附带既有 LICENSE，并校验内容一致性；已发�
 
 ## 🧩 兼容性
 
-| Komari 版本     | 状态                     | 说明                                                                                             |
-| :-------------- | :----------------------- | :----------------------------------------------------------------------------------------------- |
-| **1.4.3**       | **Verified**             | 官方二进制隔离实装；公开数据、Metric／Legacy、配置、HTTP／WebSocket 保护回归通过。               |
-| **1.5.0**       | **Verified with limits** | 普通浏览与图表／配置通过；已有官方 PWA Worker 的普通刷新可能仍返回默认主题。                     |
-| **1.5.0-fix1**  | **Verified with limits** | 普通浏览与图表／配置通过；WebKit 手机仿真通过。同 origin 从 1.5.0 升级仍复现旧 Worker 导航限制。 |
-| **1.2.6–1.4.2** | **Best effort**          | 保留能力检测与 Legacy fallback，但没有对每个中间版本执行完整回归矩阵。                           |
-| **1.2.5**       | **Not tested**           | 保留旧 records／Ping fallback；该版本缺少当前主要 `queryMetrics` 能力，不作完整兼容承诺。        |
+| Komari 版本     | 状态                     | 说明                                                                                                                                            |
+| :-------------- | :----------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1.4.3**       | **Verified**             | 官方二进制隔离实装；公开数据、Metric／Legacy、配置、HTTP／WebSocket 保护回归通过。                                                              |
+| **1.5.0**       | **Verified with limits** | 普通浏览与图表／配置通过；已有官方 PWA Worker 的普通刷新可能仍返回默认主题。                                                                    |
+| **1.5.0-fix1**  | **Verified with limits** | 普通浏览与图表／配置通过；WebKit 手机仿真通过。同 origin 从 1.5.0 升级仍复现旧 Worker 导航限制。                                                |
+| **1.5.1**       | **Verified with limits** | 官方 Linux／Windows 同包实装、升级、两入口 Ping、HTTP／WebSocket、后台与 `/admin` 转址通过；原 iPhone Safari 待实测，沿用当前在线 Worker 合同。 |
+| **1.2.6–1.4.2** | **Best effort**          | 保留能力检测与 Legacy fallback，但没有对每个中间版本执行完整回归矩阵。                                                                          |
+| **1.2.5**       | **Not tested**           | 保留旧 records／Ping fallback；该版本缺少当前主要 `queryMetrics` 能力，不作完整兼容承诺。                                                       |
 
-兼容状态描述的是当前测试证据，不等同于对整个 `1.2.x` 或 `1.5.x` 系列的统一保证。上述实装使用隔离 SQLite 与合成节点，不代表所有数据库、反代或实体手机均已验证。上述官方 PWA 限制为[最初适配记录](docs/compatibility/komari-1.5.md)；当前同地址 Worker 兼容层及离线能力影响见[启动兼容说明](docs/compatibility/service-worker.md)，不清空浏览器数据。部署前请先在测试环境检查首页、节点详情、Ping、累计流量和管理页面。
+兼容状态描述的是当前测试证据，不等同于对整个 `1.2.x` 或 `1.5.x` 系列的统一保证。[v2.8.4 同包验证](docs/compatibility/komari-1.5.1.md)覆盖 1.4.3、1.5.0、fix1 与 1.5.1 的 Linux／Windows 实装。上述实装使用隔离 SQLite 与合成节点，不代表所有数据库、反代或实体手机均已验证。上述官方 PWA 限制为[最初适配记录](docs/compatibility/komari-1.5.md)；当前同地址 Worker 兼容层及离线能力影响见[启动兼容说明](docs/compatibility/service-worker.md)，不清空浏览器数据。部署前请先在测试环境检查首页、节点详情、Ping、累计流量和管理页面。
 
 ---
 
