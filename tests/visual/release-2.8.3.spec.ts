@@ -193,7 +193,7 @@ test.describe('v2.8.3 localized labels and footer', () => {
   })
 
   test('manifest identity and build provenance contracts stay explicit', () => {
-    expect(manifest.version).toBe('2.8.3')
+    expect(manifest.version).toBe('2.8.4')
     expect(manifest.description).toBe(description)
     expect(manifest.short).toBe('glassmorphism-plus')
     expect(manifest.configuration.type).toBe('managed')

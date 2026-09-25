@@ -1,5 +1,9 @@
 # Komari 官方 Theme Market 检查报告
 
+## 当前状态补充（2026-09-25）
+
+只读核对目录 commit `1bee29cf00729f6ceb59fbec756a9807e28a33bc`：唯一 `glassmorphism-plus` 条目已更新为 v2.8.3，下载地址与 SHA-256 对应现有稳定包。简介仍是原市场文案；本轮不修改官方目录、Issue、PR 或 workflow。v2.8.4 保持 Pre-release，不作为市场 Latest 自动升级目标。下方旧状态保留为历史核验记录。
+
 ## 当前状态补充（2026-09-21）
 
 已只读核对正式目录 commit `9608c03aaceff433e4bbd99df3acfba23fe3035b`：本主题已收录，唯一标识 `glassmorphism-plus`，仓库 `VoyagerProbe/Glassmorphism-Plus`，目录版本仍为 2.8.2。**不要重复首次提交。** 下文 2026-09-20 的结论保留为当时审计记录，不代表当前收录状态。

@@ -27,25 +27,24 @@
 
 | 项目               | 当前状态                                                                                                               |
 | :----------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v2.8.3（正式发布）**                                                                                                 |
+| 当前 Plus 版本     | **v2.8.4（预发布）**                                                                                                   |
 | 当前稳定 Latest    | [v2.8.3](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.3)                                       |
 | 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7) |
 | 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                        |
 | 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                             |
 | 已验证 Komari 版本 | **1.4.3、1.5.0、1.5.0-fix1**（普通浏览；旧 PWA 限制见下文）                                                            |
 | 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                         |
-| 源码发布           | GitHub `main` 与 `v2.8.3` Release；附加唯一、已验证的客户安装包                                                        |
-| 本地安装包         | `2.8.3/Glassmorphism-Plus-release-2.8.3.zip`                                                                           |
+| 源码发布           | GitHub `main` 与 `v2.8.4` Pre-release；客户安装包与验证范围见对应发布记录                                              |
+| 本地安装包         | `2.8.4/Glassmorphism-Plus-release-2.8.4.zip`                                                                           |
 
 Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用自己的版本体系；上游 v3.3.7 仅代表当前同步基线，并非 Plus 的版本号。同步来源、选择性合并和署名详见 [UPSTREAM.md](UPSTREAM.md)。
 
-### ✨ 最新版本 · v2.8.3
+### ✨ 最新版本 · v2.8.4
 
-- 优化首页 Ping 延迟／丢包标签，改为蓝色／紫色圆点配合文字显示，保持固定 20 格及原有数据和触控交互。
-- 恢复首页右上角工具按钮的美化提示，移除重复的浏览器原生提示，保留按钮操作与无障碍名称。
-- 精简页脚版本信息，不再显示提交短哈希。
-- 更新主题英文简介，并继续保持 `glassmorphism-plus` 市场身份与升级兼容。
-- 保留 `/sw.js` 黑屏兼容处理、在线访问策略及现有主题设置。
+- 修复首页 Ping 弹窗和节点详情页关闭“丢包数据”后，时间刻度挤压、重叠的问题。
+- 单图沿用双图的时间标签避让策略，保持任务选择、时间范围、图例、原始采样与请求逻辑不变。
+- 增加 Komari 1.5.1 官方发行二进制兼容检查，核对 `/admin` 转址与同包升级；实际验证范围见[兼容记录](docs/compatibility/komari-1.5.1.md)。
+- 保留 Header 美化提示、Ping 圆点标签、精简页脚、Service Worker 黑屏兼容及现有配置。本版本保持预发布。
 
 ---
 
@@ -95,7 +94,7 @@ _历史数据的实际可查看范围取决于后端保留时间及已有采样�
 
 ### 重要说明
 
-- **[v2.8.3 正式版](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.3)只附加一个客户安装包：** `Glassmorphism-Plus-release-2.8.3.zip`。
+- **[v2.8.4 预发布版](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.4)只附加一个客户安装包：** `Glassmorphism-Plus-release-2.8.4.zip`。
 - 当前 Stable／Latest 为 [v2.8.3](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.3)。
 - GitHub 自动生成的 **Source code (zip)** 是源码快照，**不是** Komari 可安装主题包。
 - Komari 的远程仓库导入流程应使用正式 Release 中的 installer asset；仍不要用 GitHub 自动生成的源码压缩包代替。
@@ -144,7 +143,7 @@ v2.8.3 安装包原样附带既有 LICENSE，并校验内容一致性；已发�
 
 ### Komari 官方 Theme Market
 
-本项目已收录，标识保持 `glassmorphism-plus`。v2.8.3 已正式发布为 Stable／Latest；2026-09-21 核对时市场目录仍为 v2.8.2，后续更新须等待官方自动流程及 PR 合并。市场只自动同步正式 Latest 的版本／下载／校验值，不同步简介或预览图；README 首页图片不影响市场 preview。新简介的[人工更新资料](docs/theme-market-submission.md)供维护者本人更新既有条目，核验记录见 [Theme Market 检查报告](docs/theme-market.md)。
+本项目已收录，标识保持 `glassmorphism-plus`。2026-09-25 只读核对时，市场目录已为 v2.8.3，与当前 Stable／Latest 一致；v2.8.4 是预发布，不替换市场稳定安装包。市场只自动同步正式 Latest 的版本／下载／校验值，不同步简介或预览图；README 首页图片不影响市场 preview。新简介的[人工更新资料](docs/theme-market-submission.md)供维护者本人更新既有条目，核验记录见 [Theme Market 检查报告](docs/theme-market.md)。
 
 ---
 
@@ -186,12 +185,20 @@ bun run release:prepare
 
 ## 📝 版本历史
 
-当前版本更新见上方「最新版本 · v2.8.3」。
+当前版本更新见上方「最新版本 · v2.8.4」。
 
 <details>
 <summary><strong>📚 查看历史版本更新</strong></summary>
 
 <br>
+
+### v2.8.3
+
+- 优化首页 Ping 延迟／丢包标签，改为蓝色／紫色圆点配合文字显示，保持固定 20 格及原有数据和触控交互。
+- 恢复首页右上角工具按钮的美化提示，移除重复的浏览器原生提示，保留按钮操作与无障碍名称。
+- 精简页脚版本信息，不再显示提交短哈希。
+- 更新主题英文简介，并继续保持 `glassmorphism-plus` 市场身份与升级兼容。
+- 保留 `/sw.js` 黑屏兼容处理、在线访问策略及现有主题设置。
 
 ### v2.8.2
 

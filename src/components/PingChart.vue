@@ -811,6 +811,7 @@ const latencyChartOption = computed(() => {
         fontSize: 11,
         color: chartThemeColors.value.textSecondary,
         margin: 12,
+        hideOverlap: true,
         formatter: (value: number | string) => formatTime(value, showDateInAxis.value),
       },
       axisLine: {

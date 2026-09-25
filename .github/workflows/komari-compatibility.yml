@@ -1,0 +1,45 @@
+name: Komari Release Compatibility
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  official-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - name: Locked dependencies
+        run: |
+          bun install --frozen-lockfile
+          git diff --exit-code -- bun.lock
+      - name: Browser
+        run: bunx playwright install --with-deps chromium
+      - name: Build one candidate installer for every backend
+        run: bun run build
+      - name: Locate versioned installer
+        id: package
+        run: node -e 'const v = require("./komari-theme.json").version; require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `path=../${v}/Glassmorphism-Plus-release-${v}.zip\n`)'
+      - name: Official release matrix on the same ZIP
+        env:
+          KOMARI_SW_LAB_ROOT: ${{ runner.temp }}/plus-komari-lab
+          KOMARI_SW_FIXTURES: ${{ runner.temp }}/plus-komari-inputs
+          PLUS_COMPAT_REPORT: ${{ runner.temp }}/komari-compatibility.json
+        run: node tests/compatibility/komari-releases.mjs
+      - name: Retain verified candidate and sanitized evidence
+        uses: actions/upload-artifact@v6
+        with:
+          name: komari-verified-installer
+          path: |
+            ${{ steps.package.outputs.path }}
+            ${{ runner.temp }}/komari-compatibility.json
+          if-no-files-found: error
+          retention-days: 14

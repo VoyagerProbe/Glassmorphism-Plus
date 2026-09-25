@@ -8,6 +8,7 @@ import { dirname, resolve } from 'node:path'
 import process from 'node:process'
 import { inflateRawSync } from 'node:zlib'
 import archiver from 'archiver'
+import { binaries } from '../compatibility/releases.mjs'
 
 export const project = resolve(import.meta.dirname, '../..')
 export const digest = bytes => createHash('sha256').update(bytes).digest('hex')
@@ -82,14 +83,15 @@ export async function makeZip(files, path) {
   return path
 }
 
-export async function createLab() {
+export async function createLab({ version = '1.5.0-fix1' } = {}) {
   const root = resolve(process.env.KOMARI_SW_LAB_ROOT || tmpdir(), `plus-sw-${Date.now()}-${randomBytes(4).toString('hex')}`)
   mkdirSync(root, { recursive: true })
   const downloads = resolve(process.env.KOMARI_SW_FIXTURES || tmpdir(), 'plus-sw-fixtures')
   const windows = process.platform === 'win32'
   const name = windows ? 'komari-windows-amd64.exe' : 'komari-linux-amd64'
-  const expected = windows ? 'afe1277a5ae451807ba64c999515737e735bca5b39e9b9162d10d249c709e23c' : 'b82c0551577e70aa609121d90ed9e073b16f72ba597dd576e18297122dc9ef4c'
-  const binary = await download(`https://github.com/komari-monitor/komari/releases/download/1.5.0-fix1/${name}`, resolve(downloads, name), expected)
+  const expected = binaries[version]?.[process.platform]
+  assert(expected, 'Only pinned official backend/platform pairs are supported')
+  const binary = await download(`https://github.com/komari-monitor/komari/releases/download/${version}/${name}`, resolve(downloads, `${version}-${name}`), expected)
   if (!windows)
     chmodSync(binary, 0o700)
   const { createServer } = await import('node:net')

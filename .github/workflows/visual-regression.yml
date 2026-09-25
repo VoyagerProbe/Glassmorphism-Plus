@@ -111,6 +111,12 @@ jobs:
           --config playwright.webkit.config.ts
           --output=test-results/webkit-header
 
+      - name: Verify Ping axis layout and switching on WebKit
+        run: >-
+          node node_modules/@playwright/test/cli.js test tests/visual/ping-axis-layout.spec.ts
+          --config playwright.webkit.config.ts --project webkit-iphone
+          --output=test-results/webkit-ping-axis
+
       - name: Upload WebKit Tooltip results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v6
