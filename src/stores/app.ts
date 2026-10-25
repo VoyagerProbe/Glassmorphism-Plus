@@ -6,7 +6,7 @@ import { useStorageAsync } from '@vueuse/core'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { getAuthSession, getAuthSessionRevision, requirePermission, setAuthSessionFromLogin, verifyLogin } from '@/services/auth.service'
-import { paletteStorageKey, readPalettePreference, writePalettePreference } from '@/services/palette-preference.service'
+import { hasRetiredPalettePreference, paletteStorageKey, readPalettePreference, writePalettePreference } from '@/services/palette-preference.service'
 import { resolveManagedPalette } from '@/utils/glassTheme'
 import { parseNodeCardPingTaskBindings } from '@/utils/nodeCardPingBindings'
 import { resolveNodeCardPingRuntimeConfig } from '@/utils/nodeCardPingConfig'
@@ -995,20 +995,25 @@ const useAppStore = defineStore('app', () => {
   const localPaletteKey = paletteStorageKey(import.meta.env.BASE_URL)
   const appliedLocalPalette = ref<PaletteConfig | null>(readPalettePreference(localPaletteKey))
   const paletteDraft = ref<PaletteConfig | null>(null)
+  const paletteDraftFollowsSite = ref(false)
   const paletteOpen = ref(false)
   const paletteNotice = ref('')
-  const effectivePalette = computed(() => paletteDraft.value ?? appliedLocalPalette.value ?? managedPalette.value)
+  const effectivePalette = computed(() => paletteDraft.value
+    ? paletteDraftFollowsSite.value ? managedPalette.value : paletteDraft.value
+    : appliedLocalPalette.value ?? managedPalette.value)
   const glassColorPreset = computed<GlassColorPreset>(() => effectivePalette.value.preset)
   const glassCustomColors = computed<GlassCustomColors>(() => effectivePalette.value.colors)
 
   function openPaletteEditor() {
     paletteDraft.value = clonePalette(appliedLocalPalette.value ?? managedPalette.value)
+    paletteDraftFollowsSite.value = !appliedLocalPalette.value
     paletteOpen.value = true
-    paletteNotice.value = ''
+    paletteNotice.value = hasRetiredPalettePreference(localPaletteKey) ? '旧方案已停用，当前使用站点默认。' : ''
   }
 
   function closePaletteEditor() {
     paletteDraft.value = null
+    paletteDraftFollowsSite.value = false
     paletteOpen.value = false
   }
 
@@ -1279,6 +1284,7 @@ const useAppStore = defineStore('app', () => {
     effectivePalette,
     appliedLocalPalette,
     paletteDraft,
+    paletteDraftFollowsSite,
     paletteOpen,
     paletteNotice,
     openPaletteEditor,

@@ -14,7 +14,7 @@ export const GLASS_COLOR_KEYS = [
 
 export type GlassColorKey = typeof GLASS_COLOR_KEYS[number]
 export type GlassCustomColors = Record<GlassColorKey, string>
-export type GlassColorPreset = 'emerald' | 'soft' | 'contrast' | 'midnight' | 'softFrost' | 'custom'
+export type GlassColorPreset = 'emerald' | 'soft' | 'contrast' | 'midnight' | 'custom'
 export interface PaletteConfig { preset: GlassColorPreset, colors: GlassCustomColors }
 export interface RgbaBytes { r: number, g: number, b: number, alphaByte: number }
 export type ColorResult = { ok: true, color: RgbaBytes } | { ok: false, error: string }
@@ -24,19 +24,6 @@ const MANAGED_HEX = /^#[\da-f]{6}(?:[\da-f]{2})?$/i
 const EDITOR_HEX = /^#?([\da-f]{6})([\da-f]{2})?$/i
 const EDITOR_RGB = /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i
 const ALPHA_PERCENT = /^(?:\d+(?:\.\d*)?|\.\d+)$/
-
-export const SOFT_FROST_COLORS: Readonly<GlassCustomColors> = Object.freeze({
-  lightCard: '#F8FAFCE6',
-  lightControl: '#E8EDF4E6',
-  lightText: '#111111',
-  lightMutedText: '#4F5D70',
-  lightBorder: '#102A431F',
-  darkCard: '#1E2732E6',
-  darkControl: '#2C3744E6',
-  darkText: '#F2F5FA',
-  darkMutedText: '#B2BFD1',
-  darkBorder: '#D8E5F21A',
-})
 
 // Preserve the pre-v3 per-key fallback contract, distinct from strict editor import.
 const LEGACY_DEFAULT_COLORS: Readonly<GlassCustomColors> = Object.freeze({
@@ -76,7 +63,6 @@ export const PALETTE_PRESET_VALUES: Readonly<Record<GlassColorPreset, string>> =
   soft: '柔和',
   contrast: '高对比',
   midnight: '午夜',
-  softFrost: '柔雾',
   custom: '自定义',
 })
 
@@ -89,16 +75,21 @@ const PRESET_ALIASES: Readonly<Record<string, GlassColorPreset>> = Object.freeze
   高对比: 'contrast',
   midnight: 'midnight',
   午夜: 'midnight',
-  softFrost: 'softFrost',
-  柔雾: 'softFrost',
-  柔霧: 'softFrost',
   custom: 'custom',
   自定义: 'custom',
 })
 
 export function parseGlassColorPreset(value: unknown): GlassColorPreset {
+  // Retired managed values are read as the original default, never written back on startup.
+  if (isRetiredGlassPreset(value))
+    return 'emerald'
   const key = typeof value === 'string' ? value.trim() : ''
   return Object.hasOwn(PRESET_ALIASES, key) ? PRESET_ALIASES[key]! : 'emerald'
+}
+
+/** Read compatibility only. These aliases are not selectable or valid save output. */
+export function isRetiredGlassPreset(value: unknown): boolean {
+  return typeof value === 'string' && ['softFrost', '柔雾', '柔霧', '原版柔雾', '原版柔霧'].includes(value.trim())
 }
 
 export function isGlassColorPreset(value: unknown): value is GlassColorPreset {
@@ -164,10 +155,6 @@ export function parsePaletteJson(text: string): PaletteResult {
 
 export function clonePalette(palette: PaletteConfig): PaletteConfig {
   return { preset: palette.preset, colors: Object.fromEntries(GLASS_COLOR_KEYS.map(key => [key, palette.colors[key]])) as GlassCustomColors }
-}
-
-export function softFrostPalette(): PaletteConfig {
-  return { preset: 'softFrost', colors: { ...SOFT_FROST_COLORS } }
 }
 
 export function withHoverAlpha(value: string): string {

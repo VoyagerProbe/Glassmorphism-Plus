@@ -1701,12 +1701,9 @@ for (const background of [
     const card = primaryNodeCard(page)
     await card.scrollIntoViewIfNeeded()
     const styles = await card.evaluate((element) => {
-      // Full glass keeps the existing preset; reduced transparency intentionally
-      // uses its opaque composite. Both inner areas must consume the same token.
+      // Restored v2.8.4 preset surfaces, not the retired opaque composite.
       const probe = document.createElement('span')
-      const reduced = matchMedia('(prefers-reduced-transparency: reduce)').matches
-        || !(CSS.supports('backdrop-filter', 'blur(1px)') || CSS.supports('-webkit-backdrop-filter', 'blur(1px)'))
-      probe.style.backgroundColor = `var(${reduced ? '--opaque-control' : '--control-surface'})`
+      probe.style.backgroundColor = 'var(--glass-light-control)'
       element.append(probe)
       const expectedFill = getComputedStyle(probe).backgroundColor
       probe.remove()
@@ -3232,10 +3229,8 @@ test.describe('node-card per-node ping task bindings', () => {
       await expect(card.locator('[data-node-ping-bars="loss"] [data-node-ping-bar]')).toHaveCount((threeNetworkEnabled ? 3 : 1) * 20)
 
       const surfaceStyles = await card.evaluate((element) => {
-        const reduced = matchMedia('(prefers-reduced-transparency: reduce)').matches
-          || !(CSS.supports('backdrop-filter', 'blur(1px)') || CSS.supports('-webkit-backdrop-filter', 'blur(1px)'))
         const probe = document.createElement('span')
-        probe.style.backgroundColor = `var(${reduced ? '--opaque-control' : '--control-surface'})`
+        probe.style.backgroundColor = document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,.05)' : 'var(--glass-light-control)'
         element.append(probe)
         const expectedFill = getComputedStyle(probe).backgroundColor
         probe.remove()
@@ -3261,8 +3256,8 @@ test.describe('node-card per-node ping task bindings', () => {
       expect(surfaceStyles.info).toHaveLength(3)
       expect(surfaceStyles.strips).toHaveLength(threeNetworkEnabled ? 3 : 1)
       expect(surfaceStyles.contained).toBe(true)
-      // Both modes now use effective Control, with a deliberate opaque fallback
-      // for reduced transparency. Preserve all original density/geometry checks.
+      // Original presets keep their light fill and white/5 dark inner surface.
+      // Custom Control correctness is verified separately in palette tests.
       expect(surfaceStyles.expectedFill).not.toBe('rgba(0, 0, 0, 0)')
       expect(surfaceStyles.info.every(style => style.boxShadow === 'none' && style.backgroundColor === surfaceStyles.expectedFill)).toBe(true)
       expect(surfaceStyles.strips.every(style => style.boxShadow === 'none' && style.backgroundColor === surfaceStyles.expectedFill)).toBe(true)

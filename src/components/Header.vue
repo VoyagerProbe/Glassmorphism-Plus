@@ -173,14 +173,14 @@ const sitename = computed(() => appStore.siteName)
 
 <style scoped>
 .palette-entry-safe {
-  background: #e8edf4 !important;
-  color: #111111 !important;
-  border-color: #6f7c90 !important;
+  background: #f4f4f5 !important;
+  color: #18181b !important;
+  border-color: #d4d4d8 !important;
 }
 .dark .palette-entry-safe {
-  background: #2c3744 !important;
-  color: #f2f5fa !important;
-  border-color: #9aa9bd !important;
+  background: #27272a !important;
+  color: #fafafa !important;
+  border-color: #52525b !important;
 }
 .palette-entry-safe[aria-expanded='true'] {
   box-shadow: inset 0 0 0 2px #246bce;

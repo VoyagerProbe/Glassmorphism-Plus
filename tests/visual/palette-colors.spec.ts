@@ -12,10 +12,9 @@ import {
   parsePaletteJson,
   parseRgbColor,
   serializeColor,
-  SOFT_FROST_COLORS,
-  softFrostPalette,
   withHoverAlpha,
 } from '../../src/utils/paletteColors'
+import { CUSTOM_COLORS, customPalette } from './fixtures/palette'
 
 test('palette byte parsers preserve alpha and reject non-colors without clamping', () => {
   for (const alphaByte of [0, 1, 26, 127, 230, 242, 255]) {
@@ -52,13 +51,13 @@ test('reduced-transparency compositing preserves chosen RGB and storage rejects 
     removeItem: (name: string) => data.delete(name),
   } })
   try {
-    for (const raw of ['{', '[]', JSON.stringify({ schemaVersion: 2, ...softFrostPalette() }), JSON.stringify({ schemaVersion: 1, preset: 'custom', colors: {} })]) {
+    for (const raw of ['{', '[]', JSON.stringify({ schemaVersion: 2, ...customPalette() }), JSON.stringify({ schemaVersion: 1, preset: 'custom', colors: {} })]) {
       data.set(key, raw)
       expect(readPalettePreference(key)).toBeNull()
       expect(data.get(key)).toBe(raw)
     }
-    expect(writePalettePreference(key, softFrostPalette())).toBe(true)
-    expect(readPalettePreference(key)).toEqual(softFrostPalette())
+    expect(writePalettePreference(key, customPalette())).toBe(true)
+    expect(readPalettePreference(key)).toEqual(customPalette())
     data.set('unrelated', 'preserved')
     expect(writePalettePreference(key, null)).toBe(true)
     expect([...data.entries()]).toEqual([['unrelated', 'preserved']])
@@ -71,7 +70,7 @@ test('reduced-transparency compositing preserves chosen RGB and storage rejects 
 })
 
 test('complete JSON import is atomic, allowlisted and semantically round trips', () => {
-  const original = softFrostPalette()
+  const original = customPalette()
   const parsed = parsePaletteJson(JSON.stringify(original.colors))
   expect(parsed.ok).toBe(true)
   if (!parsed.ok)
@@ -90,9 +89,9 @@ test('complete JSON import is atomic, allowlisted and semantically round trips',
   const copied = clonePalette(original)
   copied.colors.lightText = '#FFFFFF'
   expect(original.colors.lightText).toBe('#111111')
-  expect(Object.isFrozen(SOFT_FROST_COLORS)).toBe(true)
-  expect(softFrostPalette().colors).toEqual(SOFT_FROST_COLORS)
-  expect(paletteEquals(original, { preset: 'softFrost', colors: { ...original.colors, lightText: '#111111ff' } })).toBe(true)
+  expect(Object.isFrozen(CUSTOM_COLORS)).toBe(true)
+  expect(customPalette().colors).toEqual(CUSTOM_COLORS)
+  expect(paletteEquals(original, { preset: 'custom', colors: { ...original.colors, lightText: '#111111ff' } })).toBe(true)
 })
 
 test('hover is monotonic for every alpha byte and keeps RGB; preset aliases are own-only', () => {
@@ -106,7 +105,7 @@ test('hover is monotonic for every alpha byte and keeps RGB; preset aliases are 
   expect(withHoverAlpha('#123456F2')).toBe('#123456FC')
   expect(withHoverAlpha('#123456FF')).toBe('#123456')
   for (const alias of ['softFrost', '柔雾', '柔霧'])
-    expect(parseGlassColorPreset(alias)).toBe('softFrost')
+    expect(parseGlassColorPreset(alias)).toBe('emerald')
   for (const alias of ['__proto__', 'constructor', 'unknown', null])
     expect(parseGlassColorPreset(alias)).toBe('emerald')
   expect(parseGlassColorPreset('柔和')).toBe('soft')

@@ -585,11 +585,11 @@ function buildNodeMetadataItems(node: NodeData): NodeMetadataItem[] {
                 <!-- 速率 -->
                 <div v-else-if="col.key === 'rate'" class="min-w-0">
                   <div class="text-[11px] font-medium flex flex-col">
-                    <span class="text-upload flex flex-row gap-1 items-center truncate">
+                    <span class="text-success flex flex-row gap-1 items-center truncate">
                       <Icon icon="tabler:chevron-up" width="12" height="12" class="shrink-0" />
                       {{ formatBytesPerSecond(node.net_out ?? 0) }}
                     </span>
-                    <span class="text-download flex flex-row gap-1 items-center truncate">
+                    <span class="text-blue-600 dark:text-blue-400 flex flex-row gap-1 items-center truncate">
                       <Icon icon="tabler:chevron-down" width="12" height="12" class="shrink-0" />
                       {{ formatBytesPerSecond(node.net_in ?? 0) }}
                     </span>

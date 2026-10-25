@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { GlassColorPreset } from '@/utils/paletteColors'
+import type { PaletteChoice } from '@/composables/usePaletteEditor'
 import { Icon } from '@iconify/vue'
 import { onMounted, ref } from 'vue'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,7 @@ const {
   fields,
   scope,
   draft,
+  selectedPreset,
   selectedKey,
   selectedInput,
   pickerColor,
@@ -23,26 +24,29 @@ const {
   status,
   busy,
   pendingConfirmation,
-  confirmation,
   invalid,
   setPreset,
   updateInput,
   normalizeInput,
-  resetGroup,
-  resetAll,
   importJson,
   copyJson,
   cancel,
   applyLocal,
-  followSite,
-  loadSite,
-  editLocal,
-  copyLocalToSite,
+  changeScope,
+  reloadSite,
   saveSite,
 } = usePaletteEditor()
 const heading = ref<HTMLElement | null>(null)
 const inputKinds = ['hex', 'rgb', 'alpha'] as const
 onMounted(() => heading.value?.focus({ preventScroll: true }))
+
+async function selectScope(event: Event) {
+  const select = event.target as HTMLSelectElement
+  const target = select.value as 'local' | 'site'
+  select.value = scope.value
+  await changeScope(target)
+  select.value = scope.value
+}
 </script>
 
 <template>
@@ -52,34 +56,29 @@ onMounted(() => heading.value?.focus({ preventScroll: true }))
         <h2 id="palette-heading" ref="heading" tabindex="-1">
           配色中心
         </h2>
-        <p>即时预览 · {{ scope === 'local' ? '仅此浏览器' : '全站默认草稿' }} · 关闭即放弃未保存草稿</p>
+        <p>保存前仅预览，关闭不会保留未保存修改。</p>
       </div>
       <Button variant="ghost" size="icon" aria-label="关闭配色中心并取消草稿" @click="cancel">
         <Icon icon="lucide:x" />
       </Button>
     </div>
-    <div class="palette-actions" aria-label="配色作用范围">
-      <Button variant="outline" :aria-pressed="scope === 'local'" :disabled="busy" @click="editLocal">
-        本机配色
-      </Button>
-      <Button v-if="app.privateFeaturesAllowed" variant="outline" :disabled="busy" @click="loadSite">
-        {{ scope === 'site' ? '重新读取站点配色' : '验证权限并编辑全站配色' }}
-      </Button>
-      <span v-else>全站默认仅可由已验证的管理员修改。</span>
-    </div>
-    <p v-if="scope === 'site'" class="palette-hint">
-      此草稿从最新站点设置读取。保存只修改配色字段；其他窗口同时保存仍可能冲突，请避免并行编辑。
-      <Button v-if="app.appliedLocalPalette" variant="outline" size="sm" :disabled="busy" @click="copyLocalToSite">
-        将本机配色复制到全站草稿
-      </Button>
+    <label v-if="app.privateFeaturesAllowed" class="palette-select">修改范围
+      <select :value="scope" :disabled="busy" data-testid="palette-scope" @change="selectScope">
+        <option value="local">仅自己（当前浏览器）</option>
+        <option value="site">全站默认（管理员）</option>
+      </select>
+    </label>
+    <p class="palette-hint">
+      {{ scope === 'local' ? '仅对当前浏览器生效。' : '修改站点默认配色，保存时需确认。' }}
     </p>
     <fieldset :disabled="busy" class="palette-editing">
       <legend class="sr-only">
         编辑配色草稿
       </legend>
-      <label class="palette-preset">配色方案
-        <select :value="draft.preset" data-testid="palette-preset" @change="setPreset(($event.target as HTMLSelectElement).value as GlassColorPreset)">
-          <option v-for="(label, preset) in PALETTE_PRESET_VALUES" :key="preset" :value="preset">{{ preset === 'softFrost' ? '原版柔雾' : label }}</option>
+      <label class="palette-select">配色方案
+        <select :value="selectedPreset" data-testid="palette-preset" @change="setPreset(($event.target as HTMLSelectElement).value as PaletteChoice)">
+          <option v-if="scope === 'local'" value="site-default">站点默认</option>
+          <option v-for="(label, preset) in PALETTE_PRESET_VALUES" :key="preset" :value="preset">{{ label }}</option>
         </select>
       </label>
       <div class="palette-groups" role="group" aria-label="正在编辑的色组，不改变页面模式">
@@ -89,13 +88,12 @@ onMounted(() => heading.value?.focus({ preventScroll: true }))
         <Button variant="outline" :aria-pressed="group === 'dark'" @click="group = 'dark'">
           编辑深色
         </Button>
-        <span>页面当前为{{ app.resolvedThemeMode === 'dark' ? '深色' : '浅色' }}；编辑色组不会切换模式。</span>
       </div>
-      <div class="palette-colors" role="group" aria-label="选择色项">
-        <Button v-for="item in fields" :key="item.key" variant="outline" :aria-pressed="field === item.key" :data-testid="`palette-field-${item.key}`" @click="field = item.key">
-          <span class="palette-swatch" :style="{ backgroundColor: draft.colors[`${group}${item.key}`] }" aria-hidden="true" />{{ item.label }}
-        </Button>
-      </div>
+      <label class="palette-select">调整项目
+        <select v-model="field" data-testid="palette-field">
+          <option v-for="item in fields" :key="item.key" :value="item.key">{{ item.label }}</option>
+        </select>
+      </label>
       <div class="palette-inputs">
         <label>色盘<input type="color" :value="pickerColor" aria-label="色盘（保留透明度）" data-testid="palette-picker" @input="updateInput('hex', ($event.target as HTMLInputElement).value)"></label>
         <label v-for="kind in inputKinds" :key="kind" :for="`palette-${kind}`">
@@ -107,23 +105,15 @@ onMounted(() => heading.value?.focus({ preventScroll: true }))
       <p class="palette-hint">
         {{ selectedKey }}：{{ draft.colors[selectedKey] }}。六位 HEX／RGB／色盘保留透明度；八位 HEX 可直接指定透明度。
       </p>
-      <div class="palette-actions">
-        <Button variant="outline" @click="resetGroup">
-          恢复本色组为柔雾
-        </Button>
-        <Button variant="outline" @click="resetAll">
-          恢复全部柔雾预设
-        </Button>
-      </div>
       <details class="palette-advanced">
         <summary>高级：十键 JSON 导入／导出</summary>
         <label for="palette-json">仅处理配色，不包含后台设置。导入为原子操作，非法内容不会部分生效。</label>
-        <textarea id="palette-json" :value="jsonText" rows="8" spellcheck="false" :aria-invalid="Boolean(jsonError)" @input="jsonText = ($event.target as HTMLTextAreaElement).value; jsonDirty = true; jsonError = ''; confirmation = false" />
+        <textarea id="palette-json" :value="jsonText" rows="8" spellcheck="false" :aria-invalid="Boolean(jsonError)" @input="jsonText = ($event.target as HTMLTextAreaElement).value; jsonDirty = true; jsonError = ''" />
         <p v-if="jsonError" class="palette-error" role="alert">
           {{ jsonError }}
         </p>
         <p v-else-if="jsonDirty">
-          文本尚未导入；应用前请导入或恢复草稿。
+          文本尚未导入；请导入或重新选择配色方案。
         </p>
         <div class="palette-actions">
           <Button variant="outline" @click="importJson">
@@ -132,11 +122,14 @@ onMounted(() => heading.value?.focus({ preventScroll: true }))
           <Button variant="outline" :disabled="invalid" @click="copyJson">
             复制当前十键配色
           </Button>
+          <Button v-if="scope === 'site'" variant="outline" :disabled="busy" @click="reloadSite">
+            重新读取站点配色
+          </Button>
         </div>
       </details>
     </fieldset>
     <p v-if="invalid" class="palette-error" role="alert">
-      存在无效或尚未导入的输入。请修正、恢复或取消，暂不能应用。
+      输入尚未完成。请修正、重新选择方案或取消，暂不能保存。
     </p>
     <p v-if="status" role="status" data-testid="palette-status">
       {{ status }}
@@ -148,39 +141,28 @@ onMounted(() => heading.value?.focus({ preventScroll: true }))
       <Button variant="outline" @click="cancel">
         取消
       </Button>
-      <template v-if="scope === 'local'">
-        <Button variant="outline" :disabled="busy" @click="followSite">
-          跟随站点配色
-        </Button>
-        <Button :disabled="invalid || busy" data-testid="palette-apply-local" @click="applyLocal">
-          套用到此浏览器
-        </Button>
-      </template>
-      <template v-else>
-        <label class="palette-confirm"><input v-model="confirmation" type="checkbox" :disabled="invalid || busy || pendingConfirmation">确认设为全站默认</label>
-        <Button :disabled="invalid || busy || pendingConfirmation || !confirmation" data-testid="palette-save-site" @click="saveSite">
-          保存全站默认
-        </Button>
-      </template>
+      <Button :disabled="invalid || busy || (scope === 'site' && pendingConfirmation)" :data-testid="scope === 'local' ? 'palette-apply-local' : 'palette-save-site'" @click="scope === 'local' ? applyLocal() : saveSite()">
+        {{ scope === 'local' ? '保存' : '保存全站' }}
+      </Button>
     </div>
   </section>
 </template>
 
 <style scoped>
 .palette-panel {
-  --editor-bg: #f8fafc;
-  --editor-surface: #e8edf4;
-  --editor-text: #111111;
-  --editor-muted: #4f5d70;
-  --editor-border: #6f7c90;
+  --editor-bg: #fafafa;
+  --editor-surface: #f4f4f5;
+  --editor-text: #18181b;
+  --editor-muted: #52525b;
+  --editor-border: #d4d4d8;
   --editor-error: #a62936;
   --editor-focus: #246bce;
   position: relative;
   z-index: 2;
   margin: 12px 16px 20px;
-  padding: 18px;
+  padding: 16px;
   border: 1px solid var(--editor-border);
-  border-radius: 18px;
+  border-radius: 12px;
   background: var(--editor-bg);
   color: var(--editor-text);
   font-size: 14px;
@@ -188,11 +170,11 @@ onMounted(() => heading.value?.focus({ preventScroll: true }))
   color-scheme: light;
 }
 .palette-panel[data-mode='dark'] {
-  --editor-bg: #1e2732;
-  --editor-surface: #2c3744;
-  --editor-text: #f2f5fa;
-  --editor-muted: #b2bfd1;
-  --editor-border: #9aa9bd;
+  --editor-bg: #18181b;
+  --editor-surface: #27272a;
+  --editor-text: #fafafa;
+  --editor-muted: #a1a1aa;
+  --editor-border: #52525b;
   --editor-error: #ffb3bb;
   --editor-focus: #8bb8ff;
   color-scheme: dark;
@@ -226,8 +208,7 @@ onMounted(() => heading.value?.focus({ preventScroll: true }))
   margin: 14px 0;
 }
 .palette-actions,
-.palette-groups,
-.palette-colors {
+.palette-groups {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -237,15 +218,15 @@ onMounted(() => heading.value?.focus({ preventScroll: true }))
 .palette-panel :deep([data-slot='button']) {
   background: var(--editor-surface) !important;
   color: var(--editor-text) !important;
-  border: 1px solid var(--editor-border) !important;
-  border-radius: 12px;
+  border: 1px solid transparent !important;
+  border-radius: 6px;
   white-space: normal;
   height: auto;
   min-height: 36px;
 }
 .palette-panel :deep([aria-pressed='true']),
 .palette-panel :deep([data-variant='default']) {
-  box-shadow: inset 0 0 0 2px var(--editor-focus);
+  border-color: var(--editor-focus) !important;
 }
 .palette-panel :deep(:focus-visible) {
   outline: 2px solid var(--editor-focus);
@@ -256,10 +237,11 @@ onMounted(() => heading.value?.focus({ preventScroll: true }))
   color: var(--editor-muted) !important;
   border-style: dashed !important;
 }
-.palette-preset {
+.palette-select {
   display: grid;
   gap: 6px;
   max-width: 300px;
+  margin-top: 12px;
 }
 .palette-panel select,
 .palette-panel textarea,
@@ -267,19 +249,12 @@ onMounted(() => heading.value?.focus({ preventScroll: true }))
   background: var(--editor-bg) !important;
   color: var(--editor-text) !important;
   border: 1px solid var(--editor-border) !important;
-  border-radius: 10px;
+  border-radius: 6px;
   font-size: 16px;
   padding: 8px;
 }
 .palette-panel select {
   min-height: 38px;
-}
-.palette-swatch {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 1px solid var(--editor-border);
-  flex: 0 0 auto;
 }
 .palette-inputs {
   display: grid;
@@ -313,11 +288,6 @@ onMounted(() => heading.value?.focus({ preventScroll: true }))
   width: 100%;
   margin-top: 8px;
   font-family: monospace;
-}
-.palette-confirm {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 .palette-footer {
   border-top: 1px solid var(--editor-border);

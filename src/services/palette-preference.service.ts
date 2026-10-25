@@ -1,5 +1,5 @@
 import type { PaletteConfig } from '@/utils/paletteColors'
-import { clonePalette, isGlassColorPreset, parsePaletteColors } from '@/utils/paletteColors'
+import { clonePalette, isGlassColorPreset, isRetiredGlassPreset, parsePaletteColors } from '@/utils/paletteColors'
 
 /** Origin is isolated by browser storage; Vite's deployment base isolates siblings. */
 export function paletteStorageKey(base: string): string {
@@ -34,6 +34,17 @@ export function writePalettePreference(key: string, palette: PaletteConfig | nul
       return false
     localStorage.setItem(key, JSON.stringify({ schemaVersion: 1, ...clonePalette({ preset: palette.preset, colors: parsed.colors }) }))
     return true
+  }
+  catch { return false }
+}
+
+export function hasRetiredPalettePreference(key: string): boolean {
+  try {
+    const value: unknown = JSON.parse(localStorage.getItem(key) ?? 'null')
+    if (!value || typeof value !== 'object' || Array.isArray(value))
+      return false
+    const record = value as Record<string, unknown>
+    return record.schemaVersion === 1 && isRetiredGlassPreset(record.preset)
   }
   catch { return false }
 }

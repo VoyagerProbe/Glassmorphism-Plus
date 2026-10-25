@@ -2,17 +2,17 @@ import { resolve } from 'node:path'
 import { expect, test } from '@playwright/test'
 import { createServer } from 'vite'
 import { inspectNodeCardPingConfig } from '../../src/utils/nodeCardPingConfig'
+import { GLASS_COLOR_KEYS } from '../../src/utils/paletteColors'
+import { CUSTOM_COLORS, customPalette } from './fixtures/palette'
 
 type PaletteService = typeof import('../../src/services/palette-admin.service')
 type AuthService = typeof import('../../src/services/auth.service')
 type PingService = typeof import('../../src/services/node-card-ping-binding.service')
 type QueueService = typeof import('../../src/services/theme-settings-save.service')
-type ColorHelpers = typeof import('../../src/utils/paletteColors')
 let palette: PaletteService
 let auth: AuthService
 let ping: PingService
 let queue: QueueService
-let colors: ColorHelpers
 let close: () => Promise<void>
 let settings: Record<string, unknown>
 let theme = 'glassmorphism-plus'
@@ -32,7 +32,6 @@ test.beforeAll(async () => {
   auth = await server.ssrLoadModule('/src/services/auth.service.ts') as AuthService
   ping = await server.ssrLoadModule('/src/services/node-card-ping-binding.service.ts') as PingService
   queue = await server.ssrLoadModule('/src/services/theme-settings-save.service.ts') as QueueService
-  colors = await server.ssrLoadModule('/src/utils/paletteColors.ts') as ColorHelpers
   close = () => server.close()
 })
 
@@ -46,8 +45,8 @@ test.beforeEach(() => {
   publicGate = undefined
   calls.length = 0
   settings = {
-    glassColorPreset: '柔雾',
-    glassCustomColors: JSON.stringify(colors.SOFT_FROST_COLORS),
+    glassColorPreset: '柔和',
+    glassCustomColors: JSON.stringify(CUSTOM_COLORS),
     themeMode: 'beijing',
     unknownFuture: { keep: [null, 0, false, { nested: 'synthetic' }] },
     nodeCardPingTaskBindings: '{}',
@@ -111,10 +110,10 @@ test('permission, theme, and concurrent color changes stop before POST', async (
   permission = 200
   const snapshot = await palette.loadSitePalette()
   theme = 'another-theme'
-  await expect(palette.saveSitePalette(snapshot, colors.softFrostPalette())).rejects.toThrow('主题已切换')
+  await expect(palette.saveSitePalette(snapshot, { ...customPalette(), preset: 'soft' })).rejects.toThrow('主题已切换')
   theme = 'glassmorphism-plus'
-  settings.glassCustomColors = JSON.stringify({ ...colors.SOFT_FROST_COLORS, darkText: '#112233' })
-  await expect(palette.saveSitePalette(snapshot, colors.softFrostPalette())).rejects.toThrow('其他操作')
+  settings.glassCustomColors = JSON.stringify({ ...CUSTOM_COLORS, darkText: '#112233' })
+  await expect(palette.saveSitePalette(snapshot, { ...customPalette(), preset: 'soft' })).rejects.toThrow('其他操作')
   expect(postCount).toBe(0)
 })
 
@@ -122,12 +121,12 @@ test('preset-only saves retain original custom JSON; custom saves write exactly 
   settings.glassCustomColors = ' { "lightText": "#345678" } '
   let baseline = await palette.loadSitePalette()
   const original = settings.glassCustomColors
-  await palette.saveSitePalette(baseline, colors.softFrostPalette())
+  await palette.saveSitePalette(baseline, { ...customPalette(), preset: 'soft' })
   expect(settings.glassCustomColors).toBe(original)
   baseline = await palette.loadSitePalette()
-  await palette.saveSitePalette(baseline, { preset: 'custom', colors: { ...colors.SOFT_FROST_COLORS, lightText: '#123456E6' } })
+  await palette.saveSitePalette(baseline, { preset: 'custom', colors: { ...CUSTOM_COLORS, lightText: '#123456E6' } })
   expect(settings.glassColorPreset).toBe('自定义')
-  expect(Object.keys(JSON.parse(String(settings.glassCustomColors)))).toEqual([...colors.GLASS_COLOR_KEYS])
+  expect(Object.keys(JSON.parse(String(settings.glassCustomColors)))).toEqual([...GLASS_COLOR_KEYS])
   expect(settings.themeMode).toBe('beijing')
   expect(settings.unknownFuture).toEqual({ keep: [null, 0, false, { nested: 'synthetic' }] })
 })
@@ -137,7 +136,7 @@ for (const lostResponse of [true, false]) {
     const baseline = await palette.loadSitePalette()
     postFailure = lostResponse
     readbackFailure = !lostResponse
-    await expect(palette.saveSitePalette(baseline, colors.softFrostPalette())).rejects.toMatchObject({ pendingConfirmation: true })
+    await expect(palette.saveSitePalette(baseline, { ...customPalette(), preset: 'soft' })).rejects.toMatchObject({ pendingConfirmation: true })
     expect(postCount).toBe(1)
   })
 }
@@ -153,14 +152,14 @@ test('identity change invalidates queued and in-flight manager responses without
   auth.setAuthSessionFromLogin(false)
   release()
   await expect(loading).rejects.toMatchObject({ status: 401 })
-  await expect(palette.saveSitePalette(baseline, colors.softFrostPalette())).rejects.toMatchObject({ status: 401 })
+  await expect(palette.saveSitePalette(baseline, { ...customPalette(), preset: 'soft' })).rejects.toMatchObject({ status: 401 })
   expect(postCount).toBe(0)
 })
 
 test('Palette and Ping share serialization and merge fresh unknown settings in either order', async () => {
   for (const paletteFirst of [true, false]) {
     const baseline = await palette.loadSitePalette()
-    const savePalette = () => palette.saveSitePalette(baseline, { preset: 'custom', colors: { ...colors.SOFT_FROST_COLORS, lightText: '#233445' } })
+    const savePalette = () => palette.saveSitePalette(baseline, { preset: 'custom', colors: { ...CUSTOM_COLORS, lightText: '#233445' } })
     const savePing = () => ping.saveNodeCardPingDisplayConfigV3({ theme, config: { schemaVersion: 3, global: { threeNetworkEnabled: false, taskIds: [101, null, null] }, nodes: {} } })
     const results = paletteFirst ? [savePalette(), savePing()] : [savePing(), savePalette()]
     await Promise.all(results)

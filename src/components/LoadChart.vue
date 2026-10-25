@@ -44,10 +44,10 @@ const detailLoadStatsHours = computed(() => appStore.publicSettings?.record_pres
 
 // 使用 store 中的 isDark computed
 
-const chartColors = reactive(getLoadChartPalette(appStore.colorVisionFriendly, appStore.isDark))
+const chartColors = reactive(getLoadChartPalette(appStore.colorVisionFriendly))
 
 watchEffect(() => {
-  Object.assign(chartColors, getLoadChartPalette(appStore.colorVisionFriendly, appStore.isDark))
+  Object.assign(chartColors, getLoadChartPalette(appStore.colorVisionFriendly))
 })
 
 const LOAD_METRIC_KEYS = [
@@ -100,14 +100,14 @@ interface CustomRange {
 }
 
 // 图表主题相关颜色
-const chartThemeColors = useChartTheme()
+const chartThemeColors = useChartTheme('load')
 
 // 通用 Tooltip 配置
 const baseTooltipConfig = computed(() => ({
   trigger: 'axis' as const,
   confine: false,
   backgroundColor: chartThemeColors.value.tooltipBg,
-  borderColor: chartThemeColors.value.borderColor,
+  borderColor: appStore.glassColorPreset === 'custom' ? chartThemeColors.value.borderColor : 'transparent',
   borderWidth: 0,
   borderRadius: 6,
   textStyle: {
@@ -759,10 +759,10 @@ const latestStatus = computed(() => {
 
 const hasGpuData = computed(() => chartData.value.some(record => record.gpu != null || record.gpu_usage != null || record.gpu_memory != null || record.gpu_detailed))
 
-const metricSeriesColors = reactive(getChartSeriesPalette(appStore.colorVisionFriendly, appStore.isDark))
+const metricSeriesColors = reactive(getChartSeriesPalette(appStore.colorVisionFriendly))
 
 watchEffect(() => {
-  metricSeriesColors.splice(0, metricSeriesColors.length, ...getChartSeriesPalette(appStore.colorVisionFriendly, appStore.isDark))
+  metricSeriesColors.splice(0, metricSeriesColors.length, ...getChartSeriesPalette(appStore.colorVisionFriendly))
 })
 
 const pingTaskMap = computed(() => new Map(pingTasks.value.map(task => [String(task.id), task])))

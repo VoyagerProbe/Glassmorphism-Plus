@@ -4,6 +4,16 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      previous_installer_url:
+        description: Optional same-version old candidate URL (read-only download)
+        type: string
+        required: false
+      previous_installer_sha256:
+        description: Required SHA-256 when an old candidate URL is supplied
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -34,6 +44,16 @@ jobs:
           KOMARI_SW_FIXTURES: ${{ runner.temp }}/plus-komari-inputs
           PLUS_COMPAT_REPORT: ${{ runner.temp }}/komari-compatibility.json
         run: node tests/compatibility/komari-releases.mjs
+      - name: Same-version candidate upgrade on official 1.6.0
+        if: github.event_name == 'workflow_dispatch' && inputs.previous_installer_url != ''
+        env:
+          KOMARI_SW_LAB_ROOT: ${{ runner.temp }}/plus-revision-lab
+          KOMARI_SW_FIXTURES: ${{ runner.temp }}/plus-komari-inputs
+          KOMARI_COMPAT_VERSIONS: 1.6.0
+          PLUS_PREVIOUS_URL: ${{ inputs.previous_installer_url }}
+          PLUS_PREVIOUS_SHA: ${{ inputs.previous_installer_sha256 }}
+          PLUS_COMPAT_REPORT: ${{ runner.temp }}/revision-compatibility.json
+        run: node tests/compatibility/komari-releases.mjs
       - name: Retain verified candidate and sanitized evidence
         uses: actions/upload-artifact@v6
         with:
@@ -41,5 +61,6 @@ jobs:
           path: |
             ${{ steps.package.outputs.path }}
             ${{ runner.temp }}/komari-compatibility.json
+            ${{ runner.temp }}/revision-compatibility.json
           if-no-files-found: error
           retention-days: 14

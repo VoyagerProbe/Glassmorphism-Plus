@@ -478,11 +478,11 @@ function hasRegion(region: string | null | undefined): boolean {
         <div class="grid gap-1.5" :class="nodeCardMetricGridClass">
           <!-- 实时网速 -->
           <div class="node-card-info-surface flex flex-col gap-0.5 rounded-lg bg-slate-500/5 min-w-0 overflow-hidden" :class="nodeCardMetricBoxClass">
-            <div class="text-[11px] text-upload flex items-center gap-1">
+            <div class="text-[11px] text-success flex items-center gap-1">
               <Icon icon="tabler:chevron-up" width="11" height="11" />
               <span class="truncate min-w-0 overflow-hidden">{{ formatBytesPerSecond(props.node.net_out ?? 0) }}</span>
             </div>
-            <div class="text-[11px] text-download flex items-center gap-1">
+            <div class="text-[11px] text-blue-600 flex items-center gap-1">
               <Icon icon="tabler:chevron-down" width="11" height="11" />
               <span class="truncate min-w-0 overflow-hidden">{{ formatBytesPerSecond(props.node.net_in ?? 0) }}</span>
             </div>

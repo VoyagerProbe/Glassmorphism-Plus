@@ -145,9 +145,8 @@ test('all card sizes preserve rows and rails; long remarks truncate and pills sh
         expect(surfaces.every(s => s.edge === 'none' && s.opacity === '1')).toBe(true)
         const expected = await card.evaluate((e) => {
           const sample = document.createElement('span')
-          const reduced = matchMedia('(prefers-reduced-transparency: reduce)').matches
-            || !(CSS.supports('backdrop-filter', 'blur(1px)') || CSS.supports('-webkit-backdrop-filter', 'blur(1px)'))
-          sample.style.backgroundColor = `var(${reduced ? '--opaque-control' : '--control-surface'})`
+          // Original preset surfaces: configured light fill, fixed white/5 dark.
+          sample.style.backgroundColor = document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,.05)' : 'var(--glass-light-control)'
           e.appendChild(sample)
           const color = getComputedStyle(sample).backgroundColor
           sample.remove()

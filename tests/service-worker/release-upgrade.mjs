@@ -30,14 +30,13 @@ async function main() {
     const oldManifest = JSON.parse(zipFiles(oldZip).get('komari-theme.json'))
     for (const key of ['name', 'short', 'author', 'url', 'preview'])
       assert.deepEqual(installedManifest[key], oldManifest[key], `Preserved manifest ${key}`)
-    // v3 adds one optional preset and its help, but must not replace defaults,
+    // v3 adds palette editor help, but must not replace defaults or presets,
     // remove existing fields, or silently change any other managed schema.
     const expectedConfiguration = structuredClone(oldManifest.configuration)
     const preset = expectedConfiguration.data.find(field => field.key === 'glassColorPreset')
     assert.equal(preset.options, '翡翠,柔和,高对比,午夜,自定义')
-    preset.options = '翡翠,柔和,高对比,午夜,柔雾,自定义'
-    preset.help = '柔雾为新增可选方案，不覆盖旧配色。选择“自定义”后读取下方 JSON；也可通过前台配色入口调整。'
-    assert.deepEqual(installedManifest.configuration, expectedConfiguration, 'Preserved existing schema with only the authorized Soft Frost option/help')
+    preset.help = '选择“自定义”后读取下方 JSON；也可通过前台配色中心调整。原有配色与设置保持。'
+    assert.deepEqual(installedManifest.configuration, expectedConfiguration, 'Preserved existing schema with only the palette editor help')
     assert.equal(digest(files.get('LICENSE')), digest(readFileSync(resolve(project, 'LICENSE'))))
     assert.equal(digest(files.get('preview.png')), digest(zipFiles(oldZip).get('preview.png')))
     assert.equal(digest(files.get('dist/sw.js')), workerSha)
@@ -129,7 +128,7 @@ async function main() {
     assert.match(sw.headers.get('content-type'), javascriptPattern)
     assert.equal(digest(Buffer.from(await sw.arrayBuffer())), workerSha)
     assert.equal(await compatibility(page), 'plus-online-v1')
-    const result = { platform: process.platform, binarySha256: lab.binaryHash, oldInstallerSha256: oldSha, installerSha256: digest(readFileSync(installer)), version: manifest.version, short: manifest.short, installedFiles: files.size, sameOriginAndProfile: true, identityAndExistingSchemaPreserved: true, softFrostOptionAdded: true, settingsBindingsFavoritesColorAndCookiePreserved: true, adminNavigationsDuringUpgrade: upgradeNavigations, realAdminDescription: true, adminButtonUsesSettingsTheme: true, fullPingModalWithRealRecords: true, workerSha256: workerSha, physicalSafari: 'not-tested' }
+    const result = { platform: process.platform, binarySha256: lab.binaryHash, oldInstallerSha256: oldSha, installerSha256: digest(readFileSync(installer)), version: manifest.version, short: manifest.short, installedFiles: files.size, sameOriginAndProfile: true, identityAndExistingSchemaPreserved: true, originalPresetOptionsPreserved: true, settingsBindingsFavoritesColorAndCookiePreserved: true, adminNavigationsDuringUpgrade: upgradeNavigations, realAdminDescription: true, adminButtonUsesSettingsTheme: true, fullPingModalWithRealRecords: true, workerSha256: workerSha, physicalSafari: 'not-tested' }
     writeFileSync(resolve(lab.root, 'release-upgrade.json'), JSON.stringify(result, null, 2))
     process.stdout.write(`${JSON.stringify(result)}\n`)
   }

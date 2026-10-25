@@ -11,6 +11,19 @@ export interface LoadChartPalette {
   senary: string
 }
 
+const DEFAULT_LOAD_CHART_PALETTE: LoadChartPalette = {
+  primary: '#FF6B6B',
+  primaryAreaStrong: 'rgba(255, 107, 107, 0.25)',
+  primaryAreaFaint: 'rgba(255, 107, 107, 0.02)',
+  secondary: '#FFB347',
+  tertiary: '#4ECDC4',
+  tertiaryAreaStrong: 'rgba(78, 205, 196, 0.25)',
+  tertiaryAreaFaint: 'rgba(78, 205, 196, 0.02)',
+  quaternary: '#A78BFA',
+  quinary: '#60A5FA',
+  senary: '#34D399',
+}
+
 const ACCESSIBLE_LOAD_CHART_PALETTE: LoadChartPalette = {
   primary: '#D55E00',
   primaryAreaStrong: 'rgba(213, 94, 0, 0.25)',
@@ -24,8 +37,16 @@ const ACCESSIBLE_LOAD_CHART_PALETTE: LoadChartPalette = {
   senary: '#56B4E9',
 }
 
-const LIGHT_SERIES_PALETTE = ['#246BCE', '#087F74', '#7054A3', '#A86510', '#C6484C', '#4F5D70']
-const DARK_SERIES_PALETTE = ['#8BB8FF', '#66C9BE', '#B5A1DF', '#E9B55F', '#F08086', '#B2BFD1']
+const DEFAULT_SERIES_PALETTE = [
+  '#FF6B6B',
+  '#4ECDC4',
+  '#A78BFA',
+  '#60A5FA',
+  '#FFB347',
+  '#F472B6',
+  '#34D399',
+  '#FB923C',
+]
 
 const ACCESSIBLE_SERIES_PALETTE = [
   '#0072B2',
@@ -40,24 +61,10 @@ const ACCESSIBLE_SERIES_PALETTE = [
 
 export const ACCESSIBLE_LINE_TYPES = ['solid', 'dashed', 'dotted'] as const
 
-export function getLoadChartPalette(accessible: boolean, dark = false): LoadChartPalette {
-  if (accessible)
-    return { ...ACCESSIBLE_LOAD_CHART_PALETTE }
-  const colors = getChartSeriesPalette(false, dark)
-  return {
-    primary: colors[0]!,
-    primaryAreaStrong: `${colors[0]}40`,
-    primaryAreaFaint: `${colors[0]}05`,
-    secondary: colors[1]!,
-    tertiary: colors[2]!,
-    tertiaryAreaStrong: `${colors[2]}40`,
-    tertiaryAreaFaint: `${colors[2]}05`,
-    quaternary: colors[3]!,
-    quinary: colors[4]!,
-    senary: colors[5]!,
-  }
+export function getLoadChartPalette(accessible: boolean): LoadChartPalette {
+  return accessible ? ACCESSIBLE_LOAD_CHART_PALETTE : DEFAULT_LOAD_CHART_PALETTE
 }
 
-export function getChartSeriesPalette(accessible: boolean, dark = false): string[] {
-  return [...(accessible ? ACCESSIBLE_SERIES_PALETTE : dark ? DARK_SERIES_PALETTE : LIGHT_SERIES_PALETTE)]
+export function getChartSeriesPalette(accessible: boolean): string[] {
+  return [...(accessible ? ACCESSIBLE_SERIES_PALETTE : DEFAULT_SERIES_PALETTE)]
 }

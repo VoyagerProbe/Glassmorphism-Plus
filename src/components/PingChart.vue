@@ -56,10 +56,10 @@ interface PingChartRecord extends PingRecord {
 // 图表主题相关颜色
 const chartThemeColors = useChartTheme()
 
-const chartColors = reactive(getChartSeriesPalette(appStore.colorVisionFriendly, appStore.isDark))
+const chartColors = reactive(getChartSeriesPalette(appStore.colorVisionFriendly))
 
 watchEffect(() => {
-  chartColors.splice(0, chartColors.length, ...getChartSeriesPalette(appStore.colorVisionFriendly, appStore.isDark))
+  chartColors.splice(0, chartColors.length, ...getChartSeriesPalette(appStore.colorVisionFriendly))
 })
 
 // 从 publicSettings 获取记录保留时间
@@ -676,7 +676,7 @@ const baseTooltipConfig = computed(() => ({
   trigger: 'axis' as const,
   confine: false,
   backgroundColor: chartThemeColors.value.tooltipBg,
-  borderColor: chartThemeColors.value.borderColor,
+  borderColor: appStore.glassColorPreset === 'custom' ? chartThemeColors.value.borderColor : 'transparent',
   borderWidth: 0,
   borderRadius: 6,
   textStyle: {

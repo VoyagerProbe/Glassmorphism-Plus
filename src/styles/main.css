@@ -3,13 +3,20 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@media (prefers-reduced-motion: reduce) {
+  :is(.node-card, .bg-card, [data-slot='card'], .bg-background, .node-card-ping-bucket-fill) {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
 * {
   scrollbar-color: var(--ring) transparent;
   scrollbar-width: thin;
 }
 
 :root {
-  --background: #f2f5f9;
+  --background: oklch(0.935 0.015 252);
   --foreground: oklch(0.11 0.01 285.823);
   --card: oklch(0.965 0.008 252);
   --card-foreground: oklch(0.11 0.01 285.823);
@@ -23,30 +30,26 @@
   --muted-foreground: oklch(0.34 0.02 285.938);
   --accent: oklch(0.967 0.001 286.375);
   --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: #c6484c;
+  --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
-  --warning: #a86510;
+  --warning: oklch(0.768 0.155 70);
   --warning-foreground: oklch(0.21 0.006 285.885);
-  --success: #17845b;
+  --success: oklch(0.696 0.17 162.48);
   --success-foreground: oklch(0.985 0 0);
-  --info: #16758f;
+  --info: oklch(0.6 0.118 230);
   --info-foreground: oklch(0.985 0 0);
-  --selection: #246bce;
-  --signal-1: #17845b;
-  --signal-2: #4b7f25;
-  --signal-3: #8c770f;
-  --signal-4: #a86510;
-  --signal-5: #c6484c;
-  --ping-latency-excellent: #17845b;
-  --ping-latency-good: #4b7f25;
-  --ping-latency-moderate: #8c770f;
-  --ping-latency-elevated: #a86510;
-  --ping-critical: #c6484c;
-  --ping-outage: #b73346;
-  --upload: #087f74;
-  --download: #246bce;
-  --loss: #7054a3;
-  --missing: #6f7c90;
+  --selection: oklch(0.55 0.15 155);
+  --signal-1: #059669;
+  --signal-2: #4ade80;
+  --signal-3: #a3e635;
+  --signal-4: #facc15;
+  --signal-5: #f43f5e;
+  --ping-latency-excellent: #2fc66e;
+  --ping-latency-good: #9fe339;
+  --ping-latency-moderate: #cbd83a;
+  --ping-latency-elevated: #e2a928;
+  --ping-critical: #dc2626;
+  --ping-outage: rgb(225 29 72 / 90%);
   --border: oklch(0.92 0.004 286.32);
   --input: oklch(0.92 0.004 286.32);
   --ring: oklch(0.705 0.015 286.067);
@@ -55,12 +58,12 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.75rem;
+  --radius: 0.625rem;
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
 .dark {
-  --background: #18212c;
+  --background: oklch(0.141 0.005 285.823);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.21 0.006 285.885);
   --card-foreground: oklch(0.985 0 0);
@@ -74,30 +77,26 @@
   --muted-foreground: oklch(0.86 0.012 286.067);
   --accent: oklch(0.274 0.006 286.033);
   --accent-foreground: oklch(0.985 0 0);
-  --destructive: #f08086;
+  --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
-  --warning: #e9b55f;
+  --warning: oklch(0.79 0.16 70);
   --warning-foreground: oklch(0.141 0.005 285.823);
-  --success: #55c697;
+  --success: oklch(0.74 0.17 162);
   --success-foreground: oklch(0.141 0.005 285.823);
-  --info: #77c7dc;
+  --info: oklch(0.68 0.13 230);
   --info-foreground: oklch(0.141 0.005 285.823);
-  --selection: #8bb8ff;
-  --signal-1: #55c697;
-  --signal-2: #9bbc70;
-  --signal-3: #c9bf67;
-  --signal-4: #e9b55f;
-  --signal-5: #f08086;
-  --ping-latency-excellent: #55c697;
-  --ping-latency-good: #9bbc70;
-  --ping-latency-moderate: #c9bf67;
-  --ping-latency-elevated: #e9b55f;
-  --ping-critical: #f08086;
-  --ping-outage: #f0809c;
-  --upload: #66c9be;
-  --download: #8bb8ff;
-  --loss: #b5a1df;
-  --missing: #9aa9bd;
+  --selection: oklch(0.74 0.17 162);
+  --signal-1: #10b981;
+  --signal-2: #4ade80;
+  --signal-3: #a3e635;
+  --signal-4: #fde047;
+  --signal-5: #fb7185;
+  --ping-latency-excellent: #2fc66e;
+  --ping-latency-good: #9fe339;
+  --ping-latency-moderate: #cbd83a;
+  --ping-latency-elevated: #e2a928;
+  --ping-critical: #f47067;
+  --ping-outage: rgb(225 29 72 / 90%);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.552 0.016 285.938);
@@ -132,10 +131,6 @@
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
   --color-selection: var(--selection);
-  --color-upload: var(--upload);
-  --color-download: var(--download);
-  --color-loss: var(--loss);
-  --color-missing: var(--missing);
   --color-signal-1: var(--signal-1);
   --color-signal-2: var(--signal-2);
   --color-signal-3: var(--signal-3);
@@ -230,7 +225,7 @@
 
 /* iOS 15.4-16.3 can run the app but lacks Tailwind v4's modern color stack. */
 html.legacy-webkit {
-  --background: #f2f5f9;
+  --background: #e8edf4;
   --foreground: #17181c;
   --card: #f1f5f9;
   --card-foreground: #17181c;
@@ -244,7 +239,7 @@ html.legacy-webkit {
   --muted-foreground: #4d5260;
   --accent: #eef0f3;
   --accent-foreground: #303239;
-  --destructive: #c6484c;
+  --destructive: #dc2626;
   --destructive-foreground: #fafafa;
   --border: #d9dde3;
   --input: #d9dde3;
@@ -252,7 +247,7 @@ html.legacy-webkit {
 }
 
 html.legacy-webkit.dark {
-  --background: #18212c;
+  --background: #15161a;
   --foreground: #fafafa;
   --card: #27282d;
   --card-foreground: #fafafa;
@@ -266,53 +261,41 @@ html.legacy-webkit.dark {
   --muted-foreground: #d1d5db;
   --accent: #33343a;
   --accent-foreground: #fafafa;
-  --destructive: #f08086;
+  --destructive: #f87171;
   --destructive-foreground: #fafafa;
   --border: #3f4046;
   --input: #47484f;
   --ring: #777982;
 }
 
-/* Effective tokens live on the root, including teleported UI and chart readers.
-   Provider only changes the ten colors; the shared semantic palette is independent. */
-:root,
-html.legacy-webkit,
-html.legacy-webkit.dark {
-  --surface: var(--glass-light-card, #f1f5f9bd);
-  --control-surface: var(--glass-light-control, #e2e8f0c2);
-  --main-text: var(--glass-light-text, #10151c);
-  --secondary-text: var(--glass-light-muted-text, #374151);
-  --surface-border: var(--glass-light-border, #cbd5e199);
-  --surface-shadow: var(--glass-light-shadow);
-  --opaque-surface: var(--glass-light-opaque-card, #f1f5f9);
-  --opaque-control: var(--glass-light-opaque-control, #e2e8f0);
-  --surface-highlight: inset 0 1px 0 rgb(255 255 255 / 0.6);
+/* Explicit custom colors reach root/Portal consumers. Original presets keep
+   their v2.8.4 styling; this is color plumbing, not a shared material override. */
+html.palette-custom,
+html.palette-custom.dark {
+  --main-text: var(--glass-light-text);
+  --secondary-text: var(--glass-light-muted-text);
+  --control-surface: var(--glass-light-control);
+  --surface-border: var(--glass-light-border);
   --foreground: var(--main-text);
-  --card: var(--surface);
+  --muted-foreground: var(--secondary-text);
   --card-foreground: var(--main-text);
   --popover: var(--control-surface);
   --popover-foreground: var(--main-text);
-  --primary: var(--main-text);
-  --muted-foreground: var(--secondary-text);
-  --secondary: var(--control-surface);
   --secondary-foreground: var(--main-text);
-  --accent: var(--control-surface);
   --accent-foreground: var(--main-text);
   --border: var(--surface-border);
-  --input: var(--surface-border);
 }
-
-html.dark,
-html.legacy-webkit.dark {
-  --surface: var(--glass-dark-card, #0d111ad9);
-  --control-surface: var(--glass-dark-control, #101624d9);
-  --main-text: var(--glass-dark-text, #f8fafc);
-  --secondary-text: var(--glass-dark-muted-text, #d6dae4);
-  --surface-border: var(--glass-dark-border, #ffffff2e);
-  --surface-shadow: var(--glass-dark-shadow);
-  --opaque-surface: var(--glass-dark-opaque-card, #0d111a);
-  --opaque-control: var(--glass-dark-opaque-control, #101624);
-  --surface-highlight: inset 0 1px 0 rgb(255 255 255 / 0.06);
+html.palette-custom.dark {
+  --main-text: var(--glass-dark-text);
+  --secondary-text: var(--glass-dark-muted-text);
+  --control-surface: var(--glass-dark-control);
+  --surface-border: var(--glass-dark-border);
+}
+html.palette-custom :is(.node-card-info-surface, .node-card-ping-task-strip, .bg-slate-500\/5) {
+  background-color: var(--control-surface) !important;
+}
+html.palette-custom :is(.node-card, .bg-card, [data-slot='card']) :is(.text-foreground\/60, .text-foreground\/65, .text-foreground\/70, .text-foreground\/75) {
+  color: var(--secondary-text) !important;
 }
 
 html.color-vision-friendly {
@@ -335,15 +318,6 @@ html.color-vision-friendly {
   --signal-3: #009e73;
   --signal-4: #e69f00;
   --signal-5: #d55e00;
-  --ping-latency-excellent: var(--signal-1);
-  --ping-latency-good: var(--signal-2);
-  --ping-latency-moderate: var(--signal-3);
-  --ping-latency-elevated: var(--signal-4);
-  --ping-critical: var(--signal-5);
-  --ping-outage: #b54708;
-  --upload: #00684d;
-  --download: #0072b2;
-  --loss: #0072b2;
 }
 
 html.color-vision-friendly.dark {
@@ -366,39 +340,6 @@ html.color-vision-friendly.dark {
   --signal-3: #44c7a0;
   --signal-4: #e69f00;
   --signal-5: #f28e5b;
-  --ping-outage: #f28e5b;
-  --upload: #44c7a0;
-  --download: #56b4e9;
-  --loss: #56b4e9;
-}
-
-/* Filled signals retain the standard palette. Small semantic text needs a
-   darker light-mode tone on nested Control surfaces (target >= 4.5:1).
-   Explicit accessible colors keep priority; arbitrary custom surfaces cannot
-   be guaranteed to contrast with a fixed semantic palette. */
-html:not(.dark):not(.color-vision-friendly) .text-selection {
-  color: #205eaf;
-}
-html:not(.dark):not(.color-vision-friendly) .text-success {
-  color: #126f4c;
-}
-html:not(.dark):not(.color-vision-friendly) .text-warning {
-  color: #94560c;
-}
-html:not(.dark):not(.color-vision-friendly) .text-destructive {
-  color: #b4373e;
-}
-html:not(.dark):not(.color-vision-friendly) .text-info {
-  color: #12677e;
-}
-html:not(.dark):not(.color-vision-friendly) .text-upload {
-  color: #076f66;
-}
-html:not(.dark):not(.color-vision-friendly) .text-download {
-  color: #205eaf;
-}
-html:not(.dark):not(.color-vision-friendly) .text-missing {
-  color: #5e6b7d;
 }
 
 html.color-vision-friendly .ping-signal-pattern-2 {
@@ -454,26 +395,19 @@ html.legacy-webkit [data-slot='card'] {
 .node-card,
 .bg-card,
 [data-slot='card'] {
-  border-radius: 18px;
-  font-variant-numeric: tabular-nums;
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    color 160ms ease,
-    box-shadow 160ms ease;
-  /* One outer glass layer; nested panels below do not blur again. */
+  /* Keep the glass effect, but avoid making every card an overly expensive compositing layer. */
   background-color: var(--glass-light-card, rgb(241 245 249 / 0.74)) !important;
   border: 1px solid var(--glass-light-border, rgb(226 232 240 / 0.68)) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  box-shadow: var(--surface-highlight), var(--surface-shadow) !important;
+  backdrop-filter: blur(14px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(145%) !important;
+  box-shadow: var(--glass-light-shadow, 0 8px 28px rgb(15 23 42 / 0.18)) !important;
 }
 
 .node-card:hover,
 .bg-card:hover,
 [data-slot='card']:hover {
   background-color: var(--glass-light-card-hover, rgb(248 250 252 / 0.8)) !important;
-  box-shadow: var(--surface-highlight), var(--surface-shadow) !important;
+  box-shadow: var(--glass-light-shadow, 0 12px 38px rgb(15 23 42 / 0.2)) !important;
 }
 
 /* ===== 暗色模式 ===== */
@@ -484,7 +418,7 @@ html.legacy-webkit [data-slot='card'] {
   /* Dark mode: keep a translucent glass feel while improving foreground contrast */
   background-color: var(--glass-dark-card, rgb(10 14 22 / 0.82)) !important;
   border: 1px solid var(--glass-dark-border, rgb(255 255 255 / 0.18)) !important;
-  box-shadow: var(--surface-highlight), var(--surface-shadow) !important;
+  box-shadow: var(--glass-dark-shadow, 0 8px 30px rgb(0 0 0 / 0.48)) !important;
 }
 
 .dark .node-card:hover,
@@ -506,12 +440,11 @@ html:not(.dark) .node-card {
   border-color: var(--node-card-light-edge) !important;
 }
 
-.node-card .node-card-info-surface,
-.node-card .node-card-ping-task-strip {
-  background-color: var(--control-surface) !important;
-  border-radius: 11px;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+html:not(.dark) .node-card .node-card-info-surface,
+html:not(.dark) .node-card .node-card-ping-task-strip {
+  /* Reuse the configured control color verbatim, including its alpha. The
+     scoped override also covers loading/unconfigured strips and legacy panels. */
+  background-color: var(--glass-light-control, rgb(226 232 240 / 0.76)) !important;
   box-shadow: none;
 }
 
@@ -532,25 +465,25 @@ html:not(.dark) .node-card {
 .node-card .text-foreground\/60,
 .bg-card .text-foreground\/60,
 [data-slot='card'] .text-foreground\/60 {
-  color: var(--glass-light-muted-text, var(--color-muted-foreground)) !important;
+  color: color-mix(in oklch, var(--glass-light-text, var(--color-foreground)) 78%, transparent) !important;
 }
 
 .node-card .text-foreground\/65,
 .bg-card .text-foreground\/65,
 [data-slot='card'] .text-foreground\/65 {
-  color: var(--glass-light-muted-text, var(--color-muted-foreground)) !important;
+  color: color-mix(in oklch, var(--glass-light-text, var(--color-foreground)) 82%, transparent) !important;
 }
 
 .node-card .text-foreground\/70,
 .bg-card .text-foreground\/70,
 [data-slot='card'] .text-foreground\/70 {
-  color: var(--glass-light-muted-text, var(--color-muted-foreground)) !important;
+  color: color-mix(in oklch, var(--glass-light-text, var(--color-foreground)) 86%, transparent) !important;
 }
 
 .node-card .text-foreground\/75,
 .bg-card .text-foreground\/75,
 [data-slot='card'] .text-foreground\/75 {
-  color: var(--glass-light-muted-text, var(--color-muted-foreground)) !important;
+  color: color-mix(in oklch, var(--glass-light-text, var(--color-foreground)) 90%, transparent) !important;
 }
 
 .dark .node-card,
@@ -570,33 +503,33 @@ html:not(.dark) .node-card {
 .dark .node-card .text-foreground\/60,
 .dark .bg-card .text-foreground\/60,
 .dark [data-slot='card'] .text-foreground\/60 {
-  color: var(--glass-dark-muted-text, var(--color-muted-foreground)) !important;
+  color: color-mix(in oklch, var(--glass-dark-text, var(--color-foreground)) 78%, transparent) !important;
 }
 
 .dark .node-card .text-foreground\/65,
 .dark .bg-card .text-foreground\/65,
 .dark [data-slot='card'] .text-foreground\/65 {
-  color: var(--glass-dark-muted-text, var(--color-muted-foreground)) !important;
+  color: color-mix(in oklch, var(--glass-dark-text, var(--color-foreground)) 82%, transparent) !important;
 }
 
 .dark .node-card .text-foreground\/70,
 .dark .bg-card .text-foreground\/70,
 .dark [data-slot='card'] .text-foreground\/70 {
-  color: var(--glass-dark-muted-text, var(--color-muted-foreground)) !important;
+  color: color-mix(in oklch, var(--glass-dark-text, var(--color-foreground)) 86%, transparent) !important;
 }
 
 .dark .node-card .text-foreground\/75,
 .dark .bg-card .text-foreground\/75,
 .dark [data-slot='card'] .text-foreground\/75 {
-  color: var(--glass-dark-muted-text, var(--color-muted-foreground)) !important;
+  color: color-mix(in oklch, var(--glass-dark-text, var(--color-foreground)) 90%, transparent) !important;
 }
 
 /* ===== Header ===== */
 
 header {
   background-color: var(--glass-light-header, rgb(241 245 249 / 0.76)) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
+  backdrop-filter: blur(14px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(150%) !important;
   border-bottom: 1px solid rgb(226 232 240 / 0.58) !important;
 }
 
@@ -609,8 +542,8 @@ header {
 
 .bg-background {
   background-color: var(--glass-light-control, rgb(241 245 249 / 0.76)) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
+  backdrop-filter: blur(14px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(145%) !important;
 }
 
 .dark .bg-background {
@@ -620,11 +553,11 @@ header {
 /* ===== 小组件背景 ===== */
 
 .bg-slate-500\/5 {
-  background-color: var(--control-surface) !important;
+  background-color: rgb(255 255 255 / 0.15) !important;
 }
 
 .dark .bg-slate-500\/5 {
-  background-color: var(--control-surface) !important;
+  background-color: rgb(255 255 255 / 0.05) !important;
 }
 
 /* ===== NodeCard Ping fixed 20-bucket rails ===== */
@@ -847,11 +780,11 @@ header {
 }
 
 .node-card-ping-trend-label[data-node-ping-header='latency'] .node-card-ping-trend-dot {
-  background-color: var(--info);
+  background-color: color-mix(in srgb, var(--color-info) 82%, var(--color-foreground));
 }
 
 .node-card-ping-trend-label[data-node-ping-header='loss'] .node-card-ping-trend-dot {
-  background-color: var(--loss);
+  background-color: color-mix(in srgb, #a855f7 70%, var(--color-foreground));
 }
 
 .node-card-ping-bucket-grid {
@@ -894,9 +827,9 @@ header {
 }
 
 .node-card-ping-bucket-hitbox[data-node-ping-severity='no-sample'] > .node-card-ping-bucket-fill {
-  background-color: var(--missing);
+  background-color: var(--ping-outage);
   background-image: repeating-linear-gradient(135deg, transparent 0 2px, rgb(255 255 255 / 36%) 2px 3px);
-  box-shadow: 0 0 0 1px var(--missing) inset;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ping-outage) 70%, transparent) inset;
   opacity: 0.76;
 }
 
@@ -1052,69 +985,5 @@ header {
 
   .dark .bg-background {
     background-color: rgb(20 20 35 / 0.86) !important;
-  }
-}
-
-/* Nested cards, controls and bucket rails must not create extra blur layers. */
-.node-card :is(.bg-card, .bg-background, [data-slot='card']),
-[data-slot='card'] :is(.bg-card, .bg-background, [data-slot='card']) {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-[data-slot='tooltip-content']:not([data-header-tooltip]) {
-  background-color: var(--opaque-control);
-  color: var(--main-text);
-  border: 1px solid var(--surface-border);
-}
-
-[data-slot='tooltip-content']:not([data-header-tooltip]) > span > svg {
-  background-color: var(--opaque-control);
-  fill: var(--opaque-control);
-}
-
-/* Header hints intentionally remain light with dark text, even for dark pages. */
-.dark [data-header-tooltip] {
-  background-color: #e8edf4;
-  color: #111111;
-}
-
-.dark [data-header-tooltip] > span > svg {
-  background-color: #e8edf4;
-  fill: #e8edf4;
-}
-
-[data-general-card-key] {
-  border-radius: 14px;
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  html:root :is(.node-card, .bg-card, [data-slot='card']),
-  html:root :is(.node-card, .bg-card, [data-slot='card']):hover {
-    background-color: var(--opaque-surface) !important;
-  }
-  html:root :is(.bg-background, .node-card-info-surface, .node-card-ping-task-strip) {
-    background-color: var(--opaque-control) !important;
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  html:root :is(.node-card, .bg-card, [data-slot='card']),
-  html:root :is(.node-card, .bg-card, [data-slot='card']):hover {
-    background-color: var(--opaque-surface) !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-  html:root :is(.bg-background, .node-card-info-surface, .node-card-ping-task-strip) {
-    background-color: var(--opaque-control) !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :is(.node-card, .bg-card, [data-slot='card'], .bg-background, .node-card-ping-bucket-fill) {
-    transition: none !important;
-    animation: none !important;
   }
 }
