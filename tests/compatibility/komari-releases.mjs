@@ -17,7 +17,7 @@ const workerSha = '472d42cd35619cde31ba3378b3c1b1ed12a7687152e37b7d131b67902814d
 // SHA is mandatory: a moving same-name Release asset is never a trusted baseline.
 const previousOverride = process.env.PLUS_PREVIOUS_INSTALLER || process.env.PLUS_PREVIOUS_URL
 const previousPaletteMode = process.env.PLUS_PREVIOUS_PALETTE_MODE || 'personal'
-assert(['personal', 'site-only'].includes(previousPaletteMode))
+assert(['personal', 'site-only', 'site-readonly'].includes(previousPaletteMode))
 const oldSha = previousOverride ? process.env.PLUS_PREVIOUS_SHA : 'b044eefcd5df9124cdbb40061a9fab704c172142ac88df7cbf5d22930ba9c6a1'
 assert.match(oldSha || '', /^[a-f0-9]{64}$/)
 const versions = process.env.KOMARI_COMPAT_VERSIONS?.split(',') || ['1.6.0', '1.5.1', '1.5.0-fix1', '1.5.0', '1.4.3']
@@ -124,7 +124,17 @@ async function main() {
           }
           else {
             assert.equal(await page.evaluate(() => document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('app').appliedLocalPalette), undefined)
-            await expect(page.getByTestId('palette-entry')).toHaveCount(0)
+            if (previousPaletteMode === 'site-only') {
+              await expect(page.getByTestId('palette-entry')).toHaveCount(0)
+            }
+            else {
+              // Later same-version candidates already expose the public reader.
+              // Verify that real old UI instead of assuming the entry is hidden.
+              await page.getByTestId('palette-entry').click()
+              await expect(page.getByTestId('palette-readonly')).toBeVisible()
+              await expect(page.getByTestId('palette-save-site')).toHaveCount(0)
+              await page.getByRole('button', { name: '关闭', exact: true }).click()
+            }
             await expect(page.locator('.node-card').first()).toHaveCSS('color', 'rgb(225, 226, 227)')
           }
         }
