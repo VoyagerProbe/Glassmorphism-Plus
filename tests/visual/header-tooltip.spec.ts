@@ -75,6 +75,22 @@ for (const scenario of [
 
 test('Header Tooltip: keyboard order, dynamic tools and single action audit', async ({ page }) => {
   await installKomariFixture(page, { adminAccess: 'admin', hideEarth: true, visitorAuditEnabled: true })
+  await page.addInitScript(() => {
+    const attempts: string[] = []
+    Object.assign(window, { __headerAuditAttempts: attempts })
+    const originalFetch = window.fetch.bind(window)
+    window.fetch = (input, init) => {
+      if (typeof init?.body === 'string') {
+        try {
+          const request = JSON.parse(init.body)
+          if (request.method === 'public:recordVisitorEvent')
+            attempts.push(request.params.event)
+        }
+        catch { /* Non-JSON fetch is unrelated to this synthetic RPC check. */ }
+      }
+      return originalFetch(input, init)
+    }
+  })
   const events: Array<{ event: string, target?: string }> = []
   await page.route('**/rpc2', async (route) => {
     const request = route.request().postDataJSON()
@@ -121,13 +137,15 @@ test('Header Tooltip: keyboard order, dynamic tools and single action audit', as
   let adminRequests = 0
   await page.route('**/admin', (route) => {
     adminRequests++
-    // Keep this synthetic document alive to observe the existing fire-and-forget
-    // audit call; a real navigation can cancel its network delivery on unload.
+    // Keep the document alive. WebKit can cancel a fire-and-forget fetch when
+    // navigation starts, even if the navigation eventually returns 204.
     return route.fulfill({ status: 204 })
   })
   await actions.getByRole('button', { name: '后台管理', exact: true }).click()
   await expect.poll(() => adminRequests).toBe(1)
-  await expect.poll(() => events.filter(e => e.event === 'admin_entry_click')).toHaveLength(1)
+  // Assert exactly one real transport invocation, not guaranteed server delivery
+  // on unload. The non-navigating theme audit above still checks server receipt.
+  await expect.poll(() => page.evaluate(() => (window as any).__headerAuditAttempts.filter((event: string) => event === 'admin_entry_click'))).toEqual(['admin_entry_click'])
 })
 
 for (const width of [360, 390]) {

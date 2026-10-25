@@ -234,7 +234,11 @@ test('small semantic text meets contrast on actual default nested surfaces and l
 })
 
 test('thirty-node palette editing adds no monitoring request or interval and retains full density', async ({ page }, info) => {
-  test.setTimeout(60_000)
+  // This is a composite request/lifecycle guard, not a 60-second UI latency SLA.
+  // Linux WebKit trace snapshots of 3,600 buckets took ~60s across all eight
+  // cycles, exhausting the test before its final assertions. Keep every cycle,
+  // input and invariant; allow bounded runner overhead and report elapsed time.
+  test.setTimeout(90_000)
   const fixture = await frost(page, { nodeCount: 30, fakeTimers: true })
   await fixture.waitForPingRefreshSettled()
   const calls = fixture.timeline.length

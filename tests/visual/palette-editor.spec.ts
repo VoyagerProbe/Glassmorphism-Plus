@@ -186,7 +186,7 @@ test('logout revokes a site draft and an old delayed response cannot restore it 
   expect(fixture.getThemeSaveCount()).toBe(0)
 })
 
-test('advanced JSON import is atomic and editing either group never rewrites theme mode', async ({ page }) => {
+test('advanced JSON import is atomic and editing either group never rewrites theme mode', async ({ page }, info) => {
   await setup(page)
   await open(page)
   await page.getByText('高级：十键 JSON 导入／导出', { exact: true }).click()
@@ -199,8 +199,11 @@ test('advanced JSON import is atomic and editing either group never rewrites the
   await expect(page.getByTestId('palette-status')).toContainText('忽略 1')
   await expect(page.getByTestId('palette-panel')).toHaveCSS('color', 'rgb(17, 17, 17)')
   await expect(page.getByTestId('palette-entry')).toHaveCSS('color', 'rgb(17, 17, 17)')
+  await page.screenshot({ path: info.outputPath('palette-recovery-before.png'), fullPage: true })
   await page.getByRole('button', { name: '恢复全部柔雾预设' }).click()
   await expect(page.getByTestId('palette-preset')).toHaveValue('softFrost')
+  await expect(page.locator('.node-card').first()).toHaveCSS('color', 'rgb(17, 17, 17)')
+  await page.screenshot({ path: info.outputPath('palette-recovery-restored.png'), fullPage: true })
   await page.getByTestId('palette-apply-local').click()
   const stored = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY)
   expect(stored.colors).toEqual(SOFT_FROST_COLORS)

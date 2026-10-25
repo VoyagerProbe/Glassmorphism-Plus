@@ -15,7 +15,7 @@
 
 ## 验证状态
 
-开发验证使用官方 Windows 1.6.0、1.5.1、1.5.0-fix1、1.5.0、1.4.3，同一个中间候选 ZIP 全部通过：1.6.0 新安装、v2.8.4 同 profile 升级、既有 Worker、真实 CPU／Ping、HTTP／WebSocket 与服务重启后重连、后台在线保存及返回，以及配色和 Ping 的完整设置往返。Linux 同包实装与最终安装包由发布 CI 门槛继续核验；中间候选结果不冒充最终 ZIP 验收。
+官方 Linux 与 Windows 的 1.6.0、1.5.1、1.5.0-fix1、1.5.0、1.4.3 使用同一个候选 ZIP 验证：1.6.0 新安装、v2.8.4 同 profile 升级、既有 Worker、真实 CPU／Ping、HTTP／WebSocket 与服务重启后重连、后台在线保存及返回，以及配色和 Ping 的完整设置往返。逐项核对 771 个安装文件、动态资源及 MIME，未连接生产站点。Linux 实装报告由 [Komari Release Compatibility](https://github.com/VoyagerProbe/Glassmorphism-Plus/actions/workflows/komari-compatibility.yml) 保留；发布前另核对最终包与实测包的内容及 SHA，不用不同构建的通过结果代替。
 
 ### 官方旧表单的未知字段边界
 

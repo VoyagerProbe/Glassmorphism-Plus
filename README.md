@@ -150,15 +150,15 @@ v2.8.3 安装包原样附带既有 LICENSE，并校验内容一致性；已发�
 
 ## 🧩 兼容性
 
-| Komari 版本     | 状态                     | 说明                                                                                                                                                         |
-| :-------------- | :----------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1.6.0**       | **Verified with limits** | 官方 Windows 候选新安装、升级、配色／Ping 保存、HTTP／WebSocket 重连通过；Linux 与最终包以发布 CI 核验为门槛，见[记录](docs/compatibility/komari-1.6.0.md)。 |
-| **1.5.1**       | **Verified with limits** | 官方 Linux／Windows 同包实装、升级、两入口 Ping、HTTP／WebSocket、后台与 `/admin` 转址通过；沿用当前在线 Worker 合同。                                       |
-| **1.5.0-fix1**  | **Verified with limits** | 普通浏览与图表／配置通过；WebKit 手机仿真通过。同 origin 从 1.5.0 升级仍复现旧 Worker 导航限制。                                                             |
-| **1.5.0**       | **Verified with limits** | 普通浏览与图表／配置通过；已有官方 PWA Worker 的普通刷新可能仍返回默认主题。                                                                                 |
-| **1.4.3**       | **Verified**             | 官方二进制隔离实装；公开数据、Metric／Legacy、配置、HTTP／WebSocket 保护回归通过。                                                                           |
-| **1.2.6–1.4.2** | **Best effort**          | 保留能力检测与 Legacy fallback，但没有对每个中间版本执行完整回归矩阵。                                                                                       |
-| **1.2.5**       | **Not tested**           | 保留旧 records／Ping fallback；该版本缺少当前主要 `queryMetrics` 能力，不作完整兼容承诺。                                                                    |
+| Komari 版本     | 状态                     | 说明                                                                                                                                                                 |
+| :-------------- | :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1.6.0**       | **Verified with limits** | 官方 Linux／Windows 同包新安装、v2.8.4 升级、配色／Ping 保存、HTTP／WebSocket 重连与静态资源通过；实体 Safari 待实测，见[记录](docs/compatibility/komari-1.6.0.md)。 |
+| **1.5.1**       | **Verified with limits** | 官方 Linux／Windows 同包实装、升级、两入口 Ping、HTTP／WebSocket、后台与 `/admin` 转址通过；沿用当前在线 Worker 合同。                                               |
+| **1.5.0-fix1**  | **Verified with limits** | 普通浏览与图表／配置通过；WebKit 手机仿真通过。同 origin 从 1.5.0 升级仍复现旧 Worker 导航限制。                                                                     |
+| **1.5.0**       | **Verified with limits** | 普通浏览与图表／配置通过；已有官方 PWA Worker 的普通刷新可能仍返回默认主题。                                                                                         |
+| **1.4.3**       | **Verified**             | 官方二进制隔离实装；公开数据、Metric／Legacy、配置、HTTP／WebSocket 保护回归通过。                                                                                   |
+| **1.2.6–1.4.2** | **Best effort**          | 保留能力检测与 Legacy fallback，但没有对每个中间版本执行完整回归矩阵。                                                                                               |
+| **1.2.5**       | **Not tested**           | 保留旧 records／Ping fallback；该版本缺少当前主要 `queryMetrics` 能力，不作完整兼容承诺。                                                                            |
 
 兼容状态只描述已取得的测试证据，不是整个后端系列、所有数据库、反代或实体设备的保证。[v3.0.0 验证及旧后台未知字段边界](docs/compatibility/komari-1.6.0.md)与 [v2.8.4 历史同包验证](docs/compatibility/komari-1.5.1.md)分开记录；测试使用隔离 SQLite 与合成节点。1.6.0 已移除旧访客审计等能力，Plus 不恢复这些接口。上述官方 PWA 限制为[最初适配记录](docs/compatibility/komari-1.5.md)；当前同地址 Worker 兼容层及离线能力影响见[启动兼容说明](docs/compatibility/service-worker.md)，不清空浏览器数据。预发布请先在测试环境检查首页、节点详情、Ping、配色和后台；实体 iPhone Safari 留待用户实测。
 
