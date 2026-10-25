@@ -1074,6 +1074,13 @@ test.describe('v2 multi-Ping visual baselines', () => {
     await expect(strips).toHaveCount(3)
     await expect.poll(async () => strips.evaluateAll(elements => elements.map(element => element.getAttribute('data-node-ping-status'))))
       .toEqual(['data', 'data', 'data'])
+    // Keep density assertions independent of any reviewed visual baseline.
+    expect(await strips.evaluateAll(elements => elements.map(element => element.getBoundingClientRect().height)))
+      .toEqual([40, 40, 40])
+    const rails = primaryCard(page).locator('[data-node-ping-bars]')
+    await expect(rails).toHaveCount(6)
+    expect(await rails.evaluateAll(elements => elements.map(element => element.children.length)))
+      .toEqual([20, 20, 20, 20, 20, 20])
     await expect(page).toHaveScreenshot('v2-multiping-mini-3-dark-mobile.png', { fullPage: false })
   })
 
