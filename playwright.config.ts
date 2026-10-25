@@ -9,9 +9,9 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   workers: 1,
-  // End the runner before the 30-minute job limit so reports can be finalized
-  // and uploaded. This does not change per-test timeouts or retry semantics.
-  globalTimeout: process.env.CI ? 26 * 60_000 : undefined,
+  // Budget the complete 372-case suite, then leave four minutes before the
+  // 36-minute job limit for reports. Per-test deadlines/retries are unchanged.
+  globalTimeout: process.env.CI ? 32 * 60_000 : undefined,
   reporter: [
     ['list'],
     ['html', { outputFolder: 'playwright-report', open: 'never' }],

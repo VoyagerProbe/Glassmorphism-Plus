@@ -16,7 +16,7 @@ concurrency:
 jobs:
   screenshots:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 36
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -170,8 +170,10 @@ jobs:
 
   webkit-palette:
     runs-on: ubuntu-latest
-    # Both engine profiles include the full eight-cycle, 30-node stress case.
-    timeout-minutes: 15
+    # 122 cases across both WebKit projects include the eight-cycle, 30-node stress
+    # case and save-feedback lifecycle coverage. Allow setup/reporting headroom;
+    # per-test deadlines, assertions and zero retries remain unchanged.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
