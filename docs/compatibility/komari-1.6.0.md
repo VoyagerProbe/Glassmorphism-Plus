@@ -15,9 +15,11 @@
 
 ## 验证状态
 
-官方 Linux 与 Windows 的 1.6.0、1.5.1、1.5.0-fix1、1.5.0、1.4.3 使用同一个候选 ZIP 验证：1.6.0 新安装、v2.8.4 同 profile 升级、既有 Worker、真实 CPU／Ping、HTTP／WebSocket 与服务重启后重连、后台在线保存及返回，以及配色和 Ping 的完整设置往返。逐项核对 771 个安装文件、动态资源及 MIME，未连接生产站点。Linux 实装报告由 [Komari Release Compatibility](https://github.com/VoyagerProbe/Glassmorphism-Plus/actions/workflows/komari-compatibility.yml) 保留；发布前另核对最终包与实测包的内容及 SHA，不用不同构建的通过结果代替。
+官方 Linux 与 Windows 的 1.6.0、1.5.1、1.5.0-fix1、1.5.0、1.4.3 使用同一个候选 ZIP 验证：1.6.0 新安装、v2.8.4 同 profile 升级、既有 Worker、真实 CPU／Ping、HTTP／WebSocket 与服务重启后重连、后台在线保存及返回，以及配色和 Ping 的完整设置往返。逐项核对 770 个安装文件、动态资源及 MIME，未连接生产站点。Linux 实装报告由 [Komari Release Compatibility](https://github.com/VoyagerProbe/Glassmorphism-Plus/actions/workflows/komari-compatibility.yml) 保留；发布前另核对最终包与实测包的内容及 SHA，不用不同构建的通过结果代替。
 
-本轮同版本修订另在官方 1.6.0 验证旧 v3.0.0 → 修订 v3.0.0：不清理同 profile 的 Worker 或存储，旧候选本机配色记录原文保留，后台退役方案只读回退，直到明确保存才写入支持的值。Windows 初次准备旧包时曾遇到一次安装接口 HTTP 400；独立诊断运行未复现，未取得足以确认根因的响应正文，不将其描述为已修复的后端问题。测试现等待独立新安装页面的资源传输结束，再建立旧版本升级现场；不增加上传重试。
+本轮全站配色修订另在两种平台的官方 1.6.0 验证含个人配色功能的旧 v3.0.0 → 当前同版本包：先确认旧个人颜色确实生效，再保留同 profile 的 Worker、收藏和存储升级。新版忽略旧个人配色原文，按服务器自定义颜色显示，不自动写服务器；管理员保存后，独立访客刷新使用同一站点配色，旧记录仍原样保留。每次同版本导入均核对实际入口 hash 与安装文件，不能只凭版本号相同判断资源已经替换。
+
+上轮恢复旧外观时，Windows 初次准备旧包曾遇到一次安装接口 HTTP 400；独立诊断未复现，未取得足以确认根因的响应正文，不将其描述为已修复的后端问题。测试在独立新安装页面的资源传输结束后才建立旧版本升级现场；没有增加上传重试。本轮旧个人记录忽略测试与上轮退役方案只读回退测试分别记录，不互相替代。
 
 ### 官方旧表单的未知字段边界
 
