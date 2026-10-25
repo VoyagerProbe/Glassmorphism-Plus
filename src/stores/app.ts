@@ -4,7 +4,7 @@ import type { ByteDecimalsConfig } from '@/utils/helper'
 import type { GlassColorPreset, GlassCustomColors, PaletteConfig } from '@/utils/paletteColors'
 import { useStorageAsync } from '@vueuse/core'
 import { defineStore } from 'pinia'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onScopeDispose, ref, watch } from 'vue'
 import { getAuthSession, getAuthSessionRevision, requirePermission, setAuthSessionFromLogin, verifyLogin } from '@/services/auth.service'
 import { invalidatePaletteAdminSession, verifyPaletteAdminAccess } from '@/services/palette-admin.service'
 import { resolveManagedPalette } from '@/utils/glassTheme'
@@ -995,7 +995,32 @@ const useAppStore = defineStore('app', () => {
   // read, written, migrated or listened to. Other browser preferences are intact.
   const paletteDraft = ref<PaletteConfig | null>(null)
   const paletteOpen = ref(false)
-  const paletteNotice = ref('')
+  const paletteNoticeText = ref('')
+  const paletteNotice = computed(() => paletteNoticeText.value)
+  let paletteNoticeGeneration = 0
+  let paletteNoticeTimer: ReturnType<typeof setTimeout> | undefined
+
+  function clearPaletteNotice() {
+    paletteNoticeGeneration++
+    clearTimeout(paletteNoticeTimer)
+    paletteNoticeTimer = undefined
+    paletteNoticeText.value = ''
+  }
+
+  function showPaletteNotice(message: string, kind: 'saved' | 'status' = 'status') {
+    clearPaletteNotice()
+    paletteNoticeText.value = message
+    // Only the verified save/readback path emits saved. The store outlives the
+    // editor, while generation protects replacements from stale callbacks.
+    if (kind === 'saved') {
+      const generation = paletteNoticeGeneration
+      paletteNoticeTimer = setTimeout(() => {
+        if (generation === paletteNoticeGeneration)
+          clearPaletteNotice()
+      }, 5000)
+    }
+  }
+  onScopeDispose(clearPaletteNotice)
   const paletteAccessStatus = ref('')
   const paletteAdminRevision = ref<number | null>(null)
   const paletteAdminAllowed = computed(() => privateFeaturesAllowed.value
@@ -1014,7 +1039,7 @@ const useAppStore = defineStore('app', () => {
       revokePaletteAccess()
     paletteDraft.value = null
     paletteOpen.value = true
-    paletteNotice.value = ''
+    clearPaletteNotice()
   }
 
   function closePaletteEditor() {
@@ -1305,6 +1330,8 @@ const useAppStore = defineStore('app', () => {
     paletteAdminAllowed,
     paletteOpen,
     paletteNotice,
+    showPaletteNotice,
+    clearPaletteNotice,
     paletteAccessStatus,
     openPaletteEditor,
     closePaletteEditor,

@@ -146,7 +146,7 @@ export async function saveSitePalette(baseline: SitePaletteSnapshot, draft: Pale
         await probeAdmin(signal)
         const fresh = await readSnapshot(signal, baseline.sessionRevision, baseline.generation)
         if (!colorSettingsEqual(baseline.settings, fresh.settings))
-          throw new PaletteSaveError('站点配色已被其他操作修改。请重新读取站点配色后再编辑；当前草稿未提交。')
+          throw new PaletteSaveError('站点配色已被其他操作修改。请关闭并重新打开配色中心后再编辑；当前草稿未提交。')
         const merged = {
           ...fresh.settings,
           glassColorPreset: PALETTE_PRESET_VALUES[requested.preset],
@@ -166,7 +166,7 @@ export async function saveSitePalette(baseline: SitePaletteSnapshot, draft: Pale
   }
   catch (error) {
     if (postStarted && !(error instanceof PaletteSaveError && (error.status === 401 || error.status === 403)))
-      throw new PaletteSaveError('保存结果待确认：请求可能已经提交，请重新读取站点配色核对，不要重复提交。', undefined, true)
+      throw new PaletteSaveError('保存结果待确认：请求可能已经提交，请关闭并重新打开配色中心核对，不要重复提交。', undefined, true)
     throw error
   }
 }

@@ -4,7 +4,7 @@ import type { HomeQuickControlKey } from '@/stores/app'
 import type { NodeData } from '@/stores/nodes'
 import { Icon } from '@iconify/vue'
 import { useDebounceFn } from '@vueuse/core'
-import { computed, defineAsyncComponent, nextTick, onActivated, onDeactivated, onMounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onActivated, onDeactivated, onMounted, onScopeDispose, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DeferredRender from '@/components/DeferredRender.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
@@ -66,6 +66,8 @@ const denseNodeAppearThreshold = UI_CONFIG.motion.denseNodeAppearThreshold
 const denseNodePingAnimationThreshold = UI_CONFIG.motion.denseNodePingAnimationThreshold
 
 const appStore = useAppStore()
+onDeactivated(() => appStore.clearPaletteNotice())
+onScopeDispose(() => appStore.clearPaletteNotice())
 const nodesStore = useNodesStore()
 const router = useRouter()
 const route = useRoute()
@@ -471,7 +473,7 @@ const nodeCardGridClass = computed(() => {
     </template>
     <div v-if="appStore.paletteNotice" class="mx-4 my-3 rounded-xl bg-slate-100 p-3 text-sm text-slate-900 dark:bg-slate-800 dark:text-slate-100" role="status" data-testid="palette-notice">
       {{ appStore.paletteNotice }}
-      <button type="button" class="ml-2 underline" @click="appStore.paletteNotice = ''">
+      <button type="button" class="ml-2 underline" @click="appStore.clearPaletteNotice">
         关闭提示
       </button>
     </div>

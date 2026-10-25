@@ -6,9 +6,27 @@ import { CUSTOM_COLORS } from './fixtures/palette'
 const STORAGE_KEY = 'glassmorphism-plus:palette:v1:%2F'
 const config = JSON.stringify({ schemaVersion: 3, global: { threeNetworkEnabled: true, taskIds: [101, 202, 303] }, nodes: {} })
 const fields = ['Card', 'Control', 'Text', 'MutedText', 'Border'] as const
+const dialogs = new WeakMap<Page, string[]>()
+const pageErrors = new WeakMap<Page, string[]>()
 
-async function setup(page: Page, admin = true, dark = false) {
-  const fixture = await installKomariFixture(page, { themeShort: 'glassmorphism-plus', adminAccess: admin ? 'admin' : 'guest', hideEarth: true, nodeCount: 3, dark, preserveStorageOnReload: true, nodeCardPingDisplayConfigV3: config, nodeCardPingFixture: { thirdSharedTask: true } })
+test.beforeEach(({ page }) => {
+  const observed: string[] = []
+  dialogs.set(page, observed)
+  const errors: string[] = []
+  pageErrors.set(page, errors)
+  page.on('pageerror', error => errors.push(error.message))
+  page.on('dialog', async (dialog) => {
+    observed.push(dialog.type())
+    await dialog.dismiss()
+  })
+})
+test.afterEach(({ page }) => {
+  expect(dialogs.get(page), 'Palette actions never require a native confirmation').toEqual([])
+  expect(pageErrors.get(page), 'Palette lifecycle leaves no uncaught browser errors').toEqual([])
+})
+
+async function setup(page: Page, admin = true, dark = false, fakeTimers = false) {
+  const fixture = await installKomariFixture(page, { themeShort: 'glassmorphism-plus', adminAccess: admin ? 'admin' : 'guest', hideEarth: true, nodeCount: 3, dark, fakeTimers, preserveStorageOnReload: true, nodeCardPingDisplayConfigV3: config, nodeCardPingFixture: { thirdSharedTask: true } })
   fixture.setThemeSetting('glassColorPreset', '自定义')
   fixture.setThemeSetting('glassCustomColors', JSON.stringify(CUSTOM_COLORS))
   fixture.setThemeSetting('futureOpaqueSetting', { list: [1, false, null], nested: { preserve: 'fixture-only' } })
@@ -129,7 +147,6 @@ test('failed permission probe keeps public colors and monitoring; later verified
   await syncSession(page)
   await open(page)
   await page.locator('#palette-hex').fill('#10203080')
-  page.once('dialog', dialog => dialog.accept())
   await page.getByTestId('palette-save-site').click()
   await expect(page.getByTestId('palette-notice')).toContainText('全站配色已保存。')
   expect(fixture.getThemeSaveCount()).toBe(1)
@@ -181,6 +198,10 @@ test('every retired personal record is ignored without mutation, including stora
     localStorage.setItem('theme:favorite-nodes:v1', JSON.stringify(['synthetic-favorite']))
   })
   for (const raw of records) {
+    // Finish routed startup traffic before tearing down this document. WebKit
+    // can otherwise let an unloading RPC escape the fixture into the dev proxy.
+    await fixture.waitForPingRefreshSettled()
+    await page.waitForLoadState('networkidle')
     await page.evaluate(({ key, raw }) => raw === null ? localStorage.removeItem(key) : localStorage.setItem(key, raw), { key: STORAGE_KEY, raw })
     await page.reload()
     await open(page)
@@ -264,7 +285,7 @@ test('cancel reveals current managed values and external refresh does not erase 
   await expect(page.locator('.node-card').first()).toHaveCSS('background-color', 'rgba(234, 244, 255, 0.8)')
 })
 
-test('fresh full-site baseline and confirmed write preserve unrelated settings and ignore old local preference', async ({ page }) => {
+test('fresh full-site baseline and direct write preserve unrelated settings and ignore old local preference', async ({ page }) => {
   const fixture = await setup(page)
   const raw = JSON.stringify({ schemaVersion: 1, preset: 'midnight', colors: CUSTOM_COLORS })
   await page.evaluate(({ key, raw }) => localStorage.setItem(key, raw), { key: STORAGE_KEY, raw })
@@ -274,10 +295,6 @@ test('fresh full-site baseline and confirmed write preserve unrelated settings a
   await page.getByTestId('palette-field-Text').click()
   await expect(page.locator('#palette-hex')).toHaveValue('#123456')
   await page.locator('#palette-hex').fill('#273849')
-  page.once('dialog', dialog => dialog.dismiss())
-  await page.getByTestId('palette-save-site').click()
-  expect(fixture.getThemeSaveCount()).toBe(0)
-  page.once('dialog', dialog => dialog.accept())
   await page.getByTestId('palette-save-site').click()
   await expect(page.getByTestId('palette-notice')).toContainText('全站配色已保存。')
   const saved = fixture.getSavedThemeSettings()
@@ -301,7 +318,6 @@ test('retired managed preset reads safely without automatic save; existing genui
   await expect(page.getByTestId('palette-save-site')).toBeDisabled()
   expect(fixture.getSavedThemeSettings().glassColorPreset).toBe('softFrost')
   await page.getByTestId('palette-preset').selectOption('soft')
-  page.once('dialog', dialog => dialog.accept())
   await page.getByTestId('palette-save-site').click()
   await expect(page.getByTestId('palette-notice')).toContainText('全站配色已保存。')
   expect(fixture.getSavedThemeSettings().glassCustomColors).toBe(JSON.stringify(CUSTOM_COLORS))
@@ -313,16 +329,13 @@ test('conflict and permission loss cannot become successful saves or personal fa
   await open(page)
   await page.locator('#palette-hex').fill('#112233E6')
   fixture.setThemeSetting('glassColorPreset', '午夜')
-  page.once('dialog', dialog => dialog.accept())
   await page.getByTestId('palette-save-site').click()
   await expect(page.getByTestId('palette-status')).toContainText('已被其他操作修改')
-  await page.locator('.palette-advanced summary').click()
-  page.once('dialog', dialog => dialog.accept())
-  await page.getByRole('button', { name: '重新读取站点配色' }).click()
+  await page.getByRole('button', { name: '取消', exact: true }).click()
+  await open(page)
   await expect(page.getByTestId('palette-preset')).toHaveValue('midnight')
   await page.locator('#palette-hex').fill('#112233E6')
   fixture.setAdminAccess('forbidden')
-  page.once('dialog', dialog => dialog.accept())
   await page.getByTestId('palette-save-site').click()
   await expect(page.getByTestId('palette-notice')).toContainText('管理权限失效')
   await expect(page.getByTestId('palette-panel')).toHaveCount(0)
@@ -337,7 +350,6 @@ test('readback failure blocks duplicate submission and close cannot claim to und
   await open(page)
   await page.locator('#palette-hex').fill('#112233E6')
   await page.route('**/api/public', async route => fixture.getThemeSaveCount() > 0 ? route.fulfill({ status: 503, json: { status: 'error' } }) : route.fallback())
-  page.once('dialog', dialog => dialog.accept())
   await page.getByTestId('palette-save-site').click()
   await expect(page.getByTestId('palette-status')).toContainText('保存结果待确认')
   await expect(page.getByTestId('palette-save-site')).toBeDisabled()
@@ -351,7 +363,6 @@ test('logout removes preview; delayed permission result cannot reactivate it acr
   await open(page)
   await page.locator('#palette-hex').fill('#010203E6')
   const release = fixture.pauseAdminResponses()
-  page.once('dialog', dialog => dialog.accept())
   const pending = page.waitForRequest(request => request.url().endsWith('/api/admin/ping'))
   await page.getByTestId('palette-save-site').click()
   await pending
@@ -422,18 +433,17 @@ test('repeated save while permission check is pending submits once', async ({ pa
   await open(page)
   await page.locator('#palette-hex').fill('#112233E6')
   const release = fixture.pauseAdminResponses()
-  let confirmations = 0
-  page.on('dialog', async (dialog) => {
-    confirmations++
-    await dialog.accept()
-  })
   const pending = page.waitForRequest(request => request.url().endsWith('/api/admin/ping'))
   await page.getByTestId('palette-save-site').click()
   await pending
   await page.getByTestId('palette-save-site').dispatchEvent('click')
+  await page.getByTestId('palette-save-site').dispatchEvent('click')
+  await page.keyboard.press('Enter')
+  await expect(page.locator('#palette-hex')).toBeDisabled()
+  await expect(page.getByTestId('palette-save-site')).toBeDisabled()
   release()
   await expect(page.getByTestId('palette-notice')).toContainText('全站配色已保存。')
-  expect(confirmations).toBe(1)
+  expect(dialogs.get(page)).toEqual([])
   expect(fixture.getThemeSaveCount()).toBe(1)
 })
 
@@ -443,12 +453,16 @@ test('advanced JSON remains atomic, ignores unknown keys and preserves mode on c
   const mode = await page.evaluate(() => localStorage.getItem('themeMode'))
   await page.getByText('高级：十键 JSON 导入／导出', { exact: true }).click()
   await page.locator('#palette-json').fill('{"lightText":"#ffffff"}')
-  await page.getByRole('button', { name: '导入到草稿' }).click()
+  await page.getByRole('button', { name: '导入', exact: true }).click()
   await expect(page.getByTestId('palette-save-site')).toBeDisabled()
   await expect(page.locator('.node-card').first()).toHaveCSS('color', 'rgb(17, 17, 17)')
   await page.locator('#palette-json').fill(JSON.stringify({ ...CUSTOM_COLORS, lightText: '#FFFFFF', extra: 'discard' }))
-  await page.getByRole('button', { name: '导入到草稿' }).click()
+  await page.getByRole('button', { name: '导入', exact: true }).click()
   await expect(page.getByTestId('palette-status')).toContainText('忽略 1')
+  await expect(page.getByTestId('palette-preset')).toHaveValue('custom')
+  await expect(page.getByTestId('palette-save-site')).toBeEnabled()
+  await expect(page.getByTestId('palette-notice')).toHaveCount(0)
+  expect(fixture.getThemeSaveCount()).toBe(0)
   await expect(page.getByTestId('palette-panel')).toHaveCSS('color', 'rgb(24, 24, 27)')
   await expect(page.getByTestId('palette-entry')).toHaveCSS('color', 'rgb(24, 24, 27)')
   expect(await page.evaluate(() => Boolean(document.activeElement?.closest('#palette-center'))), 'JSON import keeps keyboard ownership inside the palette').toBe(true)
@@ -457,6 +471,195 @@ test('advanced JSON remains atomic, ignores unknown keys and preserves mode on c
   expect(await page.evaluate(() => localStorage.getItem('themeMode'))).toBe(mode)
   expect(fixture.getThemeSaveCount()).toBe(0)
 })
+
+test('feedback controls retain only atomic Import and ten-color Copy actions', async ({ page }) => {
+  const fixture = await setup(page)
+  await open(page)
+  await page.locator('.palette-advanced summary').click()
+  expect((await page.locator('.palette-advanced button').allTextContents()).map(value => value.trim())).toEqual(['导入', '复制当前十键配色'])
+  await expect(page.getByRole('button', { name: '导入', exact: true })).toHaveAccessibleName('导入')
+  await expect(page.getByRole('button', { name: /重新读取|重新加载|同步站点|刷新/ })).toHaveCount(0)
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (text: string) => {
+      (window as any).copiedPalette = text
+    } } })
+  })
+  await page.getByRole('button', { name: '复制当前十键配色', exact: true }).click()
+  expect(JSON.parse(await page.evaluate(() => (window as any).copiedPalette))).toEqual(CUSTOM_COLORS)
+  expect(fixture.getThemeSaveCount()).toBe(0)
+})
+
+async function pausePaletteClock(page: Page) {
+  await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000))
+}
+
+async function saveChangedColor(page: Page, value = '#273849') {
+  await page.getByTestId('palette-field-Text').click()
+  await page.locator('#palette-hex').fill(value)
+  await page.getByTestId('palette-save-site').click()
+  await expect(page.getByTestId('palette-notice')).toContainText('全站配色已保存。')
+  await expect(page.getByTestId('palette-panel')).toHaveCount(0)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+}
+
+for (const width of [360, 390]) {
+  for (const dark of [false, true]) {
+    test(`feedback direct save expires only after verified success plus 5000ms at ${width}px ${dark ? 'dark' : 'light'}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 844 })
+      const fixture = await setup(page, true, dark, true)
+      await open(page)
+      await pausePaletteClock(page)
+      const original = structuredClone(fixture.getSavedThemeSettings())
+      await saveChangedColor(page)
+      const saved = structuredClone(fixture.getSavedThemeSettings())
+      expect(fixture.getThemeSaveCount()).toBe(1)
+      for (const key of Object.keys(original).filter(key => !['glassColorPreset', 'glassCustomColors'].includes(key)))
+        expect(saved[key], key).toEqual(original[key])
+      await expect(page.getByTestId('palette-entry')).toBeFocused()
+      await page.clock.runFor(4999)
+      await expect(page.getByTestId('palette-notice')).toBeVisible()
+      await page.clock.runFor(1)
+      await expect(page.getByTestId('palette-notice')).toHaveCount(0)
+      await expect(page.getByTestId('palette-entry')).toBeFocused()
+      expect(fixture.getSavedThemeSettings()).toEqual(saved)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    })
+  }
+}
+
+test('feedback slow POST and readback start no success timer until both finish', async ({ page }) => {
+  const fixture = await setup(page, true, false, true)
+  await open(page)
+  await pausePaletteClock(page)
+  let releasePost!: () => void
+  let releaseRead!: () => void
+  const postGate = new Promise<void>((resolve) => {
+    releasePost = resolve
+  })
+  const readGate = new Promise<void>((resolve) => {
+    releaseRead = resolve
+  })
+  let posts = 0
+  let reads = 0
+  await page.route('**/api/admin/theme/settings?*', async (route) => {
+    posts++
+    await postGate
+    await route.fallback()
+  })
+  await page.route('**/api/public', async (route) => {
+    if (fixture.getThemeSaveCount()) {
+      reads++
+      await readGate
+    }
+    await route.fallback()
+  })
+  await page.locator('#palette-hex').fill('#12345680')
+  await page.getByTestId('palette-save-site').click()
+  await expect.poll(() => posts).toBe(1)
+  await page.clock.runFor(6000)
+  await expect(page.getByTestId('palette-notice')).toHaveCount(0)
+  releasePost()
+  await expect.poll(() => reads).toBe(1)
+  await page.clock.runFor(6000)
+  await expect(page.getByTestId('palette-notice')).toHaveCount(0)
+  await expect(page.getByTestId('palette-save-site')).toBeDisabled()
+  releaseRead()
+  await expect(page.getByTestId('palette-notice')).toContainText('全站配色已保存。')
+  await page.clock.runFor(4999)
+  await expect(page.getByTestId('palette-notice')).toBeVisible()
+  await page.clock.runFor(1)
+  await expect(page.getByTestId('palette-notice')).toHaveCount(0)
+  expect(fixture.getThemeSaveCount()).toBe(1)
+})
+
+test('feedback manual dismissal clears its timer without later mutation', async ({ page }) => {
+  await setup(page, true, false, true)
+  await open(page)
+  await pausePaletteClock(page)
+  await saveChangedColor(page)
+  await page.clock.runFor(2000)
+  await page.getByRole('button', { name: '关闭提示', exact: true }).click()
+  await expect(page.getByTestId('palette-notice')).toHaveCount(0)
+  await page.clock.runFor(10000)
+  await expect(page.getByTestId('palette-notice')).toHaveCount(0)
+})
+
+test('feedback second real save receives its own complete five seconds', async ({ page }) => {
+  const fixture = await setup(page, true, false, true)
+  await open(page)
+  await pausePaletteClock(page)
+  await saveChangedColor(page)
+  await page.clock.runFor(2000)
+  await open(page)
+  await saveChangedColor(page, '#345678')
+  await page.clock.runFor(3000)
+  await expect(page.getByTestId('palette-notice')).toBeVisible()
+  await page.clock.runFor(1999)
+  await expect(page.getByTestId('palette-notice')).toBeVisible()
+  await page.clock.runFor(1)
+  await expect(page.getByTestId('palette-notice')).toHaveCount(0)
+  expect(fixture.getThemeSaveCount()).toBe(2)
+})
+
+test('feedback replacement errors never inherit a success timer or keyword heuristic', async ({ page }) => {
+  await setup(page, true, false, true)
+  await open(page)
+  await pausePaletteClock(page)
+  await saveChangedColor(page)
+  await page.clock.runFor(2000)
+  // Exercise the same store action used by permission/pending-result producers;
+  // no fake lifecycle events, and the preceding success came from real UI save.
+  await page.evaluate(() => (document.querySelector('#app') as any).__vue_app__.config.globalProperties.$pinia._s.get('app').showPaletteNotice('保存失败：管理权限失效，结果待确认。'))
+  await page.clock.runFor(10000)
+  await expect(page.getByTestId('palette-notice')).toContainText('保存失败：管理权限失效，结果待确认。')
+})
+
+test('feedback notice lifecycle ends on home deactivation and store disposal', async ({ page }) => {
+  // Detail navigation also performs geolocation. Keep that unrelated lookup
+  // synthetic so this lifecycle gate never depends on public provider CORS.
+  await page.route('https://api.ip.sb/**', route => route.fulfill({
+    json: { latitude: 34, longitude: -118, city: 'Fixture', country_code: 'US' },
+  }))
+  await setup(page, true, false, true)
+  await open(page)
+  await pausePaletteClock(page)
+  await saveChangedColor(page)
+  await page.getByRole('button', { name: '查看节点 主控-洛杉矶 详情', exact: true }).click()
+  await expect(page).toHaveURL(new RegExp(`/instance/${PRIMARY_NODE_UUID}`))
+  await page.clock.runFor(10000)
+  await page.goBack()
+  await expect(page.locator('.node-card')).toHaveCount(3)
+  await expect(page.getByTestId('palette-notice')).toHaveCount(0)
+  await open(page)
+  await saveChangedColor(page, '#345678')
+  await page.evaluate(() => {
+    const app = (document.querySelector('#app') as any).__vue_app__.config.globalProperties.$pinia._s.get('app')
+    app.$dispose()
+  })
+  await expect(page.getByTestId('palette-notice')).toHaveCount(0)
+  await page.clock.runFor(10000)
+  await expect(page.getByTestId('palette-notice')).toHaveCount(0)
+})
+
+for (const status of [401, 403, 500]) {
+  test(`feedback rejected POST ${status} never reports success or expires its error`, async ({ page }) => {
+    const fixture = await setup(page, true, false, true)
+    await open(page)
+    await pausePaletteClock(page)
+    await page.route('**/api/admin/theme/settings?*', route => route.fulfill({ status, json: { status: 'error' } }))
+    await page.locator('#palette-hex').fill('#12345680')
+    await page.getByTestId('palette-save-site').click()
+    const error = status === 500 ? page.getByTestId('palette-status') : page.getByTestId('palette-notice')
+    await expect(error).toContainText(status === 500 ? '结果待确认' : '管理权限失效')
+    await page.clock.runFor(10000)
+    await expect(error).toBeVisible()
+    if (status === 500)
+      await expect(page.getByTestId('palette-notice')).toHaveCount(0)
+    else
+      await expect(page.getByTestId('palette-notice')).not.toContainText('全站配色已保存。')
+    expect(fixture.getThemeSaveCount()).toBe(0)
+  })
+}
 
 for (const width of [1440, 1280, 768, 390, 360, 320]) {
   for (const dark of [false, true]) {

@@ -23,13 +23,6 @@ function inputsFor(value: string): FieldInput {
   return { hex: serializeColor(color), rgb: `rgb(${color.r}, ${color.g}, ${color.b})`, alpha: String(Number((color.alphaByte / 255 * 100).toFixed(2))), errors: {} }
 }
 
-function confirmPaletteAction(message: string): boolean {
-  // Only explicit user actions reach this browser-owned confirmation. It stays
-  // readable even when the user's preview makes application text invisible.
-  // eslint-disable-next-line no-alert -- intentional single, native confirmation; no startup or background prompts
-  return window.confirm(message)
-}
-
 export function usePaletteEditor() {
   const app = useAppStore()
   const group = ref<'light' | 'dark'>(app.resolvedThemeMode)
@@ -130,7 +123,7 @@ export function usePaletteEditor() {
 
   function cancel() {
     if (savingSite.value || pendingConfirmation.value)
-      app.paletteNotice = '全站保存结果待确认；关闭不能撤回已发送请求，请稍后重新读取站点配色核对。'
+      app.showPaletteNotice('全站保存结果待确认；关闭不能撤回已发送请求，请稍后关闭并重新打开配色中心核对。')
     operation++
     invalidatePaletteAdminSession()
     app.closePaletteEditor()
@@ -159,7 +152,7 @@ export function usePaletteEditor() {
       if (currentOperation === operation) {
         status.value = error instanceof Error ? error.message : '无法读取站点配色。'
         if (error instanceof PaletteSaveError && (error.status === 401 || error.status === 403)) {
-          app.paletteNotice = '管理权限失效，配色草稿已撤销。'
+          app.showPaletteNotice('管理权限失效，配色草稿已撤销。')
           app.revokePaletteAccess()
         }
       }
@@ -170,15 +163,8 @@ export function usePaletteEditor() {
     }
   }
 
-  async function reloadSite() {
-    if (!busy.value && (!dirty.value || confirmPaletteAction('重新读取将放弃未保存的草稿，是否继续？')))
-      await loadSite()
-  }
-
   async function saveSite() {
     if (!ready.value || !siteBaseline.value || !dirty.value || invalid.value || busy.value || pendingConfirmation.value)
-      return
-    if (!confirmPaletteAction('保存全站配色？这会更新站点默认配色，其他浏览器正常刷新或重新打开后可见。'))
       return
     const currentOperation = ++operation
     busy.value = true
@@ -188,7 +174,7 @@ export function usePaletteEditor() {
       if (currentOperation !== operation)
         return
       app.publicSettings = snapshot.publicSettings
-      app.paletteNotice = '全站配色已保存。'
+      app.showPaletteNotice('全站配色已保存。', 'saved')
       savingSite.value = false
       cancel()
     }
@@ -198,7 +184,7 @@ export function usePaletteEditor() {
         status.value = error instanceof Error ? error.message : '保存失败，草稿保留。'
         pendingConfirmation.value = error instanceof PaletteSaveError && error.pendingConfirmation
         if (error instanceof PaletteSaveError && (error.status === 401 || error.status === 403)) {
-          app.paletteNotice = '管理权限失效，全站草稿已撤销。请重新登录并读取站点配色。'
+          app.showPaletteNotice('管理权限失效，全站草稿已撤销。请重新登录并打开配色中心。')
           app.revokePaletteAccess()
         }
       }
@@ -219,7 +205,7 @@ export function usePaletteEditor() {
   }, { flush: 'sync' })
   onScopeDispose(() => {
     if (savingSite.value || pendingConfirmation.value)
-      app.paletteNotice = '全站保存结果待确认；关闭不能撤回已发送请求，请稍后重新读取站点配色核对。'
+      app.showPaletteNotice('全站保存结果待确认；关闭不能撤回已发送请求，请稍后关闭并重新打开配色中心核对。')
     operation++
     invalidatePaletteAdminSession()
     app.closePaletteEditor()
@@ -253,7 +239,6 @@ export function usePaletteEditor() {
     importJson,
     copyJson,
     cancel,
-    reloadSite,
     saveSite,
   }
 }

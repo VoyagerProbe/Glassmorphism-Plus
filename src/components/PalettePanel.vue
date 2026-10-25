@@ -32,7 +32,6 @@ const {
   importJson,
   copyJson,
   cancel,
-  reloadSite,
   saveSite,
 } = usePaletteEditor()
 const heading = ref<HTMLElement | null>(null)
@@ -109,7 +108,7 @@ function moveField(event: KeyboardEvent) {
       </p>
       <details class="palette-advanced">
         <summary>高级：十键 JSON 导入／导出</summary>
-        <label for="palette-json">仅处理配色，不包含后台设置。导入为原子操作，非法内容不会部分生效。</label>
+        <label for="palette-json">仅处理配色，不包含后台设置。导入为原子操作，非法内容不会部分生效。导入后仅更新当前预览，点击保存后才会应用到全站。</label>
         <textarea id="palette-json" :value="jsonText" rows="8" spellcheck="false" :aria-invalid="Boolean(jsonError)" @input="jsonText = ($event.target as HTMLTextAreaElement).value; jsonDirty = true; jsonError = ''" />
         <p v-if="jsonError" class="palette-error" role="alert">
           {{ jsonError }}
@@ -119,13 +118,10 @@ function moveField(event: KeyboardEvent) {
         </p>
         <div class="palette-actions">
           <Button variant="outline" @click="importJson">
-            导入到草稿
+            导入
           </Button>
           <Button variant="outline" :disabled="invalid" @click="copyJson">
             复制当前十键配色
-          </Button>
-          <Button variant="outline" :disabled="busy" @click="reloadSite">
-            重新读取站点配色
           </Button>
         </div>
       </details>

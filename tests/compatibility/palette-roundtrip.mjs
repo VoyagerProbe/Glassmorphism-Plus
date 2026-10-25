@@ -7,6 +7,7 @@ const assetUrl = /\/assets\/[^?]+\.(?:js|css)(?:\?|$)/
 const paletteChunk = /PalettePanel-/
 const javascriptMime = /javascript/
 const stylesheetMime = /text\/css/
+const manualReloadAction = /重新读取|重新加载|同步站点/
 
 // Real production UI and official HTTP handlers, not intercepted fixture responses.
 export async function verifyPaletteRoundtrip({ page, lab, settings, version, files }) {
@@ -44,8 +45,17 @@ export async function verifyPaletteRoundtrip({ page, lab, settings, version, fil
   })
   await page.getByTestId('palette-entry').click()
   await expect(page.getByTestId('palette-status')).toContainText('已验证管理权限')
+  await page.locator('.palette-advanced summary').click()
+  assert.deepEqual((await page.locator('.palette-advanced button').allTextContents()).map(value => value.trim()), ['导入', '复制当前十键配色'])
+  await expect(page.getByRole('button', { name: manualReloadAction })).toHaveCount(0)
+  await page.locator('.palette-advanced summary').click()
+  const paletteDialogs = []
+  const rejectDialog = async (dialog) => {
+    paletteDialogs.push(dialog.type())
+    await dialog.dismiss()
+  }
+  page.on('dialog', rejectDialog)
   await page.getByTestId('palette-preset').selectOption('soft')
-  page.once('dialog', dialog => dialog.accept())
   await page.getByTestId('palette-save-site').click()
   await expect(page.getByTestId('palette-notice')).toContainText('全站配色已保存。')
   const presetSaved = await readSettings()
@@ -59,7 +69,6 @@ export async function verifyPaletteRoundtrip({ page, lab, settings, version, fil
   await page.getByRole('button', { name: '编辑浅色', exact: true }).click()
   await page.getByTestId('palette-field-Text').click()
   await page.locator('#palette-hex').fill('#234567')
-  page.once('dialog', dialog => dialog.accept())
   await page.getByTestId('palette-save-site').click()
   await expect(page.getByTestId('palette-notice')).toContainText('全站配色已保存。')
   const customSaved = await readSettings()
@@ -69,6 +78,11 @@ export async function verifyPaletteRoundtrip({ page, lab, settings, version, fil
   assert.equal(colors.lightText, '#234567')
   for (const key of Object.keys(before).filter(key => !['glassColorPreset', 'glassCustomColors'].includes(key)))
     assert.deepEqual(customSaved[key], before[key], `Custom save preserved: ${key}`)
+  // One real-clock smoke complements exact 4999/5000ms fixture-clock coverage.
+  await expect(page.getByTestId('palette-panel')).toHaveCount(0)
+  await expect(page.getByTestId('palette-notice')).toHaveCount(0, { timeout: 7000 })
+  assert.deepEqual(paletteDialogs, [], 'Palette saves must never open native dialogs')
+  page.off('dialog', rejectDialog)
   await visitorPage.reload()
   await expect(visitorPage.locator('.node-card').first()).toHaveCSS('color', 'rgb(35, 69, 103)')
   assert.equal(await visitorPage.evaluate(() => localStorage.getItem('glassmorphism-plus:palette:v1:%2F')), oldPersonal)
@@ -151,5 +165,5 @@ export async function verifyPaletteRoundtrip({ page, lab, settings, version, fil
   // Return the full original settings for the remaining installation assertions.
   await lab.request('/api/admin/theme/settings?theme=glassmorphism-plus', { auth: true, body: before })
   assert.deepEqual(await readSettings(), before)
-  return { presetCanonical: true, customTenKeyString: true, unknownSettingsPreserved: true, guestReadonlyWithoutAdminRequests: true, guestReloadUsesSitePalette: true, oldPersonalRecordIgnoredAndPreserved: true, officialFormRoundtrip: true, officialFormRemovedUnknownKeys, pingSavePreservesPalette: true, realLazyAssets: assets.length, directThemeRoutes: true, removedAuditNotCalled: version === '1.6.0' }
+  return { compactImportActions: true, noNativeSaveConfirmation: true, successNoticeExpiresAfterEditorCloses: true, presetCanonical: true, customTenKeyString: true, unknownSettingsPreserved: true, guestReadonlyWithoutAdminRequests: true, guestReloadUsesSitePalette: true, oldPersonalRecordIgnoredAndPreserved: true, officialFormRoundtrip: true, officialFormRemovedUnknownKeys, pingSavePreservesPalette: true, realLazyAssets: assets.length, directThemeRoutes: true, removedAuditNotCalled: version === '1.6.0' }
 }
