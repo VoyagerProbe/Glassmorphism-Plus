@@ -105,7 +105,7 @@ export async function loadSitePalette(): Promise<SitePaletteSnapshot> {
   })
 }
 
-/** Header eligibility only; opening and saving still revalidate independently. */
+/** Editor eligibility only; public viewing needs no probe. Editing/saving revalidate independently. */
 export async function verifyPaletteAdminAccess(): Promise<number> {
   const requestedGeneration = generation
   const session = await verifyLogin()

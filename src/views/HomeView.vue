@@ -58,6 +58,7 @@ const ProviderValuePanel = defineAsyncComponent(() => import('@/components/Provi
 const SnapshotExportPanel = defineAsyncComponent(() => import('@/components/SnapshotExportPanel.vue'))
 const NodePingBindingManager = defineAsyncComponent(() => import('@/components/NodePingBindingManager.vue'))
 const PalettePanel = defineAsyncComponent(() => import('@/components/PalettePanel.vue'))
+const PaletteReadOnlyPanel = defineAsyncComponent(() => import('@/components/PaletteReadOnlyPanel.vue'))
 
 const nodeItemStaggerMs = UI_CONFIG.motion.staggerMs
 const nodeItemStaggerLimit = UI_CONFIG.motion.staggerLimit
@@ -464,7 +465,10 @@ const nodeCardGridClass = computed(() => {
 
 <template>
   <div class="home-view" :class="!appStore.disablePageAnimation && 'home-view--motion'">
-    <PalettePanel v-if="appStore.paletteOpen" />
+    <template v-if="appStore.paletteOpen">
+      <PalettePanel v-if="appStore.paletteAdminAllowed" />
+      <PaletteReadOnlyPanel v-else />
+    </template>
     <div v-if="appStore.paletteNotice" class="mx-4 my-3 rounded-xl bg-slate-100 p-3 text-sm text-slate-900 dark:bg-slate-800 dark:text-slate-100" role="status" data-testid="palette-notice">
       {{ appStore.paletteNotice }}
       <button type="button" class="ml-2 underline" @click="appStore.paletteNotice = ''">

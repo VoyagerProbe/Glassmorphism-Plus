@@ -16,6 +16,8 @@ const workerSha = '472d42cd35619cde31ba3378b3c1b1ed12a7687152e37b7d131b67902814d
 // Explicit old candidates may be supplied for same-version revision gates.
 // SHA is mandatory: a moving same-name Release asset is never a trusted baseline.
 const previousOverride = process.env.PLUS_PREVIOUS_INSTALLER || process.env.PLUS_PREVIOUS_URL
+const previousPaletteMode = process.env.PLUS_PREVIOUS_PALETTE_MODE || 'personal'
+assert(['personal', 'site-only'].includes(previousPaletteMode))
 const oldSha = previousOverride ? process.env.PLUS_PREVIOUS_SHA : 'b044eefcd5df9124cdbb40061a9fab704c172142ac88df7cbf5d22930ba9c6a1'
 assert.match(oldSha || '', /^[a-f0-9]{64}$/)
 const versions = process.env.KOMARI_COMPAT_VERSIONS?.split(',') || ['1.6.0', '1.5.1', '1.5.0-fix1', '1.5.0', '1.4.3']
@@ -52,7 +54,7 @@ async function main() {
           const freshPage = await fresh.newPage()
           await freshPage.goto(lab.base)
           await expect(freshPage.locator('footer')).toContainText(`v${manifest.version} · VoyagerProbe`)
-          await expect(freshPage.getByTestId('palette-entry')).toHaveCount(0)
+          await expect(freshPage.getByTestId('palette-entry')).toBeVisible()
           assert.equal(await freshPage.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length), 0)
           // Finish the independent fresh-install check before replacing its files.
           // Closing while large lazy assets are still streaming can retain a file
@@ -117,7 +119,14 @@ async function main() {
           : null
         if (sameVersionRevision) {
           await page.reload()
-          await expect.poll(() => page.evaluate(() => document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('app').appliedLocalPalette?.colors.darkText)).toBe('#ABCDEF')
+          if (previousPaletteMode === 'personal') {
+            await expect.poll(() => page.evaluate(() => document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('app').appliedLocalPalette?.colors.darkText)).toBe('#ABCDEF')
+          }
+          else {
+            assert.equal(await page.evaluate(() => document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('app').appliedLocalPalette), undefined)
+            await expect(page.getByTestId('palette-entry')).toHaveCount(0)
+            await expect(page.locator('.node-card').first()).toHaveCSS('color', 'rgb(225, 226, 227)')
+          }
         }
         // Model an existing registration from a prior backend visit without clearing it.
         await page.evaluate(async () => {
@@ -148,7 +157,7 @@ async function main() {
         assert.equal(await page.evaluate(() => navigator.serviceWorker.controller?.scriptURL), `${lab.base}/sw.js`)
         if (sameVersionRevision) {
           assert.equal(await page.evaluate(() => localStorage.getItem('glassmorphism-plus:palette:v1:%2F')), retiredPreference)
-          await expect(page.getByTestId('palette-entry')).toHaveCount(0)
+          await expect(page.getByTestId('palette-entry')).toBeVisible()
           await expect(page.locator('.node-card').first()).toHaveCSS('color', 'rgb(225, 226, 227)')
           assert.equal(await page.evaluate(() => document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('app').appliedLocalPalette), undefined)
           assert.deepEqual((await rpc('public:getPublicSettings')).theme_settings, beforeSettings)

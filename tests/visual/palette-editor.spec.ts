@@ -18,6 +18,7 @@ async function setup(page: Page, admin = true, dark = false) {
 }
 
 async function open(page: Page) {
+  await expect.poll(() => page.evaluate(() => (document.querySelector('#app') as any).__vue_app__.config.globalProperties.$pinia._s.get('app').paletteAdminAllowed)).toBe(true)
   await page.getByTestId('palette-entry').click()
   await expect(page.getByTestId('palette-panel')).toBeVisible()
   await expect(page.getByTestId('palette-status')).toContainText('已验证管理权限')
@@ -31,22 +32,106 @@ async function syncSession(page: Page) {
   })
 }
 
-test('guests and denied sessions cannot open an editable palette, including direct internal calls', async ({ page }) => {
+test('guests and denied sessions open readonly without admin requests or direct-action preview bypass', async ({ page }) => {
   const requests: string[] = []
   page.on('request', request => requests.push(request.url()))
   const fixture = await setup(page, false)
-  await expect(page.getByTestId('palette-entry')).toHaveCount(0)
+  await expect(page.getByTestId('palette-entry')).toBeVisible()
   expect(requests.filter(url => url.includes('/api/admin/'))).toEqual([])
   const tryOpen = () => page.evaluate(() => (document.querySelector('#app') as any).__vue_app__.config.globalProperties.$pinia._s.get('app').openPaletteEditor())
   await tryOpen()
-  await expect(page.getByTestId('palette-panel')).toHaveCount(0)
+  await expect(page.getByTestId('palette-readonly')).toBeVisible()
+  await expect(page.getByTestId('palette-readonly-lightText')).toHaveText('#111111')
+  await expect(page.getByTestId('palette-panel').locator('input, select, textarea, [contenteditable="true"]')).toHaveCount(0)
+  await expect(page.getByTestId('palette-save-site')).toHaveCount(0)
+  await page.evaluate(() => {
+    const app = (document.querySelector('#app') as any).__vue_app__.config.globalProperties.$pinia._s.get('app')
+    app.paletteDraft = { preset: 'custom', colors: { ...app.managedPalette.colors, lightText: '#ABCDEF' } }
+  })
+  await expect(page.locator('.node-card').first()).toHaveCSS('color', 'rgb(17, 17, 17)')
+  await expect(page.getByTestId('palette-readonly-lightText')).toHaveText('#111111')
+  await page.keyboard.press('Enter')
+  expect(requests.filter(url => url.includes('/api/admin/'))).toEqual([])
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('palette-entry')).toBeFocused()
   fixture.setAdminAccess('forbidden')
   await syncSession(page)
   await expect.poll(() => requests.filter(url => url.endsWith('/api/admin/ping')).length).toBe(1)
-  await expect(page.getByTestId('palette-entry')).toHaveCount(0)
+  await expect(page.getByTestId('palette-entry')).toBeVisible()
+  await expect.poll(() => page.evaluate(() => (document.querySelector('#app') as any).__vue_app__.config.globalProperties.$pinia._s.get('app').paletteAccessStatus)).toContain('未能确认')
+  const adminRequests = requests.filter(url => url.includes('/api/admin/'))
   await tryOpen()
-  await expect(page.getByTestId('palette-panel')).toHaveCount(0)
+  await expect(page.getByTestId('palette-readonly')).toBeVisible()
+  await expect(page.getByTestId('palette-save-site')).toHaveCount(0)
+  await page.getByRole('button', { name: '关闭', exact: true }).click()
+  await page.getByTestId('palette-entry').click()
+  await expect(page.getByTestId('palette-readonly')).toBeVisible()
+  expect(requests.filter(url => url.includes('/api/admin/'))).toEqual(adminRequests)
   expect(fixture.getThemeSaveCount()).toBe(0)
+})
+
+for (const width of [360, 390]) {
+  for (const dark of [false, true]) {
+    test(`anonymous readonly palette fits ${width}px ${dark ? 'dark' : 'light'} without storage or monitoring changes`, async ({ page }, info) => {
+      await page.setViewportSize({ width, height: 844 })
+      const fixture = await setup(page, false, dark)
+      // Finish ordinary startup ingestion before attributing writes/traffic to
+      // opening the readonly view. Monitoring is intentionally still running.
+      await fixture.waitForPingRefreshSettled()
+      await page.waitForLoadState('networkidle')
+      const before = await page.evaluate(() => ({ ...localStorage }))
+      const requests: string[] = []
+      page.on('request', request => requests.push(request.url()))
+      const calls = fixture.timeline.length
+      const actions = page.getByTestId('header-actions').locator('button')
+      const labels = await actions.evaluateAll(buttons => buttons.map(button => button.getAttribute('aria-label')))
+      expect(labels.indexOf('配色中心')).toBe(labels.indexOf('延迟监测中心') + 1)
+      expect(labels.indexOf('后台管理')).toBe(labels.indexOf('配色中心') + 1)
+      await page.getByTestId('palette-entry').focus()
+      await page.keyboard.press('Enter')
+      await expect(page.getByTestId('palette-readonly')).toBeVisible()
+      await expect(page.locator('#palette-heading')).toBeFocused()
+      for (const [key, value] of Object.entries(CUSTOM_COLORS))
+        await expect(page.getByTestId(`palette-readonly-${key}`)).toHaveText(value)
+      await expect(page.getByTestId('palette-readonly').locator('dd')).toHaveCount(10)
+      await expect(page.getByTestId('palette-panel').locator('button')).toHaveCount(2)
+      await expect(page.getByTestId('palette-panel').locator('input,select,textarea,[role="radio"]')).toHaveCount(0)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+      await page.getByTestId('palette-panel').screenshot({ path: info.outputPath('readonly-palette.png') })
+      await page.getByRole('button', { name: '关闭', exact: true }).click()
+      await expect(page.getByTestId('palette-entry')).toBeFocused()
+      expect(await page.evaluate(() => ({ ...localStorage }))).toEqual(before)
+      expect(requests.filter(url => url.includes('/api/admin/'))).toEqual([])
+      expect(fixture.timeline.length).toBe(calls)
+      expect(fixture.getThemeSaveCount()).toBe(0)
+    })
+  }
+}
+
+test('failed permission probe keeps public colors and monitoring; later verified login edits without reload', async ({ page }) => {
+  const fixture = await setup(page, false)
+  const unavailable = (route: any) => route.fulfill({ status: 503, json: { status: 'error' } })
+  await page.route('**/api/admin/ping', unavailable)
+  fixture.setAdminAccess('admin')
+  await syncSession(page)
+  await page.getByTestId('palette-entry').click()
+  await expect(page.getByTestId('palette-readonly')).toBeVisible()
+  await expect(page.getByTestId('palette-panel')).toContainText('未能确认管理员权限')
+  await expect(page.locator('.node-card')).toHaveCount(3)
+  await expect(page.getByTestId('palette-save-site')).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await page.unroute('**/api/admin/ping', unavailable)
+  fixture.setAdminAccess('guest')
+  await syncSession(page)
+  await expect(page.getByTestId('palette-entry')).toBeVisible()
+  fixture.setAdminAccess('admin')
+  await syncSession(page)
+  await open(page)
+  await page.locator('#palette-hex').fill('#10203080')
+  page.once('dialog', dialog => dialog.accept())
+  await page.getByTestId('palette-save-site').click()
+  await expect(page.getByTestId('palette-notice')).toContainText('全站配色已保存。')
+  expect(fixture.getThemeSaveCount()).toBe(1)
 })
 
 test('compact site editor has five swatch radio choices and presets, keyboard navigation and only cancel/save', async ({ page }) => {
@@ -237,7 +322,9 @@ test('conflict and permission loss cannot become successful saves or personal fa
   await page.getByTestId('palette-save-site').click()
   await expect(page.getByTestId('palette-notice')).toContainText('管理权限失效')
   await expect(page.getByTestId('palette-panel')).toHaveCount(0)
-  await expect(page.getByTestId('palette-entry')).toHaveCount(0)
+  await expect(page.getByTestId('palette-entry')).toBeVisible()
+  await page.getByTestId('palette-entry').click()
+  await expect(page.getByTestId('palette-readonly')).toBeVisible()
   expect(fixture.getThemeSaveCount()).toBe(0)
 })
 
@@ -267,7 +354,11 @@ test('logout removes preview; delayed permission result cannot reactivate it acr
   fixture.setAdminAccess('guest')
   await syncSession(page)
   await expect(page.getByTestId('palette-panel')).toHaveCount(0)
-  await expect(page.getByTestId('palette-entry')).toHaveCount(0)
+  await expect(page.getByTestId('palette-entry')).toBeVisible()
+  await page.getByTestId('palette-entry').click()
+  await expect(page.getByTestId('palette-readonly')).toBeVisible()
+  await expect(page.getByTestId('palette-readonly-lightCard')).toHaveText('#F8FAFCE6')
+  await page.keyboard.press('Escape')
   fixture.setAdminAccess('admin')
   release()
   await syncSession(page)
@@ -317,7 +408,9 @@ test('session identity and active theme transitions discard preview without revi
     app.publicSettings = { ...app.publicSettings, theme: 'other-theme' }
   })
   await expect(page.getByTestId('palette-panel')).toHaveCount(0)
-  await expect(page.getByTestId('palette-entry')).toHaveCount(0)
+  await expect(page.getByTestId('palette-entry')).toBeVisible()
+  await page.getByTestId('palette-entry').click()
+  await expect(page.getByTestId('palette-readonly')).toBeVisible()
 })
 
 test('repeated save while permission check is pending submits once', async ({ page }) => {

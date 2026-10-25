@@ -17,6 +17,11 @@ export async function verifyPaletteRoundtrip({ page, lab, settings, version, fil
     assert.deepEqual(before[key], value, `Seed setting retained: ${key}`)
   const visitor = await page.context().browser().newContext()
   const visitorPage = await visitor.newPage()
+  const visitorAdminRequests = []
+  visitorPage.on('request', (request) => {
+    if (new URL(request.url()).pathname.startsWith('/api/admin/'))
+      visitorAdminRequests.push(request.url())
+  })
   await visitorPage.goto(lab.base)
   await visitorPage.getByTestId('theme-mode-light').click()
   const oldPersonal = await visitorPage.evaluate(() => {
@@ -27,7 +32,11 @@ export async function verifyPaletteRoundtrip({ page, lab, settings, version, fil
     return raw
   })
   await visitorPage.reload()
-  await expect(visitorPage.getByTestId('palette-entry')).toHaveCount(0)
+  await expect(visitorPage.getByTestId('palette-entry')).toBeVisible()
+  await visitorPage.getByTestId('palette-entry').click()
+  await expect(visitorPage.getByTestId('palette-readonly')).toBeVisible()
+  await expect(visitorPage.getByTestId('palette-save-site')).toHaveCount(0)
+  await visitorPage.getByRole('button', { name: '关闭', exact: true }).click()
   const auditCalls = []
   page.on('request', (request) => {
     if (request.postData()?.includes('public:recordVisitorEvent'))
@@ -64,7 +73,10 @@ export async function verifyPaletteRoundtrip({ page, lab, settings, version, fil
   await expect(visitorPage.locator('.node-card').first()).toHaveCSS('color', 'rgb(35, 69, 103)')
   assert.equal(await visitorPage.evaluate(() => localStorage.getItem('glassmorphism-plus:palette:v1:%2F')), oldPersonal)
   assert.equal(await visitorPage.evaluate(() => localStorage.getItem('palette_unrelated_sentinel')), 'preserved')
-  await expect(visitorPage.getByTestId('palette-entry')).toHaveCount(0)
+  await expect(visitorPage.getByTestId('palette-entry')).toBeVisible()
+  await visitorPage.getByTestId('palette-entry').click()
+  await expect(visitorPage.getByTestId('palette-readonly-lightText')).toHaveText('#234567')
+  assert.deepEqual(visitorAdminRequests, [], 'Public readonly palette never requests admin APIs')
   await visitor.close()
 
   // Inspect actual lazy-load requests and compare served bytes with the installer.
@@ -139,5 +151,5 @@ export async function verifyPaletteRoundtrip({ page, lab, settings, version, fil
   // Return the full original settings for the remaining installation assertions.
   await lab.request('/api/admin/theme/settings?theme=glassmorphism-plus', { auth: true, body: before })
   assert.deepEqual(await readSettings(), before)
-  return { presetCanonical: true, customTenKeyString: true, unknownSettingsPreserved: true, guestReloadUsesSitePalette: true, oldPersonalRecordIgnoredAndPreserved: true, officialFormRoundtrip: true, officialFormRemovedUnknownKeys, pingSavePreservesPalette: true, realLazyAssets: assets.length, directThemeRoutes: true, removedAuditNotCalled: version === '1.6.0' }
+  return { presetCanonical: true, customTenKeyString: true, unknownSettingsPreserved: true, guestReadonlyWithoutAdminRequests: true, guestReloadUsesSitePalette: true, oldPersonalRecordIgnoredAndPreserved: true, officialFormRoundtrip: true, officialFormRemovedUnknownKeys, pingSavePreservesPalette: true, realLazyAssets: assets.length, directThemeRoutes: true, removedAuditNotCalled: version === '1.6.0' }
 }

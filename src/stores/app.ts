@@ -996,6 +996,7 @@ const useAppStore = defineStore('app', () => {
   const paletteDraft = ref<PaletteConfig | null>(null)
   const paletteOpen = ref(false)
   const paletteNotice = ref('')
+  const paletteAccessStatus = ref('')
   const paletteAdminRevision = ref<number | null>(null)
   const paletteAdminAllowed = computed(() => privateFeaturesAllowed.value
     && paletteAdminRevision.value === authSessionRevision.value
@@ -1007,8 +1008,10 @@ const useAppStore = defineStore('app', () => {
   const glassCustomColors = computed<GlassCustomColors>(() => effectivePalette.value.colors)
 
   function openPaletteEditor() {
-    if (!paletteAdminAllowed.value || getAuthSessionRevision() !== paletteAdminRevision.value)
-      return
+    // Visibility/opening is public. Only the verified current session may mount
+    // the editor or contribute a preview; everyone else gets managed read-only colors.
+    if (paletteAdminAllowed.value && getAuthSessionRevision() !== paletteAdminRevision.value)
+      revokePaletteAccess()
     paletteDraft.value = null
     paletteOpen.value = true
     paletteNotice.value = ''
@@ -1021,6 +1024,7 @@ const useAppStore = defineStore('app', () => {
 
   function revokePaletteAccess() {
     paletteAdminRevision.value = null
+    paletteAccessStatus.value = ''
     invalidatePaletteAdminSession()
     closePaletteEditor()
   }
@@ -1035,12 +1039,18 @@ const useAppStore = defineStore('app', () => {
       return
     if (!getAuthSession().authenticated)
       return
+    paletteAccessStatus.value = '正在确认管理权限；当前仅可查看公开站点配色。'
     try {
       const verified = await verifyPaletteAdminAccess()
-      if (revision === authSessionRevision.value && revision === verified)
+      if (revision === authSessionRevision.value && revision === verified) {
         paletteAdminRevision.value = verified
+        paletteAccessStatus.value = ''
+      }
     }
-    catch { /* Public monitoring stays available; no editable palette entry. */ }
+    catch {
+      if (revision === authSessionRevision.value && theme === publicSettings.value?.theme)
+        paletteAccessStatus.value = '未能确认管理员权限，当前仅可查看公开站点配色。'
+    }
   }, { flush: 'sync', immediate: true })
 
   const colorVisionMode = computed<ColorVisionMode>(() => parseColorVisionMode(themeSettings.value.colorVisionMode))
@@ -1295,6 +1305,7 @@ const useAppStore = defineStore('app', () => {
     paletteAdminAllowed,
     paletteOpen,
     paletteNotice,
+    paletteAccessStatus,
     openPaletteEditor,
     closePaletteEditor,
     revokePaletteAccess,
