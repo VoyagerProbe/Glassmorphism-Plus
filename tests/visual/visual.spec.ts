@@ -1472,7 +1472,7 @@ for (const scenario of [
 }
 
 test('v2.7.1 header exposes the three direct theme choices before the unchanged visitor tools', async ({ page }) => {
-  await installKomariFixture(page, { adminAccess: 'admin' })
+  await installKomariFixture(page, { themeShort: 'glassmorphism-plus', adminAccess: 'admin' })
   await openStablePage(page)
 
   const expectedLabels = ['浅色模式', '北京时间自动', '深色模式', '显示首页工具', '延迟监测中心', '配色中心', '后台管理']
@@ -1613,6 +1613,7 @@ test('v2.7.1 Beijing automatic source keeps the single UTC+8 07:00-18:59 schedul
 
 test('v2.7.1 theme and visitor tools remain visible, ordered, and non-overlapping at 360-430px', async ({ page }) => {
   await installKomariFixture(page, {
+    themeShort: 'glassmorphism-plus',
     adminAccess: 'admin',
     siteName: 'MyVpsMonitor Long Mobile Header',
   })

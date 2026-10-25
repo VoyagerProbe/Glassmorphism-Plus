@@ -52,8 +52,7 @@ async function main() {
           const freshPage = await fresh.newPage()
           await freshPage.goto(lab.base)
           await expect(freshPage.locator('footer')).toContainText(`v${manifest.version} · VoyagerProbe`)
-          await freshPage.getByTestId('palette-entry').click()
-          await expect(freshPage.getByTestId('palette-panel')).toBeVisible()
+          await expect(freshPage.getByTestId('palette-entry')).toHaveCount(0)
           assert.equal(await freshPage.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length), 0)
           // Finish the independent fresh-install check before replacing its files.
           // Closing while large lazy assets are still streaming can retain a file
@@ -94,8 +93,6 @@ async function main() {
           return new Set(history.records?.map(record => record.task_id)).size
         }, { timeout: 15000, intervals: [250, 500, 1000] }).toBe(3)
         const settings = { themeMode: 'dark', themeColor: '#00c99c', hideEarth: true, disablePageAnimation: true, rpcTransportMode: 'http', glassColorPreset: '自定义', glassCustomColors: '{"lightText":"#123456","darkText":"#E1E2E3"}', backgroundEnabled: false, lightBackgroundUrl: 'https://example.invalid/preserved.png', colorVisionMode: '色觉友好', futureOpaqueSetting: { array: [false, null, 17], nested: { preserve: 'synthetic' } }, nodeCardPingDisplayConfigV3: JSON.stringify({ schemaVersion: 3, global: { threeNetworkEnabled: true, taskIds: tasks }, nodes: {} }) }
-        if (sameVersionRevision)
-          settings.glassColorPreset = 'softFrost'
         const saveSettings = body => lab.request('/api/admin/theme/settings?theme=glassmorphism-plus', { auth: true, body })
         await saveSettings(settings)
         const beforeSettings = (await rpc('public:getPublicSettings')).theme_settings
@@ -113,14 +110,14 @@ async function main() {
         const retiredPreference = sameVersionRevision
           ? await page.evaluate(() => {
               const app = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('app')
-              const raw = JSON.stringify({ schemaVersion: 1, preset: 'softFrost', colors: app.managedPalette.colors })
+              const raw = JSON.stringify({ schemaVersion: 1, preset: 'custom', colors: { ...app.managedPalette.colors, darkText: '#ABCDEF' } })
               localStorage.setItem('glassmorphism-plus:palette:v1:%2F', raw)
               return raw
             })
           : null
         if (sameVersionRevision) {
           await page.reload()
-          await expect.poll(() => page.evaluate(() => document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('app').appliedLocalPalette?.preset)).toBe('softFrost')
+          await expect.poll(() => page.evaluate(() => document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('app').appliedLocalPalette?.colors.darkText)).toBe('#ABCDEF')
         }
         // Model an existing registration from a prior backend visit without clearing it.
         await page.evaluate(async () => {
@@ -151,10 +148,9 @@ async function main() {
         assert.equal(await page.evaluate(() => navigator.serviceWorker.controller?.scriptURL), `${lab.base}/sw.js`)
         if (sameVersionRevision) {
           assert.equal(await page.evaluate(() => localStorage.getItem('glassmorphism-plus:palette:v1:%2F')), retiredPreference)
-          await page.getByTestId('palette-entry').click()
-          await expect(page.getByTestId('palette-preset')).toHaveValue('site-default')
-          await expect(page.locator('#palette-hex')).toHaveValue('#0D111AD9')
-          await page.getByRole('button', { name: '取消', exact: true }).click()
+          await expect(page.getByTestId('palette-entry')).toHaveCount(0)
+          await expect(page.locator('.node-card').first()).toHaveCSS('color', 'rgb(225, 226, 227)')
+          assert.equal(await page.evaluate(() => document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('app').appliedLocalPalette), undefined)
           assert.deepEqual((await rpc('public:getPublicSettings')).theme_settings, beforeSettings)
         }
         await expect.poll(() => page.evaluate(uuid => document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('nodes').nodes.find(n => n.uuid === uuid)?.cpu, client.uuid)).toBe(12)

@@ -26,7 +26,7 @@ for (const scenario of [
   { name: 'automatic day', mode: 'beijing' as const, dark: false, time: '2026-09-04T00:30:00Z' },
 ]) {
   test(`Header Tooltip: ${scenario.name} uses one custom bubble without a native title`, async ({ page }, info) => {
-    await installKomariFixture(page, { managedThemeMode: scenario.mode, clockNow: scenario.time, hideEarth: true, adminAccess: 'admin' })
+    await installKomariFixture(page, { themeShort: 'glassmorphism-plus', managedThemeMode: scenario.mode, clockNow: scenario.time, hideEarth: true, adminAccess: 'admin' })
     await page.goto('/')
     for (const name of ['显示首页工具', '延迟监测中心', '配色中心', '后台管理']) {
       const button = page.getByRole('button', { name, exact: true })
@@ -74,7 +74,7 @@ for (const scenario of [
 }
 
 test('Header Tooltip: keyboard order, dynamic tools and single action audit', async ({ page }) => {
-  await installKomariFixture(page, { adminAccess: 'admin', hideEarth: true, visitorAuditEnabled: true })
+  await installKomariFixture(page, { themeShort: 'glassmorphism-plus', adminAccess: 'admin', hideEarth: true, visitorAuditEnabled: true })
   await page.addInitScript(() => {
     const attempts: string[] = []
     Object.assign(window, { __headerAuditAttempts: attempts })
@@ -153,7 +153,7 @@ for (const width of [360, 390]) {
     const context = await browser.newContext({ baseURL, viewport: { width, height: 844 }, hasTouch: true, isMobile: true })
     const page = await context.newPage()
     try {
-      await installKomariFixture(page, { hideEarth: true, adminAccess: 'admin' })
+      await installKomariFixture(page, { themeShort: 'glassmorphism-plus', hideEarth: true, adminAccess: 'admin' })
       await page.goto('/')
       await page.getByTestId('theme-mode-dark').tap()
       await expect(page.getByTestId('theme-mode-dark')).toHaveAttribute('aria-pressed', 'true')
@@ -188,8 +188,8 @@ test('Header Tooltip: hidden guest entries and detail route stay scoped', async 
   await installKomariFixture(page, { hideEarth: true, hideAdminEntryWhenLoggedOut: true, hidePingTaskBindingEntry: true })
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Komari Visual Lab', exact: true })).toBeVisible()
-  await expect(page.getByTestId('header-actions').locator('button')).toHaveCount(5)
-  await expect(page.getByTestId('palette-entry')).toBeVisible()
+  await expect(page.getByTestId('header-actions').locator('button')).toHaveCount(4)
+  await expect(page.getByTestId('palette-entry')).toHaveCount(0)
   await expect(page.getByTestId('ping-center-entry')).toHaveCount(0)
   await expect(page.getByRole('button', { name: '后台管理', exact: true })).toHaveCount(0)
   await page.goto(`/instance/${PRIMARY_NODE_UUID}`)

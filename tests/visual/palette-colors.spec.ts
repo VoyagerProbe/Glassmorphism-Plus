@@ -36,37 +36,10 @@ test('palette byte parsers preserve alpha and reject non-colors without clamping
   expect(() => serializeColor({ r: 256, g: 0, b: 0, alphaByte: 255 })).toThrow()
 })
 
-test('reduced-transparency compositing preserves chosen RGB and storage rejects future or corrupt data without rewriting it', async () => {
+test('reduced-transparency compositing preserves chosen RGB', () => {
   expect(opaqueColorOver('#123456FF', '#FFFFFF')).toBe('#123456')
   expect(opaqueColorOver('#12345600', '#FFFFFF')).toBe('#FFFFFF')
   expect(opaqueColorOver('#00000080', '#FFFFFF')).toBe('#7F7F7F')
-  const { paletteStorageKey, readPalettePreference, writePalettePreference } = await import('../../src/services/palette-preference.service')
-  const key = paletteStorageKey('/tenant/')
-  expect(key).not.toBe(paletteStorageKey('/'))
-  const data = new Map<string, string>()
-  const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
-  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
-    getItem: (name: string) => data.get(name) ?? null,
-    setItem: (name: string, value: string) => data.set(name, value),
-    removeItem: (name: string) => data.delete(name),
-  } })
-  try {
-    for (const raw of ['{', '[]', JSON.stringify({ schemaVersion: 2, ...customPalette() }), JSON.stringify({ schemaVersion: 1, preset: 'custom', colors: {} })]) {
-      data.set(key, raw)
-      expect(readPalettePreference(key)).toBeNull()
-      expect(data.get(key)).toBe(raw)
-    }
-    expect(writePalettePreference(key, customPalette())).toBe(true)
-    expect(readPalettePreference(key)).toEqual(customPalette())
-    data.set('unrelated', 'preserved')
-    expect(writePalettePreference(key, null)).toBe(true)
-    expect([...data.entries()]).toEqual([['unrelated', 'preserved']])
-  }
-  finally {
-    if (original)
-      Object.defineProperty(globalThis, 'localStorage', original)
-    else Reflect.deleteProperty(globalThis, 'localStorage')
-  }
 })
 
 test('complete JSON import is atomic, allowlisted and semantically round trips', () => {

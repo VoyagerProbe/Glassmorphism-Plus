@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PaletteChoice } from '@/composables/usePaletteEditor'
 import { Icon } from '@iconify/vue'
-import { onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { usePaletteEditor } from '@/composables/usePaletteEditor'
@@ -12,7 +12,6 @@ const {
   group,
   field,
   fields,
-  scope,
   draft,
   selectedPreset,
   selectedKey,
@@ -25,27 +24,38 @@ const {
   busy,
   pendingConfirmation,
   invalid,
+  ready,
+  dirty,
   setPreset,
   updateInput,
   normalizeInput,
   importJson,
   copyJson,
   cancel,
-  applyLocal,
-  changeScope,
   reloadSite,
   saveSite,
 } = usePaletteEditor()
 const heading = ref<HTMLElement | null>(null)
 const inputKinds = ['hex', 'rgb', 'alpha'] as const
 onMounted(() => heading.value?.focus({ preventScroll: true }))
+// Disabling the focused Save control can send focus to body in Chromium.
+// Keep Escape usable while loading/saving, without stealing another control's focus.
+watch(busy, async () => {
+  await nextTick()
+  if (app.paletteOpen && document.activeElement === document.body)
+    heading.value?.focus({ preventScroll: true })
+})
 
-async function selectScope(event: Event) {
-  const select = event.target as HTMLSelectElement
-  const target = select.value as 'local' | 'site'
-  select.value = scope.value
-  await changeScope(target)
-  select.value = scope.value
+function moveField(event: KeyboardEvent) {
+  const direction = ['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : ['ArrowLeft', 'ArrowUp'].includes(event.key) ? -1 : 0
+  if (!direction && event.key !== 'Home' && event.key !== 'End')
+    return
+  event.preventDefault()
+  const index = fields.value.findIndex(item => item.key === field.value)
+  const target = event.key === 'Home' ? 0 : event.key === 'End' ? fields.value.length - 1 : (index + direction + fields.value.length) % fields.value.length
+  field.value = fields.value[target]!.key
+  const buttons = (event.currentTarget as HTMLElement).querySelectorAll<HTMLButtonElement>('[role="radio"]')
+  buttons[target]?.focus()
 }
 </script>
 
@@ -56,28 +66,18 @@ async function selectScope(event: Event) {
         <h2 id="palette-heading" ref="heading" tabindex="-1">
           配色中心
         </h2>
-        <p>保存前仅预览，关闭不会保留未保存修改。</p>
+        <p>编辑全站配色，保存前仅预览；关闭会放弃未保存修改。</p>
       </div>
       <Button variant="ghost" size="icon" aria-label="关闭配色中心并取消草稿" @click="cancel">
         <Icon icon="lucide:x" />
       </Button>
     </div>
-    <label v-if="app.privateFeaturesAllowed" class="palette-select">修改范围
-      <select :value="scope" :disabled="busy" data-testid="palette-scope" @change="selectScope">
-        <option value="local">仅自己（当前浏览器）</option>
-        <option value="site">全站默认（管理员）</option>
-      </select>
-    </label>
-    <p class="palette-hint">
-      {{ scope === 'local' ? '仅对当前浏览器生效。' : '修改站点默认配色，保存时需确认。' }}
-    </p>
-    <fieldset :disabled="busy" class="palette-editing">
+    <fieldset :disabled="busy || !ready" class="palette-editing">
       <legend class="sr-only">
         编辑配色草稿
       </legend>
       <label class="palette-select">配色方案
         <select :value="selectedPreset" data-testid="palette-preset" @change="setPreset(($event.target as HTMLSelectElement).value as PaletteChoice)">
-          <option v-if="scope === 'local'" value="site-default">站点默认</option>
           <option v-for="(label, preset) in PALETTE_PRESET_VALUES" :key="preset" :value="preset">{{ label }}</option>
         </select>
       </label>
@@ -88,12 +88,14 @@ async function selectScope(event: Event) {
         <Button variant="outline" :aria-pressed="group === 'dark'" @click="group = 'dark'">
           编辑深色
         </Button>
+        <span>页面当前为{{ app.resolvedThemeMode === 'dark' ? '深色' : '浅色' }}；编辑色组不会切换模式。</span>
       </div>
-      <label class="palette-select">调整项目
-        <select v-model="field" data-testid="palette-field">
-          <option v-for="item in fields" :key="item.key" :value="item.key">{{ item.label }}</option>
-        </select>
-      </label>
+      <div class="palette-fields" role="radiogroup" aria-label="配色项目" @keydown="moveField">
+        <Button v-for="item in fields" :key="item.key" type="button" variant="outline" role="radio" :aria-checked="field === item.key" :tabindex="field === item.key ? 0 : -1" :data-testid="`palette-field-${item.key}`" @click="field = item.key">
+          <span class="palette-swatch" aria-hidden="true" :style="{ backgroundColor: draft.colors[`${group}${item.key}`] }" />
+          {{ item.label }}
+        </Button>
+      </div>
       <div class="palette-inputs">
         <label>色盘<input type="color" :value="pickerColor" aria-label="色盘（保留透明度）" data-testid="palette-picker" @input="updateInput('hex', ($event.target as HTMLInputElement).value)"></label>
         <label v-for="kind in inputKinds" :key="kind" :for="`palette-${kind}`">
@@ -122,7 +124,7 @@ async function selectScope(event: Event) {
           <Button variant="outline" :disabled="invalid" @click="copyJson">
             复制当前十键配色
           </Button>
-          <Button v-if="scope === 'site'" variant="outline" :disabled="busy" @click="reloadSite">
+          <Button variant="outline" :disabled="busy" @click="reloadSite">
             重新读取站点配色
           </Button>
         </div>
@@ -141,8 +143,8 @@ async function selectScope(event: Event) {
       <Button variant="outline" @click="cancel">
         取消
       </Button>
-      <Button :disabled="invalid || busy || (scope === 'site' && pendingConfirmation)" :data-testid="scope === 'local' ? 'palette-apply-local' : 'palette-save-site'" @click="scope === 'local' ? applyLocal() : saveSite()">
-        {{ scope === 'local' ? '保存' : '保存全站' }}
+      <Button :disabled="!ready || !dirty || invalid || busy || pendingConfirmation" data-testid="palette-save-site" @click="saveSite">
+        保存
       </Button>
     </div>
   </section>
@@ -208,6 +210,7 @@ async function selectScope(event: Event) {
   margin: 14px 0;
 }
 .palette-actions,
+.palette-fields,
 .palette-groups {
   display: flex;
   flex-wrap: wrap;
@@ -225,8 +228,21 @@ async function selectScope(event: Event) {
   min-height: 36px;
 }
 .palette-panel :deep([aria-pressed='true']),
+.palette-panel :deep([aria-checked='true']),
 .palette-panel :deep([data-variant='default']) {
   border-color: var(--editor-focus) !important;
+}
+.palette-fields :deep(button) {
+  white-space: nowrap;
+  gap: 6px;
+  padding: 5px 9px;
+}
+.palette-swatch {
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--editor-muted);
+  border-radius: 50%;
 }
 .palette-panel :deep(:focus-visible) {
   outline: 2px solid var(--editor-focus);

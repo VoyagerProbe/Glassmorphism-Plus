@@ -5,7 +5,7 @@ import { installKomariFixture, PRIMARY_NODE_UUID } from './fixtures/komari'
 const config = JSON.stringify({ schemaVersion: 3, global: { threeNetworkEnabled: true, taskIds: [101, 202, 303] }, nodes: {} })
 
 async function originalTheme(page: Page, options: Parameters<typeof installKomariFixture>[1] = {}) {
-  const fixture = await installKomariFixture(page, { hideEarth: true, nodeCount: 3, nodeCardPingDisplayConfigV3: config, nodeCardPingFixture: { thirdSharedTask: true }, ...options })
+  const fixture = await installKomariFixture(page, { themeShort: 'glassmorphism-plus', adminAccess: 'admin', hideEarth: true, nodeCount: 3, nodeCardPingDisplayConfigV3: config, nodeCardPingFixture: { thirdSharedTask: true }, ...options })
   fixture.setThemeSetting('glassColorPreset', '翡翠')
   await page.goto('/')
   // Thirty real cards render 3,600 buckets; wait for that DOM rather than
@@ -70,7 +70,8 @@ for (const dark of [false, true]) {
     await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))))
     await page.screenshot({ path: info.outputPath(`home-original-${dark ? 'dark' : 'light'}.png`), fullPage: true })
     await page.getByTestId('palette-entry').click()
-    await page.getByTestId('palette-field').selectOption('Text')
+    await expect(page.getByTestId('palette-status')).toContainText('已验证管理权限')
+    await page.getByTestId('palette-field-Text').click()
     await page.locator('#palette-hex').fill('#CC7788')
     await expect(card).toHaveCSS('color', 'rgb(204, 119, 136)')
     await page.getByRole('button', { name: '取消', exact: true }).click()
@@ -91,9 +92,7 @@ test('palette changes update existing chart and portal colors without reloading 
   // exercise the same Provider chain without introducing a production test hook.
   await page.evaluate(() => {
     const app = (document.querySelector('#app') as any).__vue_app__.config.globalProperties.$pinia._s.get('app')
-    app.openPaletteEditor()
-    app.paletteDraftFollowsSite = false
-    app.paletteDraft = { preset: 'custom', colors: { ...app.paletteDraft.colors, lightText: '#234567', lightMutedText: '#456789', lightControl: '#DDEEFF', lightBorder: '#112233' } }
+    app.publicSettings = { ...app.publicSettings, theme_settings: { ...app.publicSettings.theme_settings, glassColorPreset: '自定义', glassCustomColors: JSON.stringify({ ...app.managedPalette.colors, lightText: '#234567', lightMutedText: '#456789', lightControl: '#DDEEFF', lightBorder: '#112233' }) } }
   })
   await expect.poll(async () => (await chartState(owner)).tooltip.backgroundColor).toBe('#DDEEFF')
   const changed = await chartState(owner)
@@ -120,9 +119,7 @@ test('list titles and existing Load charts consume effective text without new me
   const calls = fixture.timeline.length
   await page.evaluate(() => {
     const app = (document.querySelector('#app') as any).__vue_app__.config.globalProperties.$pinia._s.get('app')
-    app.openPaletteEditor()
-    app.paletteDraftFollowsSite = false
-    app.paletteDraft = { preset: 'custom', colors: { ...app.paletteDraft.colors, lightText: '#123456', lightMutedText: '#456789', lightControl: '#DDEEFF', lightBorder: '#102030' } }
+    app.publicSettings = { ...app.publicSettings, theme_settings: { ...app.publicSettings.theme_settings, glassColorPreset: '自定义', glassCustomColors: JSON.stringify({ ...app.managedPalette.colors, lightText: '#123456', lightMutedText: '#456789', lightControl: '#DDEEFF', lightBorder: '#102030' }) } }
   })
   await expect.poll(async () => (await chartState(owner)).tooltip.backgroundColor).toBe('#DDEEFF')
   const after = await chartState(owner)
@@ -141,9 +138,9 @@ test('reduced motion keeps complete content and the editor keyboard recovery rem
   await page.getByTestId('palette-entry').focus()
   await page.keyboard.press('Enter')
   await expect(page.locator('#palette-heading')).toBeFocused()
-  await page.getByTestId('palette-field').selectOption('Text')
+  await page.getByTestId('palette-field-Text').click()
   await page.locator('#palette-hex').fill('#FFFFFF')
-  await page.getByTestId('palette-field').selectOption('Card')
+  await page.getByTestId('palette-field-Card').click()
   await page.locator('#palette-hex').fill('#FFFFFF')
   await expect(page.getByTestId('palette-panel')).toHaveCSS('color', 'rgb(250, 250, 250)')
   await page.keyboard.press('Escape')
@@ -175,6 +172,7 @@ test('Beijing day boundary does not switch the edited group or overwrite prefere
     const fixture = await originalTheme(page, { managedThemeMode: 'beijing', clockNow: '2026-10-26T18:59:30+08:00', fakeTimers: true })
     await page.getByTestId('theme-mode-beijing').click()
     await page.getByTestId('palette-entry').click()
+    await expect(page.getByTestId('palette-status')).toContainText('已验证管理权限')
     await page.getByRole('button', { name: '编辑浅色', exact: true }).click()
     await fixture.advanceTime(60_000)
     await expect(page.locator('html')).toHaveClass(/dark/)
@@ -201,7 +199,8 @@ test('original standard and accessible Ping semantics remain distinct in legacy 
   const dots = page.locator('.node-card-ping-trend-dot')
   expect(await dots.nth(0).evaluate(e => getComputedStyle(e).backgroundColor)).not.toBe(await dots.nth(1).evaluate(e => getComputedStyle(e).backgroundColor))
   await page.getByTestId('palette-entry').click()
-  await page.getByTestId('palette-field').selectOption('Text')
+  await expect(page.getByTestId('palette-status')).toContainText('已验证管理权限')
+  await page.getByTestId('palette-field-Text').click()
   await page.locator('#palette-hex').fill('#AABBCC')
   await expect(page.getByRole('heading', { name: 'Komari Visual Lab', exact: true })).toHaveCSS('color', 'rgb(170, 187, 204)')
   await page.keyboard.press('Escape')
@@ -235,6 +234,7 @@ test('thirty-node palette editing adds no monitoring request or interval and ret
   const start = Date.now()
   for (let cycle = 0; cycle < 8; cycle++) {
     await page.getByTestId('palette-entry').click()
+    await expect(page.getByTestId('palette-status')).toContainText('已验证管理权限')
     for (const value of ['#123456E6', '#ABCDEF80', '#F8FAFCE6'])
       await page.locator('#palette-hex').fill(value)
     await page.getByRole('button', { name: '取消', exact: true }).click()

@@ -66,7 +66,7 @@ async function jsonRequest(path: string, signal: AbortSignal, body?: Record<stri
 
 async function probeAdmin(signal: AbortSignal): Promise<void> {
   // Fixed Komari router protects this endpoint with RoleAdmin. Discard the data;
-  // it is a permission probe, not a palette source, and is never called on open.
+  // it is a permission probe, not a palette source. No polling is installed.
   if (!Array.isArray(await jsonRequest('/api/admin/ping', signal)))
     throw new PaletteSaveError('未能确认管理权限，已停止全站操作。')
 }
@@ -103,6 +103,21 @@ export async function loadSitePalette(): Promise<SitePaletteSnapshot> {
     await probeAdmin(signal)
     return readSnapshot(signal, revision, requestedGeneration)
   })
+}
+
+/** Header eligibility only; opening and saving still revalidate independently. */
+export async function verifyPaletteAdminAccess(): Promise<number> {
+  const requestedGeneration = generation
+  const session = await verifyLogin()
+  if (!session.authenticated || requestedGeneration !== generation)
+    throw new PaletteSaveError('请先登录后台。', 401)
+  const revision = getAuthSessionRevision()
+  await run(async (signal) => {
+    assertContext(requestedGeneration, revision)
+    await probeAdmin(signal)
+    assertContext(requestedGeneration, revision)
+  })
+  return revision
 }
 
 function colorSettingsEqual(left: Record<string, unknown>, right: Record<string, unknown>): boolean {

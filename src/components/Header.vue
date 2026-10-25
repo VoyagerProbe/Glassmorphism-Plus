@@ -44,7 +44,7 @@ const actionButtons = computed(() => {
     })
   }
 
-  if (router.currentRoute.value.name === 'home') {
+  if (router.currentRoute.value.name === 'home' && appStore.paletteAdminAllowed) {
     buttons.push({ title: '配色中心', icon: 'lucide:palette', action: 'togglePalette', pressed: appStore.paletteOpen })
   }
 

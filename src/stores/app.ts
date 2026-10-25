@@ -4,13 +4,12 @@ import type { ByteDecimalsConfig } from '@/utils/helper'
 import type { GlassColorPreset, GlassCustomColors, PaletteConfig } from '@/utils/paletteColors'
 import { useStorageAsync } from '@vueuse/core'
 import { defineStore } from 'pinia'
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { getAuthSession, getAuthSessionRevision, requirePermission, setAuthSessionFromLogin, verifyLogin } from '@/services/auth.service'
-import { hasRetiredPalettePreference, paletteStorageKey, readPalettePreference, writePalettePreference } from '@/services/palette-preference.service'
+import { invalidatePaletteAdminSession, verifyPaletteAdminAccess } from '@/services/palette-admin.service'
 import { resolveManagedPalette } from '@/utils/glassTheme'
 import { parseNodeCardPingTaskBindings } from '@/utils/nodeCardPingBindings'
 import { resolveNodeCardPingRuntimeConfig } from '@/utils/nodeCardPingConfig'
-import { clonePalette, parsePaletteColors } from '@/utils/paletteColors'
 
 export type { GlassCustomColors } from '@/utils/paletteColors'
 
@@ -992,47 +991,57 @@ const useAppStore = defineStore('app', () => {
   const homeToolsEnabled = computed<boolean>(() => readBooleanSetting(themeSettings.value, 'homeToolsEnabled', true))
 
   const managedPalette = computed(() => resolveManagedPalette(themeSettings.value))
-  const localPaletteKey = paletteStorageKey(import.meta.env.BASE_URL)
-  const appliedLocalPalette = ref<PaletteConfig | null>(readPalettePreference(localPaletteKey))
+  // Retired glassmorphism-plus:palette:v1:<base> records are deliberately never
+  // read, written, migrated or listened to. Other browser preferences are intact.
   const paletteDraft = ref<PaletteConfig | null>(null)
-  const paletteDraftFollowsSite = ref(false)
   const paletteOpen = ref(false)
   const paletteNotice = ref('')
-  const effectivePalette = computed(() => paletteDraft.value
-    ? paletteDraftFollowsSite.value ? managedPalette.value : paletteDraft.value
-    : appliedLocalPalette.value ?? managedPalette.value)
+  const paletteAdminRevision = ref<number | null>(null)
+  const paletteAdminAllowed = computed(() => privateFeaturesAllowed.value
+    && paletteAdminRevision.value === authSessionRevision.value
+    && publicSettings.value?.theme === 'glassmorphism-plus')
+  const effectivePalette = computed(() => paletteOpen.value && paletteAdminAllowed.value && paletteDraft.value
+    ? paletteDraft.value
+    : managedPalette.value)
   const glassColorPreset = computed<GlassColorPreset>(() => effectivePalette.value.preset)
   const glassCustomColors = computed<GlassCustomColors>(() => effectivePalette.value.colors)
 
   function openPaletteEditor() {
-    paletteDraft.value = clonePalette(appliedLocalPalette.value ?? managedPalette.value)
-    paletteDraftFollowsSite.value = !appliedLocalPalette.value
+    if (!paletteAdminAllowed.value || getAuthSessionRevision() !== paletteAdminRevision.value)
+      return
+    paletteDraft.value = null
     paletteOpen.value = true
-    paletteNotice.value = hasRetiredPalettePreference(localPaletteKey) ? '旧方案已停用，当前使用站点默认。' : ''
+    paletteNotice.value = ''
   }
 
   function closePaletteEditor() {
     paletteDraft.value = null
-    paletteDraftFollowsSite.value = false
     paletteOpen.value = false
   }
 
-  function applyLocalPalette(palette: PaletteConfig): boolean {
-    const parsed = parsePaletteColors(palette.colors)
-    if (!parsed.ok)
-      throw new Error(parsed.error)
-    appliedLocalPalette.value = clonePalette({ preset: palette.preset, colors: parsed.colors })
-    const saved = writePalettePreference(localPaletteKey, appliedLocalPalette.value)
+  function revokePaletteAccess() {
+    paletteAdminRevision.value = null
+    invalidatePaletteAdminSession()
     closePaletteEditor()
-    return saved
   }
 
-  function followSitePalette(): boolean {
-    appliedLocalPalette.value = null
-    const saved = writePalettePreference(localPaletteKey, null)
-    closePaletteEditor()
-    return saved
-  }
+  // One probe per known session transition, never per render or monitoring tick.
+  watch([authSessionRevision, () => publicSettings.value?.theme], async ([revision, theme]) => {
+    revokePaletteAccess()
+    // Dispose the previous editor before starting a new session's probe, so its
+    // cleanup cannot invalidate the replacement session's request generation.
+    await nextTick()
+    if (revision !== authSessionRevision.value || theme !== publicSettings.value?.theme || theme !== 'glassmorphism-plus')
+      return
+    if (!getAuthSession().authenticated)
+      return
+    try {
+      const verified = await verifyPaletteAdminAccess()
+      if (revision === authSessionRevision.value && revision === verified)
+        paletteAdminRevision.value = verified
+    }
+    catch { /* Public monitoring stays available; no editable palette entry. */ }
+  }, { flush: 'sync', immediate: true })
 
   const colorVisionMode = computed<ColorVisionMode>(() => parseColorVisionMode(themeSettings.value.colorVisionMode))
 
@@ -1282,15 +1291,13 @@ const useAppStore = defineStore('app', () => {
     glassCustomColors,
     managedPalette,
     effectivePalette,
-    appliedLocalPalette,
     paletteDraft,
-    paletteDraftFollowsSite,
+    paletteAdminAllowed,
     paletteOpen,
     paletteNotice,
     openPaletteEditor,
     closePaletteEditor,
-    applyLocalPalette,
-    followSitePalette,
+    revokePaletteAccess,
     colorVisionMode,
     colorVisionFriendly,
     visitorAuditSupported,

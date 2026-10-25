@@ -15,18 +15,30 @@ export async function verifyPaletteRoundtrip({ page, lab, settings, version, fil
   // /api/public adds manifest defaults. Preserve those too, not just seed keys.
   for (const [key, value] of Object.entries(settings))
     assert.deepEqual(before[key], value, `Seed setting retained: ${key}`)
+  const visitor = await page.context().browser().newContext()
+  const visitorPage = await visitor.newPage()
+  await visitorPage.goto(lab.base)
+  await visitorPage.getByTestId('theme-mode-light').click()
+  const oldPersonal = await visitorPage.evaluate(() => {
+    const app = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('app')
+    const raw = JSON.stringify({ schemaVersion: 1, preset: 'custom', colors: { ...app.managedPalette.colors, lightText: '#ABCDEF' } })
+    localStorage.setItem('glassmorphism-plus:palette:v1:%2F', raw)
+    localStorage.setItem('palette_unrelated_sentinel', 'preserved')
+    return raw
+  })
+  await visitorPage.reload()
+  await expect(visitorPage.getByTestId('palette-entry')).toHaveCount(0)
   const auditCalls = []
   page.on('request', (request) => {
     if (request.postData()?.includes('public:recordVisitorEvent'))
       auditCalls.push('recordVisitorEvent')
   })
   await page.getByTestId('palette-entry').click()
-  await page.getByTestId('palette-scope').selectOption('site')
   await expect(page.getByTestId('palette-status')).toContainText('已验证管理权限')
   await page.getByTestId('palette-preset').selectOption('soft')
   page.once('dialog', dialog => dialog.accept())
   await page.getByTestId('palette-save-site').click()
-  await expect(page.getByTestId('palette-notice')).toContainText('全站配色已保存并核对')
+  await expect(page.getByTestId('palette-notice')).toContainText('全站配色已保存。')
   const presetSaved = await readSettings()
   assert.equal(presetSaved.glassColorPreset, '柔和')
   assert.equal(presetSaved.glassCustomColors, before.glassCustomColors)
@@ -34,14 +46,13 @@ export async function verifyPaletteRoundtrip({ page, lab, settings, version, fil
     assert.deepEqual(presetSaved[key], before[key], `Preset save preserved: ${key}`)
 
   await page.getByTestId('palette-entry').click()
-  await page.getByTestId('palette-scope').selectOption('site')
   await expect(page.getByTestId('palette-status')).toContainText('已验证管理权限')
   await page.getByRole('button', { name: '编辑浅色', exact: true }).click()
-  await page.getByTestId('palette-field').selectOption('Text')
+  await page.getByTestId('palette-field-Text').click()
   await page.locator('#palette-hex').fill('#234567')
   page.once('dialog', dialog => dialog.accept())
   await page.getByTestId('palette-save-site').click()
-  await expect(page.getByTestId('palette-notice')).toContainText('全站配色已保存并核对')
+  await expect(page.getByTestId('palette-notice')).toContainText('全站配色已保存。')
   const customSaved = await readSettings()
   assert.equal(customSaved.glassColorPreset, '自定义')
   const colors = JSON.parse(customSaved.glassCustomColors)
@@ -49,6 +60,12 @@ export async function verifyPaletteRoundtrip({ page, lab, settings, version, fil
   assert.equal(colors.lightText, '#234567')
   for (const key of Object.keys(before).filter(key => !['glassColorPreset', 'glassCustomColors'].includes(key)))
     assert.deepEqual(customSaved[key], before[key], `Custom save preserved: ${key}`)
+  await visitorPage.reload()
+  await expect(visitorPage.locator('.node-card').first()).toHaveCSS('color', 'rgb(35, 69, 103)')
+  assert.equal(await visitorPage.evaluate(() => localStorage.getItem('glassmorphism-plus:palette:v1:%2F')), oldPersonal)
+  assert.equal(await visitorPage.evaluate(() => localStorage.getItem('palette_unrelated_sentinel')), 'preserved')
+  await expect(visitorPage.getByTestId('palette-entry')).toHaveCount(0)
+  await visitor.close()
 
   // Inspect actual lazy-load requests and compare served bytes with the installer.
   const urls = await page.evaluate(() => performance.getEntriesByType('resource').map(entry => entry.name))
@@ -109,10 +126,9 @@ export async function verifyPaletteRoundtrip({ page, lab, settings, version, fil
     assert.deepEqual(pingSaved[key], backendSaved[key], `Ping save preserved palette and other settings: ${key}`)
   await page.goto(lab.base)
   await page.getByTestId('palette-entry').click()
-  await page.getByTestId('palette-scope').selectOption('site')
   await expect(page.getByTestId('palette-status')).toContainText('已验证管理权限')
   await page.getByRole('button', { name: '编辑浅色', exact: true }).click()
-  await page.getByTestId('palette-field').selectOption('Text')
+  await page.getByTestId('palette-field-Text').click()
   await expect(page.locator('#palette-hex')).toHaveValue('#345678')
   await page.getByRole('button', { name: '取消', exact: true }).click()
   if (version === '1.6.0') {
@@ -123,5 +139,5 @@ export async function verifyPaletteRoundtrip({ page, lab, settings, version, fil
   // Return the full original settings for the remaining installation assertions.
   await lab.request('/api/admin/theme/settings?theme=glassmorphism-plus', { auth: true, body: before })
   assert.deepEqual(await readSettings(), before)
-  return { presetCanonical: true, customTenKeyString: true, unknownSettingsPreserved: true, officialFormRoundtrip: true, officialFormRemovedUnknownKeys, pingSavePreservesPalette: true, realLazyAssets: assets.length, directThemeRoutes: true, removedAuditNotCalled: version === '1.6.0' }
+  return { presetCanonical: true, customTenKeyString: true, unknownSettingsPreserved: true, guestReloadUsesSitePalette: true, oldPersonalRecordIgnoredAndPreserved: true, officialFormRoundtrip: true, officialFormRemovedUnknownKeys, pingSavePreservesPalette: true, realLazyAssets: assets.length, directThemeRoutes: true, removedAuditNotCalled: version === '1.6.0' }
 }

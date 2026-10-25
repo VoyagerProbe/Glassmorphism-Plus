@@ -6,7 +6,7 @@ import { useAppStore } from '@/stores/app'
 import { paletteForPreset } from '@/utils/glassTheme'
 import { clonePalette, GLASS_COLOR_KEYS, paletteEquals, parseAlphaPercent, parseHexColor, parsePaletteJson, parseRgbColor, serializeColor } from '@/utils/paletteColors'
 
-export type PaletteChoice = GlassColorPreset | 'site-default'
+export type PaletteChoice = GlassColorPreset
 type InputKind = 'hex' | 'rgb' | 'alpha'
 interface FieldInput { hex: string, rgb: string, alpha: string, errors: Partial<Record<InputKind, string>> }
 const FIELD_NAMES = { Card: '卡片', Control: '控制区', Text: '主文字', MutedText: '次文字', Border: '边框' } as const
@@ -34,11 +34,8 @@ export function usePaletteEditor() {
   const app = useAppStore()
   const group = ref<'light' | 'dark'>(app.resolvedThemeMode)
   const field = ref<keyof typeof FIELD_NAMES>('Card')
-  const scope = ref<'local' | 'site'>('local')
-  const draft = computed(() => app.paletteDraftFollowsSite ? app.managedPalette : app.paletteDraft!)
-  const selectedPreset = computed<PaletteChoice>(() => app.paletteDraftFollowsSite ? 'site-default' : draft.value.preset)
-  const initialPalette = ref(clonePalette(draft.value))
-  const initialFollowsSite = ref(app.paletteDraftFollowsSite)
+  const draft = computed(() => app.paletteDraft ?? app.managedPalette)
+  const selectedPreset = computed<PaletteChoice>(() => draft.value.preset)
   const selectedKey = computed(() => `${group.value}${field.value}` as GlassColorKey)
   const fields = computed(() => Object.entries(FIELD_NAMES).map(([key, label]) => ({ key: key as keyof typeof FIELD_NAMES, label })))
   const inputs = ref({} as Record<GlassColorKey, FieldInput>)
@@ -55,16 +52,16 @@ export function usePaletteEditor() {
   const savingSite = ref(false)
   let operation = 0
   const invalid = computed(() => jsonDirty.value || Object.values(inputs.value).some(input => Object.keys(input.errors).length > 0))
-  const dirty = computed(() => invalid.value || initialFollowsSite.value !== app.paletteDraftFollowsSite || !paletteEquals(initialPalette.value, draft.value))
+  const ready = computed(() => Boolean(siteBaseline.value) && app.paletteOpen && app.paletteAdminAllowed)
+  const dirty = computed(() => Boolean(siteBaseline.value) && (invalid.value || !paletteEquals(siteBaseline.value!.palette, draft.value)))
 
   function resetInputs(keys: readonly GlassColorKey[] = GLASS_COLOR_KEYS) {
     for (const key of keys)
       inputs.value[key] = inputsFor(draft.value.colors[key])
   }
 
-  function setDraft(palette: PaletteConfig, followsSite = false) {
+  function setDraft(palette: PaletteConfig) {
     app.paletteDraft = clonePalette(palette)
-    app.paletteDraftFollowsSite = followsSite
     resetInputs()
     jsonText.value = JSON.stringify(palette.colors, null, 2)
     jsonDirty.value = false
@@ -72,15 +69,14 @@ export function usePaletteEditor() {
   }
 
   function setPreset(preset: PaletteChoice) {
-    if (preset === 'site-default') {
-      if (scope.value === 'local')
-        setDraft(app.managedPalette, true)
+    if (!ready.value || busy.value)
       return
-    }
     setDraft(paletteForPreset(preset, draft.value.colors))
   }
 
   function updateInput(kind: InputKind, value: string) {
+    if (!ready.value || busy.value)
+      return
     const key = selectedKey.value
     const input = inputs.value[key]
     input[kind] = value
@@ -98,7 +94,6 @@ export function usePaletteEditor() {
     delete input.errors[kind]
     const colors = { ...draft.value.colors, [key]: serializeColor(parsed.color) }
     app.paletteDraft = { preset: 'custom', colors }
-    app.paletteDraftFollowsSite = false
     const normalized = inputsFor(colors[key])
     for (const other of ['hex', 'rgb', 'alpha'] as const) {
       if (other !== kind && !input.errors[other])
@@ -114,6 +109,8 @@ export function usePaletteEditor() {
   }
 
   function importJson() {
+    if (!ready.value || busy.value)
+      return
     const parsed = parsePaletteJson(jsonText.value)
     if (!parsed.ok) {
       jsonError.value = parsed.error
@@ -132,7 +129,7 @@ export function usePaletteEditor() {
   }
 
   function cancel() {
-    if (savingSite.value)
+    if (savingSite.value || pendingConfirmation.value)
       app.paletteNotice = '全站保存结果待确认；关闭不能撤回已发送请求，请稍后重新读取站点配色核对。'
     operation++
     invalidatePaletteAdminSession()
@@ -140,73 +137,37 @@ export function usePaletteEditor() {
     void nextTick(() => document.querySelector<HTMLButtonElement>('[data-testid="palette-entry"]')?.focus())
   }
 
-  function applyLocal() {
-    if (invalid.value || busy.value)
-      return
-    const follows = app.paletteDraftFollowsSite
-    const saved = follows ? app.followSitePalette() : app.applyLocalPalette(draft.value)
-    app.paletteNotice = follows
-      ? saved ? '已保存：当前浏览器跟随站点配色。' : '当前页面已跟随站点，但浏览器未能删除旧偏好；未永久保存。'
-      : saved ? '已保存，仅对当前浏览器生效。' : '已应用到当前页面，但浏览器禁止保存偏好；未永久保存。'
-    cancel()
-  }
-
   async function loadSite() {
-    if (busy.value)
+    if (busy.value || !app.paletteOpen || !app.paletteAdminAllowed)
       return
     const currentOperation = ++operation
     busy.value = true
+    siteBaseline.value = null
+    app.paletteDraft = null
     try {
-      if (!await app.verifyLoginState({ force: true }))
-        throw new Error('请先登录后台，再验证全站配色管理权限。')
-      if (currentOperation !== operation)
-        return
       const snapshot = await loadSitePalette()
-      if (currentOperation !== operation)
+      await app.verifyLoginState()
+      if (currentOperation !== operation || !app.paletteOpen || !app.paletteAdminAllowed)
         return
       siteBaseline.value = snapshot
-      scope.value = 'site'
       setDraft(snapshot.palette)
       app.publicSettings = snapshot.publicSettings
       pendingConfirmation.value = false
-      rememberInitial()
       status.value = '已验证管理权限，正在编辑全站默认配色。'
     }
     catch (error) {
-      if (currentOperation === operation)
+      if (currentOperation === operation) {
         status.value = error instanceof Error ? error.message : '无法读取站点配色。'
+        if (error instanceof PaletteSaveError && (error.status === 401 || error.status === 403)) {
+          app.paletteNotice = '管理权限失效，配色草稿已撤销。'
+          app.revokePaletteAccess()
+        }
+      }
     }
     finally {
       if (currentOperation === operation)
         busy.value = false
     }
-  }
-
-  function editLocal() {
-    operation++
-    invalidatePaletteAdminSession()
-    busy.value = false
-    siteBaseline.value = null
-    pendingConfirmation.value = false
-    scope.value = 'local'
-    setDraft(app.appliedLocalPalette ?? app.managedPalette, !app.appliedLocalPalette)
-    rememberInitial()
-    status.value = '仅对当前浏览器生效。'
-  }
-
-  function rememberInitial() {
-    initialPalette.value = clonePalette(draft.value)
-    initialFollowsSite.value = app.paletteDraftFollowsSite
-  }
-
-  async function changeScope(target: 'local' | 'site') {
-    if (busy.value || target === scope.value)
-      return
-    if (dirty.value && !confirmPaletteAction('切换修改范围将放弃未保存的配色草稿，是否继续？'))
-      return
-    if (target === 'site')
-      await loadSite()
-    else editLocal()
   }
 
   async function reloadSite() {
@@ -215,9 +176,9 @@ export function usePaletteEditor() {
   }
 
   async function saveSite() {
-    if (!siteBaseline.value || invalid.value || busy.value || pendingConfirmation.value)
+    if (!ready.value || !siteBaseline.value || !dirty.value || invalid.value || busy.value || pendingConfirmation.value)
       return
-    if (!confirmPaletteAction('保存全站默认配色？这会修改站点默认配色，不会清除任何浏览器的个人配色。'))
+    if (!confirmPaletteAction('保存全站配色？这会更新站点默认配色，其他浏览器正常刷新或重新打开后可见。'))
       return
     const currentOperation = ++operation
     busy.value = true
@@ -227,17 +188,18 @@ export function usePaletteEditor() {
       if (currentOperation !== operation)
         return
       app.publicSettings = snapshot.publicSettings
-      app.paletteNotice = app.appliedLocalPalette ? '全站配色已更新，当前浏览器仍使用个人配色。' : '全站配色已保存并核对。'
+      app.paletteNotice = '全站配色已保存。'
       savingSite.value = false
       cancel()
     }
     catch (error) {
       if (currentOperation === operation) {
+        savingSite.value = false
         status.value = error instanceof Error ? error.message : '保存失败，草稿保留。'
         pendingConfirmation.value = error instanceof PaletteSaveError && error.pendingConfirmation
         if (error instanceof PaletteSaveError && (error.status === 401 || error.status === 403)) {
-          editLocal()
-          status.value = '管理权限失效，全站草稿已撤销。请重新登录并读取站点配色。'
+          app.paletteNotice = '管理权限失效，全站草稿已撤销。请重新登录并读取站点配色。'
+          app.revokePaletteAccess()
         }
       }
     }
@@ -249,37 +211,28 @@ export function usePaletteEditor() {
   }
 
   watch(() => app.authSessionRevision, () => {
-    if (siteBaseline.value || scope.value === 'site') {
-      editLocal()
-      status.value = '登录会话已变更，全站草稿已撤销；本机设置未改变。'
-    }
+    cancel()
+  }, { flush: 'sync' })
+  watch(() => app.paletteAdminAllowed, (allowed) => {
+    if (!allowed)
+      cancel()
   }, { flush: 'sync' })
   onScopeDispose(() => {
+    if (savingSite.value || pendingConfirmation.value)
+      app.paletteNotice = '全站保存结果待确认；关闭不能撤回已发送请求，请稍后重新读取站点配色核对。'
     operation++
     invalidatePaletteAdminSession()
+    app.closePaletteEditor()
   })
-  watch(() => app.managedPalette, () => {
-    if (app.paletteDraftFollowsSite) {
-      app.paletteDraft = clonePalette(app.managedPalette)
-      // A refreshed site default may update the preview, but must not erase an
-      // invalid raw edit or turn an unsaved follow intent into a saved baseline.
-      for (const key of GLASS_COLOR_KEYS) {
-        if (!Object.keys(inputs.value[key].errors).length)
-          inputs.value[key] = inputsFor(app.managedPalette.colors[key])
-      }
-      if (!jsonDirty.value)
-        jsonText.value = JSON.stringify(app.managedPalette.colors, null, 2)
-      if (initialFollowsSite.value)
-        initialPalette.value = clonePalette(app.managedPalette)
-    }
-  })
-  setDraft(draft.value, app.paletteDraftFollowsSite)
+  // Loading may render the current safe managed values, but never exposes them
+  // as an editable/savable baseline until the fresh authorized read succeeds.
+  resetInputs()
+  void loadSite()
   return {
     app,
     group,
     field,
     fields,
-    scope,
     draft,
     selectedPreset,
     selectedKey,
@@ -292,14 +245,14 @@ export function usePaletteEditor() {
     busy,
     pendingConfirmation,
     invalid,
+    ready,
+    dirty,
     setPreset,
     updateInput,
     normalizeInput,
     importJson,
     copyJson,
     cancel,
-    applyLocal,
-    changeScope,
     reloadSite,
     saveSite,
   }
