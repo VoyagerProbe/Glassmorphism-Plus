@@ -158,6 +158,9 @@ test('compact site editor has five swatch radio choices and presets, keyboard na
 })
 
 test('every retired personal record is ignored without mutation, including storage events and matching managed custom', async ({ page }) => {
+  // Ten real reload/editor cycles share this test's budget. Keep every case,
+  // per-assertion deadline and zero retries; slower WebKit CI needs the total.
+  test.setTimeout(60_000)
   await page.addInitScript((key) => {
     const host = window as any
     host.retiredPaletteAccess = []
