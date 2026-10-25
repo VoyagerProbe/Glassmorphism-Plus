@@ -55,6 +55,10 @@ async function main() {
           await freshPage.getByTestId('palette-entry').click()
           await expect(freshPage.getByTestId('palette-panel')).toBeVisible()
           assert.equal(await freshPage.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length), 0)
+          // Finish the independent fresh-install check before replacing its files.
+          // Closing while large lazy assets are still streaming can retain a file
+          // handle briefly on Windows; this is not part of the upgrade profile.
+          await freshPage.waitForLoadState('networkidle')
           await fresh.close()
         }
         const oldZip = process.env.PLUS_PREVIOUS_INSTALLER || await download(process.env.PLUS_PREVIOUS_URL || 'https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/download/v2.8.4/Glassmorphism-Plus-release-2.8.4.zip', resolve(lab.root, 'previous.zip'), oldSha)

@@ -294,7 +294,9 @@ html.palette-custom.dark {
 html.palette-custom :is(.node-card-info-surface, .node-card-ping-task-strip, .bg-slate-500\/5) {
   background-color: var(--control-surface) !important;
 }
-html.palette-custom :is(.node-card, .bg-card, [data-slot='card']) :is(.text-foreground\/60, .text-foreground\/65, .text-foreground\/70, .text-foreground\/75) {
+html.palette-custom
+  :is(.node-card, .bg-card, [data-slot='card'])
+  :is(.text-foreground\/60, .text-foreground\/65, .text-foreground\/70, .text-foreground\/75) {
   color: var(--secondary-text) !important;
 }
 
