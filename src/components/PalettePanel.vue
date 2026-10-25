@@ -38,9 +38,9 @@ const {
 const heading = ref<HTMLElement | null>(null)
 const inputKinds = ['hex', 'rgb', 'alpha'] as const
 onMounted(() => heading.value?.focus({ preventScroll: true }))
-// Disabling the focused Save control can send focus to body in Chromium.
-// Keep Escape usable while loading/saving, without stealing another control's focus.
-watch(busy, async () => {
+// Disabling Save (Chromium) or clicking JSON import (WebKit) can send focus to
+// body. Keep Escape usable after a draft action, without stealing another control's focus.
+watch([busy, draft], async () => {
   await nextTick()
   if (app.paletteOpen && document.activeElement === document.body)
     heading.value?.focus({ preventScroll: true })

@@ -117,6 +117,12 @@ function close() {
   justify-content: space-between;
   margin-top: 8px;
 }
+.palette-readonly-color dd {
+  flex-shrink: 0;
+}
+.palette-readonly-color code {
+  white-space: nowrap;
+}
 .palette-readonly-swatch {
   flex: 0 0 14px;
   height: 14px;
