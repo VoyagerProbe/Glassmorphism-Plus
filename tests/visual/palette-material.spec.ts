@@ -216,6 +216,12 @@ test('thirty-node palette editing adds no monitoring request or interval and ret
   test.setTimeout(90_000)
   const fixture = await originalTheme(page, { nodeCount: 30, fakeTimers: true })
   await fixture.waitForPingRefreshSettled()
+  // clock.install alone still advances with wall time. Slow traced WebKit runs
+  // crossed the ordinary 60-second polling deadline and counted its refresh as
+  // palette traffic. Pause after loading and drain due work to isolate editing;
+  // verify the normal polling path separately after the zero-traffic assertion.
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 60_000))
+  await fixture.waitForPingRefreshSettled()
   const calls = fixture.timeline.length
   await page.evaluate(() => {
     const host = window as any
@@ -236,5 +242,8 @@ test('thirty-node palette editing adds no monitoring request or interval and ret
   await expect(page.locator('[data-node-ping-bars]')).toHaveCount(180)
   expect(fixture.timeline.length).toBe(calls)
   expect(await page.evaluate(() => (window as any).paletteIntervalCount)).toBe(0)
-  await info.attach('palette-30-node-budget', { body: JSON.stringify({ elapsedMs: Date.now() - start, cycles: 8, colorInputs: 24, additionalMonitoringRequests: 0, additionalIntervals: 0 }), contentType: 'application/json' })
+  await page.clock.fastForward(60_000)
+  await fixture.waitForPingRefreshSettled()
+  expect(fixture.timeline.length).toBeGreaterThan(calls)
+  await info.attach('palette-30-node-budget', { body: JSON.stringify({ elapsedMs: Date.now() - start, cycles: 8, colorInputs: 24, additionalMonitoringRequestsDuringEditing: 0, additionalIntervals: 0, existingPollContinuesAfterClockAdvance: true }), contentType: 'application/json' })
 })
