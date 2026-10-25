@@ -1,12 +1,18 @@
 import type { PermissionKey, VerifyLoginOptions } from '@/services/auth.service'
 import type { MeInfo, PublicSettings } from '@/utils/api'
 import type { ByteDecimalsConfig } from '@/utils/helper'
+import type { GlassColorPreset, GlassCustomColors, PaletteConfig } from '@/utils/paletteColors'
 import { useStorageAsync } from '@vueuse/core'
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
-import { getAuthSession, requirePermission, setAuthSessionFromLogin, verifyLogin } from '@/services/auth.service'
+import { getAuthSession, getAuthSessionRevision, requirePermission, setAuthSessionFromLogin, verifyLogin } from '@/services/auth.service'
+import { paletteStorageKey, readPalettePreference, writePalettePreference } from '@/services/palette-preference.service'
+import { resolveManagedPalette } from '@/utils/glassTheme'
 import { parseNodeCardPingTaskBindings } from '@/utils/nodeCardPingBindings'
 import { resolveNodeCardPingRuntimeConfig } from '@/utils/nodeCardPingConfig'
+import { clonePalette, parsePaletteColors } from '@/utils/paletteColors'
+
+export type { GlassCustomColors } from '@/utils/paletteColors'
 
 export type ThemeMode = 'auto' | 'beijing' | 'light' | 'dark'
 export type ManagedThemeMode = 'beijing' | 'light' | 'dark'
@@ -91,7 +97,6 @@ type NodeViewMode = 'card' | 'list'
 type NodeCardSize = 'mini' | 'compact' | 'comfortable' | 'large'
 type RpcTransportMode = 'websocket' | 'http'
 type EarthRenderer = 'realistic' | 'cobe' | 'tiled'
-type GlassColorPreset = 'emerald' | 'soft' | 'contrast' | 'midnight' | 'custom'
 type ColorVisionMode = 'default' | 'accessible'
 export type ChartDashboardCardKey
   = | 'cpu'
@@ -106,19 +111,6 @@ export type ChartDashboardCardKey
     | 'process'
     | 'ping'
     | 'pingLoss'
-
-export interface GlassCustomColors {
-  lightCard: string
-  lightControl: string
-  lightText: string
-  lightMutedText: string
-  lightBorder: string
-  darkCard: string
-  darkControl: string
-  darkText: string
-  darkMutedText: string
-  darkBorder: string
-}
 
 export interface ChartDashboardTemplate {
   cards: ChartDashboardCardKey[]
@@ -533,19 +525,6 @@ const HOME_QUICK_CONTROL_PRESET_ALIASES: Record<string, HomeQuickControlPreset> 
   自定义: 'custom',
 }
 
-const GLASS_COLOR_PRESET_ALIASES: Record<string, GlassColorPreset> = {
-  emerald: 'emerald',
-  翡翠: 'emerald',
-  soft: 'soft',
-  柔和: 'soft',
-  contrast: 'contrast',
-  高对比: 'contrast',
-  midnight: 'midnight',
-  午夜: 'midnight',
-  custom: 'custom',
-  自定义: 'custom',
-}
-
 const COLOR_VISION_MODE_ALIASES: Record<string, ColorVisionMode> = {
   default: 'default',
   标准: 'default',
@@ -554,20 +533,6 @@ const COLOR_VISION_MODE_ALIASES: Record<string, ColorVisionMode> = {
   色觉友好: 'accessible',
 }
 
-const DEFAULT_GLASS_CUSTOM_COLORS: GlassCustomColors = {
-  lightCard: '#f1f5f9bd',
-  lightControl: '#e2e8f0c2',
-  lightText: '#14151a',
-  lightMutedText: '#3f4552',
-  lightBorder: '#cbd5e199',
-  darkCard: '#0d111ad9',
-  darkControl: '#101624cc',
-  darkText: '#f7f8fb',
-  darkMutedText: '#d6dae4',
-  darkBorder: '#ffffff2e',
-}
-
-const HEX_COLOR_REGEX = /^#[0-9a-f]{6}(?:[0-9a-f]{2})?$/i
 const KEY_LIST_SEPARATOR_REGEX = /[\s,，;；]+/u
 const EMPTY_THEME_SETTINGS: ThemeSettings = {}
 
@@ -815,66 +780,6 @@ function resolveBackgroundSource(value: unknown): string {
   return `/themes/user-assets/${segments.map(segment => encodeURIComponent(segment)).join('/')}`
 }
 
-function readColorSetting(settings: ThemeSettings, key: string, fallback: string): string {
-  const trimmed = readStringSetting(settings, key, fallback)
-  return HEX_COLOR_REGEX.test(trimmed) ? trimmed : fallback
-}
-
-function readColorValue(value: unknown, fallback: string): string {
-  if (typeof value !== 'string')
-    return fallback
-  const trimmed = value.trim()
-  return HEX_COLOR_REGEX.test(trimmed) ? trimmed : fallback
-}
-
-function parseGlassCustomColors(settings: ThemeSettings): GlassCustomColors {
-  const legacyColors: GlassCustomColors = {
-    lightCard: readColorSetting(settings, 'glassLightCardColor', DEFAULT_GLASS_CUSTOM_COLORS.lightCard),
-    lightControl: readColorSetting(settings, 'glassLightControlColor', DEFAULT_GLASS_CUSTOM_COLORS.lightControl),
-    lightText: readColorSetting(settings, 'glassLightTextColor', DEFAULT_GLASS_CUSTOM_COLORS.lightText),
-    lightMutedText: readColorSetting(settings, 'glassLightMutedTextColor', DEFAULT_GLASS_CUSTOM_COLORS.lightMutedText),
-    lightBorder: readColorSetting(settings, 'glassLightBorderColor', DEFAULT_GLASS_CUSTOM_COLORS.lightBorder),
-    darkCard: readColorSetting(settings, 'glassDarkCardColor', DEFAULT_GLASS_CUSTOM_COLORS.darkCard),
-    darkControl: readColorSetting(settings, 'glassDarkControlColor', DEFAULT_GLASS_CUSTOM_COLORS.darkControl),
-    darkText: readColorSetting(settings, 'glassDarkTextColor', DEFAULT_GLASS_CUSTOM_COLORS.darkText),
-    darkMutedText: readColorSetting(settings, 'glassDarkMutedTextColor', DEFAULT_GLASS_CUSTOM_COLORS.darkMutedText),
-    darkBorder: readColorSetting(settings, 'glassDarkBorderColor', DEFAULT_GLASS_CUSTOM_COLORS.darkBorder),
-  }
-
-  let rawValue = settings.glassCustomColors
-  if (typeof rawValue === 'string') {
-    try {
-      rawValue = JSON.parse(rawValue) as unknown
-    }
-    catch {
-      return legacyColors
-    }
-  }
-
-  if (!rawValue || typeof rawValue !== 'object' || Array.isArray(rawValue))
-    return legacyColors
-
-  const record = rawValue as Record<keyof GlassCustomColors, unknown>
-  return {
-    lightCard: readColorValue(record.lightCard, legacyColors.lightCard),
-    lightControl: readColorValue(record.lightControl, legacyColors.lightControl),
-    lightText: readColorValue(record.lightText, legacyColors.lightText),
-    lightMutedText: readColorValue(record.lightMutedText, legacyColors.lightMutedText),
-    lightBorder: readColorValue(record.lightBorder, legacyColors.lightBorder),
-    darkCard: readColorValue(record.darkCard, legacyColors.darkCard),
-    darkControl: readColorValue(record.darkControl, legacyColors.darkControl),
-    darkText: readColorValue(record.darkText, legacyColors.darkText),
-    darkMutedText: readColorValue(record.darkMutedText, legacyColors.darkMutedText),
-    darkBorder: readColorValue(record.darkBorder, legacyColors.darkBorder),
-  }
-}
-
-function parseGlassColorPreset(value: unknown): GlassColorPreset {
-  if (typeof value !== 'string')
-    return 'emerald'
-  return GLASS_COLOR_PRESET_ALIASES[value.trim()] ?? 'emerald'
-}
-
 function parseColorVisionMode(value: unknown): ColorVisionMode {
   if (typeof value !== 'string')
     return 'default'
@@ -892,6 +797,7 @@ const useAppStore = defineStore('app', () => {
   const favoriteNodeIds = useStorageAsync<string[]>('theme:favorite-nodes:v1', [], localStorage)
   const isLoggedIn = ref<boolean>(getAuthSession().authenticated)
   const authStatus = ref(getAuthSession().status)
+  const authSessionRevision = ref(getAuthSessionRevision())
   const privateFeaturesAllowed = computed(() => authStatus.value === 'authenticated')
   const connectionError = ref<boolean>(false)
   const connectionErrorKind = ref<'network' | 'rpc' | 'initialization' | null>(null)
@@ -1085,9 +991,43 @@ const useAppStore = defineStore('app', () => {
 
   const homeToolsEnabled = computed<boolean>(() => readBooleanSetting(themeSettings.value, 'homeToolsEnabled', true))
 
-  const glassColorPreset = computed<GlassColorPreset>(() => parseGlassColorPreset(themeSettings.value.glassColorPreset))
+  const managedPalette = computed(() => resolveManagedPalette(themeSettings.value))
+  const localPaletteKey = paletteStorageKey(import.meta.env.BASE_URL)
+  const appliedLocalPalette = ref<PaletteConfig | null>(readPalettePreference(localPaletteKey))
+  const paletteDraft = ref<PaletteConfig | null>(null)
+  const paletteOpen = ref(false)
+  const paletteNotice = ref('')
+  const effectivePalette = computed(() => paletteDraft.value ?? appliedLocalPalette.value ?? managedPalette.value)
+  const glassColorPreset = computed<GlassColorPreset>(() => effectivePalette.value.preset)
+  const glassCustomColors = computed<GlassCustomColors>(() => effectivePalette.value.colors)
 
-  const glassCustomColors = computed<GlassCustomColors>(() => parseGlassCustomColors(themeSettings.value))
+  function openPaletteEditor() {
+    paletteDraft.value = clonePalette(appliedLocalPalette.value ?? managedPalette.value)
+    paletteOpen.value = true
+    paletteNotice.value = ''
+  }
+
+  function closePaletteEditor() {
+    paletteDraft.value = null
+    paletteOpen.value = false
+  }
+
+  function applyLocalPalette(palette: PaletteConfig): boolean {
+    const parsed = parsePaletteColors(palette.colors)
+    if (!parsed.ok)
+      throw new Error(parsed.error)
+    appliedLocalPalette.value = clonePalette({ preset: palette.preset, colors: parsed.colors })
+    const saved = writePalettePreference(localPaletteKey, appliedLocalPalette.value)
+    closePaletteEditor()
+    return saved
+  }
+
+  function followSitePalette(): boolean {
+    appliedLocalPalette.value = null
+    const saved = writePalettePreference(localPaletteKey, null)
+    closePaletteEditor()
+    return saved
+  }
 
   const colorVisionMode = computed<ColorVisionMode>(() => parseColorVisionMode(themeSettings.value.colorVisionMode))
 
@@ -1279,6 +1219,7 @@ const useAppStore = defineStore('app', () => {
     const session = getAuthSession()
     isLoggedIn.value = session.authenticated
     authStatus.value = session.status
+    authSessionRevision.value = getAuthSessionRevision()
     return session
   }
 
@@ -1334,6 +1275,16 @@ const useAppStore = defineStore('app', () => {
     homeAdvancedToolsVisible,
     glassColorPreset,
     glassCustomColors,
+    managedPalette,
+    effectivePalette,
+    appliedLocalPalette,
+    paletteDraft,
+    paletteOpen,
+    paletteNotice,
+    openPaletteEditor,
+    closePaletteEditor,
+    applyLocalPalette,
+    followSitePalette,
     colorVisionMode,
     colorVisionFriendly,
     visitorAuditSupported,
@@ -1368,6 +1319,7 @@ const useAppStore = defineStore('app', () => {
     backgroundOverlay,
     isLoggedIn,
     authStatus,
+    authSessionRevision,
     privateFeaturesAllowed,
     publicSettings,
     siteName,

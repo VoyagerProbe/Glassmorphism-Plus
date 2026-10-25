@@ -123,6 +123,19 @@ export async function createLab({ version = '1.5.0-fix1' } = {}) {
       await exit
     }
   }
+  async function restart() {
+    // Interrupt real sockets without altering the disposable database or settings.
+    await stop()
+    child = launch()
+    for (let attempt = 0; attempt < 120; attempt++) {
+      try {
+        await request('/api/version')
+        return
+      }
+      catch { await delay(250) }
+    }
+    throw new Error('Disposable backend restart did not become ready')
+  }
   async function restartMode(restricted) {
     await stop()
     const metrics = resolve(root, 'data/metrics.db')
@@ -199,7 +212,7 @@ export async function createLab({ version = '1.5.0-fix1' } = {}) {
       const f = fixtures[label]
       return download(f.url, resolve(downloads, `${label}-${f.sha}.zip`), f.sha)
     }
-    return { root, base, request, upload, setTheme, archive, fixtureFile, restartMode, stop, credentials: { username, password }, cookie, binaryHash: expected }
+    return { root, base, request, upload, setTheme, archive, fixtureFile, restart, restartMode, stop, credentials: { username, password }, cookie, binaryHash: expected }
   }
   catch (error) {
     await stop()

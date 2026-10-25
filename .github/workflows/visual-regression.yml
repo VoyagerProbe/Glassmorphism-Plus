@@ -167,3 +167,36 @@ jobs:
           path: test-results/
           if-no-files-found: error
           retention-days: 14
+
+  webkit-palette:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - name: Locked dependencies
+        run: |
+          bun install --frozen-lockfile
+          git diff --exit-code -- bun.lock
+      - name: Install WebKit
+        run: bunx playwright install --with-deps webkit
+      - name: Build palette test artifact
+        run: KOMARI_SKIP_PACKAGE=1 bun run build-only
+      - name: Verify palette and material on desktop and mobile WebKit
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/webkit-palette-summary.json
+        run: >-
+          node node_modules/@playwright/test/cli.js test
+          tests/visual/palette-colors.spec.ts tests/visual/palette-editor.spec.ts tests/visual/palette-material.spec.ts
+          --config playwright.webkit.config.ts --retries=0 --reporter=line,json
+          --output=test-results/webkit-palette
+      - name: Retain palette evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: webkit-palette-results
+          path: test-results/
+          if-no-files-found: error
+          retention-days: 14

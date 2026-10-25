@@ -140,12 +140,14 @@ test('all card sizes preserve rows and rails; long remarks truncate and pills sh
         return { fill: s.backgroundColor, edge: s.boxShadow, opacity: s.opacity }
       }))
       expect(surfaces).toHaveLength(6)
-      if (theme === 'light') {
+      {
         expect(new Set(surfaces.map(s => s.fill)).size).toBe(1)
         expect(surfaces.every(s => s.edge === 'none' && s.opacity === '1')).toBe(true)
         const expected = await card.evaluate((e) => {
           const sample = document.createElement('span')
-          sample.style.backgroundColor = 'var(--glass-light-control)'
+          const reduced = matchMedia('(prefers-reduced-transparency: reduce)').matches
+            || !(CSS.supports('backdrop-filter', 'blur(1px)') || CSS.supports('-webkit-backdrop-filter', 'blur(1px)'))
+          sample.style.backgroundColor = `var(${reduced ? '--opaque-control' : '--control-surface'})`
           e.appendChild(sample)
           const color = getComputedStyle(sample).backgroundColor
           sample.remove()
@@ -161,7 +163,11 @@ test('all card sizes preserve rows and rails; long remarks truncate and pills sh
   }
 })
 
-test('360px boundary, custom transparent control colors and automatic light/dark use existing theme tokens', async ({ page }) => {
+test('360px boundary, custom transparent control colors and automatic light/dark use existing theme tokens', async ({ page, browserName }) => {
+  if (browserName === 'chromium') {
+    const cdp = await page.context().newCDPSession(page)
+    await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-transparency', value: 'no-preference' }] })
+  }
   await page.setViewportSize({ width: 360, height: 800 })
   const fixture = await installKomariFixture(page, { hideEarth: true, nodeCount: 1, managedThemeMode: 'beijing', clockNow: '2026-07-25T02:00:00Z', nodeCardPingDisplayConfigV3: config, nodeCardPingFixture: { metric: 'valid', thirdSharedTask: true } })
   fixture.setThemeSetting('glassColorPreset', 'custom')
@@ -175,7 +181,9 @@ test('360px boundary, custom transparent control colors and automatic light/dark
   await expect(card).toHaveCSS('background-color', 'rgba(221, 238, 255, 0.5)')
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false)
   await page.getByRole('button', { name: '深色模式', exact: true }).dispatchEvent('click')
-  await expect(card.locator('.node-card-info-surface').first()).toHaveCSS('background-color', 'rgba(255, 255, 255, 0.05)')
+  // v3 intentionally fixes the old fixed white/5 dark fill. Partial custom JSON
+  // must retain its original per-key darkControl fallback (#101624CC).
+  await expect(card.locator('.node-card-info-surface').first()).toHaveCSS('background-color', 'rgba(16, 22, 36, 0.8)')
 })
 
 test('guest/admin visibility keeps private notes hidden and honors hidden-node and price rules', async ({ page }) => {

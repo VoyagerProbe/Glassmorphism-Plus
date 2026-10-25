@@ -6,23 +6,25 @@ import process from 'node:process'
 import { expect } from '@playwright/test'
 import { chromium } from 'playwright'
 import { createLab, delay, digest, download, project, zipFiles } from '../service-worker/lab.mjs'
+import { verifyPaletteRoundtrip } from './palette-roundtrip.mjs'
 
 const manifest = JSON.parse(readFileSync(resolve(project, 'komari-theme.json')))
 const installer = process.env.PLUS_INSTALLER || resolve(project, '..', manifest.version, `Glassmorphism-Plus-release-${manifest.version}.zip`)
 const files = zipFiles(installer)
 const installerSha = digest(readFileSync(installer))
 const workerSha = '472d42cd35619cde31ba3378b3c1b1ed12a7687152e37b7d131b67902814d527'
-const oldSha = '5f2395ef9dad6aa4280d951d60692200f712cf16eec9485c4f4b684f5d03541b'
+const oldSha = 'b044eefcd5df9124cdbb40061a9fab704c172142ac88df7cbf5d22930ba9c6a1'
 const reports = []
 const htmlMime = /text\/html/
 const javascriptMime = /javascript/
 const jsonMime = /json/
+const accessibleClass = /color-vision-friendly/
 
 async function main() {
   const browser = await chromium.launch()
 
   try {
-    for (const version of ['1.5.1', '1.5.0-fix1', '1.5.0', '1.4.3']) {
+    for (const version of ['1.6.0', '1.5.1', '1.5.0-fix1', '1.5.0', '1.4.3']) {
       const lab = await createLab({ version })
       try {
         let id = 0
@@ -33,11 +35,23 @@ async function main() {
         }
         assert.equal((await rpc('public:getVersion')).version, version)
         const redirect = await fetch(`${lab.base}/admin`, { redirect: 'manual' })
-        if (version === '1.5.1') {
+        if (version === '1.6.0' || version === '1.5.1') {
           assert.equal(redirect.status, 302)
           assert.equal(redirect.headers.get('location'), '/admin/dashboard')
         }
-        const oldZip = await download('https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/download/v2.8.3/Glassmorphism-Plus-release-2.8.3.zip', resolve(lab.root, 'previous.zip'), oldSha)
+        if (version === '1.6.0') {
+          await lab.upload(installer)
+          await lab.setTheme('glassmorphism-plus')
+          const fresh = await browser.newContext()
+          const freshPage = await fresh.newPage()
+          await freshPage.goto(lab.base)
+          await expect(freshPage.locator('footer')).toContainText(`v${manifest.version} · VoyagerProbe`)
+          await freshPage.getByTestId('palette-entry').click()
+          await expect(freshPage.getByTestId('palette-panel')).toBeVisible()
+          assert.equal(await freshPage.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length), 0)
+          await fresh.close()
+        }
+        const oldZip = await download('https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/download/v2.8.4/Glassmorphism-Plus-release-2.8.4.zip', resolve(lab.root, 'previous.zip'), oldSha)
         await lab.upload(oldZip)
         await lab.setTheme('glassmorphism-plus')
         const client = await rpc('admin:addClient', { name: 'Synthetic compatibility node' }, true)
@@ -65,7 +79,7 @@ async function main() {
           const history = await rpc('common:getRecords', { type: 'ping', uuid: client.uuid, start, end })
           return new Set(history.records?.map(record => record.task_id)).size
         }, { timeout: 15000, intervals: [250, 500, 1000] }).toBe(3)
-        const settings = { themeMode: 'dark', themeColor: '#00c99c', hideEarth: true, disablePageAnimation: true, rpcTransportMode: 'http', nodeCardPingDisplayConfigV3: JSON.stringify({ schemaVersion: 3, global: { threeNetworkEnabled: true, taskIds: tasks }, nodes: {} }) }
+        const settings = { themeMode: 'dark', themeColor: '#00c99c', hideEarth: true, disablePageAnimation: true, rpcTransportMode: 'http', glassColorPreset: '自定义', glassCustomColors: '{"lightText":"#123456","darkText":"#E1E2E3"}', backgroundEnabled: false, lightBackgroundUrl: 'https://example.invalid/preserved.png', colorVisionMode: '色觉友好', futureOpaqueSetting: { array: [false, null, 17], nested: { preserve: 'synthetic' } }, nodeCardPingDisplayConfigV3: JSON.stringify({ schemaVersion: 3, global: { threeNetworkEnabled: true, taskIds: tasks }, nodes: {} }) }
         const saveSettings = body => lab.request('/api/admin/theme/settings?theme=glassmorphism-plus', { auth: true, body })
         await saveSettings(settings)
         const beforeSettings = (await rpc('public:getPublicSettings')).theme_settings
@@ -79,7 +93,15 @@ async function main() {
             badResources.push({ path: new URL(r.url()).pathname, status: r.status() })
         })
         await page.goto(lab.base)
-        await expect(page.locator('footer')).toContainText('v2.8.3 · VoyagerProbe')
+        await expect(page.locator('footer')).toContainText('v2.8.4 · VoyagerProbe')
+        // Model an existing registration from a prior backend visit without clearing it.
+        await page.evaluate(async () => {
+          const registration = await navigator.serviceWorker.register('/sw.js')
+          await navigator.serviceWorker.ready
+          if (!registration.active)
+            throw new Error('Previous compatibility Worker failed to activate')
+        })
+        await expect.poll(() => page.evaluate(() => navigator.serviceWorker.controller?.scriptURL)).toBe(`${lab.base}/sw.js`)
         await page.getByRole('button', { name: '收藏 Synthetic compatibility node', exact: true }).click()
         await page.evaluate(() => {
           document.cookie = 'compat_sentinel=preserved; Path=/'
@@ -96,7 +118,9 @@ async function main() {
         await expect(page.locator('footer')).toContainText(`v${manifest.version} · VoyagerProbe`)
         assert.notEqual(await page.locator('script[type="module"][src]').first().getAttribute('src'), entry)
         await expect(page.getByRole('button', { name: '取消收藏 Synthetic compatibility node', exact: true })).toBeVisible()
+        await expect(page.locator('html')).toHaveClass(accessibleClass)
         assert(await page.evaluate(() => document.cookie.includes('compat_sentinel=preserved') && localStorage.getItem('compat_sentinel') === 'preserved'))
+        assert.equal(await page.evaluate(() => navigator.serviceWorker.controller?.scriptURL), `${lab.base}/sw.js`)
         await expect.poll(() => page.evaluate(uuid => document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('nodes').nodes.find(n => n.uuid === uuid)?.cpu, client.uuid)).toBe(12)
         await page.locator('[data-node-ping-header="latency"]').first().click()
         const modal = page.getByRole('dialog').locator('[data-ping-chart]')
@@ -122,17 +146,27 @@ async function main() {
           const modeContext = await browser.newContext()
           const modePage = await modeContext.newPage()
           let frames = 0
+          let sockets = 0
           modePage.on('websocket', (ws) => {
-            if (new URL(ws.url()).pathname === '/api/rpc2')
+            if (new URL(ws.url()).pathname === '/api/rpc2') {
+              sockets++
               ws.on('framereceived', () => frames++)
+            }
           })
           await modePage.goto(lab.base)
           await expect(modePage.locator('.node-card')).toHaveCount(1)
           await modePage.goto(`${lab.base}/instance/${client.uuid}`)
           await expect.poll(async () => Number(await modePage.locator('[data-ping-chart]').getAttribute('data-ping-chart-record-count'))).toBeGreaterThan(0)
-          if (mode === 'websocket')
+          if (mode === 'websocket') {
             await expect.poll(() => frames).toBeGreaterThan(0)
-          modeEvidence.push({ mode, nonemptyPingHistory: true, websocketFrames: frames })
+            const firstFrames = frames
+            const firstSockets = sockets
+            await lab.restart()
+            await feed()
+            await expect.poll(() => sockets, { timeout: 15000 }).toBeGreaterThan(firstSockets)
+            await expect.poll(() => frames, { timeout: 15000 }).toBeGreaterThan(firstFrames)
+          }
+          modeEvidence.push({ mode, nonemptyPingHistory: true, websocketFrames: frames, websocketReconnect: mode === 'websocket' })
           await modeContext.close()
         }
         await saveSettings(settings)
@@ -146,15 +180,16 @@ async function main() {
         await page.locator('input').first().fill('Synthetic compatibility saved')
         await page.getByRole('button', { name: '保存', exact: true }).first().click()
         await expect.poll(async () => (await lab.request('/api/admin/settings/', { auth: true })).data.sitename).toBe('Synthetic compatibility saved')
-        if (version === '1.5.1') {
+        if (version === '1.6.0' || version === '1.5.1') {
           await page.goto(`${lab.base}/admin`)
           await expect(page).toHaveURL(`${lab.base}/admin/dashboard`)
         }
         await page.goto(lab.base)
         await expect(page.locator('.node-card')).toHaveCount(1)
+        const paletteEvidence = await verifyPaletteRoundtrip({ page, lab, settings, tasks, clientUuid: client.uuid, version, files })
         assert.deepEqual(errors, [])
         assert.deepEqual(badResources, [])
-        reports.push({ version, platform: process.platform, binarySha256: lab.binaryHash, installerSha256: installerSha, installedFiles: files.size, previousInstallerSha256: oldSha, sameProfileUpgrade: true, settingsBindingsFavoritesPreserved: true, liveCpu: 12, modalAndDetailHistory: true, transport: modeEvidence, adminStatus: redirect.status, adminLocation: redirect.headers.get('location'), loginGuestSaveReturn: true, workerSha256: workerSha, errors, badResources, physicalSafari: 'not-tested' })
+        reports.push({ version, platform: process.platform, binarySha256: lab.binaryHash, installerSha256: installerSha, installedFiles: files.size, previousInstallerSha256: oldSha, sameProfileUpgrade: true, existingWorkerRetained: true, freshInstallation: version === '1.6.0', settingsBindingsFavoritesPreserved: true, liveCpu: 12, modalAndDetailHistory: true, transport: modeEvidence, palette: paletteEvidence, adminStatus: redirect.status, adminLocation: redirect.headers.get('location'), loginGuestSaveReturn: true, workerSha256: workerSha, errors, badResources, physicalSafari: 'not-tested' })
         writeFileSync(process.env.PLUS_COMPAT_REPORT || resolve(lab.root, 'komari-compatibility.json'), JSON.stringify(reports, null, 2))
         process.stdout.write(`${JSON.stringify(reports.at(-1))}\n`)
         await context.close()

@@ -53,7 +53,8 @@ test('Plus documentation keeps its own version identity and preserves upstream a
   expect(installSection).toContain(`Glassmorphism-Plus-release-${version}.zip`)
   expect(installSection).toContain(`https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v${version}`)
   expect(readme).toContain('Source code (zip)')
-  expect(readme).not.toMatch(/^#{2,}\s+(?:\S.*)?v3\.\d/m)
+  // Plus now has its own 3.x releases; the upstream baseline is still not a Plus release.
+  expect(readme).not.toMatch(/^#{2,}\s+(?:\S.*)?v3\.3\.7/m)
 
   const changelogVersions = Array.from(changelog.matchAll(/^## \[([^\]]+)\]/gm), match => match[1])
   expect(changelogVersions[0]).toBe(version)
@@ -1474,7 +1475,7 @@ test('v2.7.1 header exposes the three direct theme choices before the unchanged 
   await installKomariFixture(page, { adminAccess: 'admin' })
   await openStablePage(page)
 
-  const expectedLabels = ['浅色模式', '北京时间自动', '深色模式', '显示首页工具', '延迟监测中心', '后台管理']
+  const expectedLabels = ['浅色模式', '北京时间自动', '深色模式', '显示首页工具', '延迟监测中心', '配色中心', '后台管理']
   const controls = page.getByTestId('header-actions').locator('button')
   await expect(controls).toHaveCount(expectedLabels.length)
   expect(await controls.evaluateAll(buttons => buttons.map(button => button.getAttribute('aria-label')))).toEqual(expectedLabels)
@@ -1620,8 +1621,8 @@ test('v2.7.1 theme and visitor tools remain visible, ordered, and non-overlappin
   const controls = page.getByTestId('header-actions').locator('button')
   for (const width of [360, 375, 390, 430]) {
     await page.setViewportSize({ width, height: 844 })
-    await expect(controls).toHaveCount(6)
-    for (let index = 0; index < 6; index += 1)
+    await expect(controls).toHaveCount(7)
+    for (let index = 0; index < 7; index += 1)
       await expect(controls.nth(index)).toBeVisible()
 
     const layout = await page.getByTestId('header-actions').evaluate((actions) => {
@@ -1699,14 +1700,26 @@ for (const background of [
 
     const card = primaryNodeCard(page)
     await card.scrollIntoViewIfNeeded()
-    const styles = await card.evaluate(element => ({
-      cardBorderWidth: getComputedStyle(element).borderWidth,
-      cardBorderColor: getComputedStyle(element).borderColor,
-      infoShadows: Array.from(element.querySelectorAll('.node-card-info-surface'), item => getComputedStyle(item).boxShadow),
-      stripShadows: Array.from(element.querySelectorAll('.node-card-ping-task-strip'), item => getComputedStyle(item).boxShadow),
-      fills: Array.from(element.querySelectorAll('.node-card-info-surface,.node-card-ping-task-strip'), item => getComputedStyle(item).backgroundColor),
-      contained: element.scrollWidth <= element.clientWidth + 1,
-    }))
+    const styles = await card.evaluate((element) => {
+      // Full glass keeps the existing preset; reduced transparency intentionally
+      // uses its opaque composite. Both inner areas must consume the same token.
+      const probe = document.createElement('span')
+      const reduced = matchMedia('(prefers-reduced-transparency: reduce)').matches
+        || !(CSS.supports('backdrop-filter', 'blur(1px)') || CSS.supports('-webkit-backdrop-filter', 'blur(1px)'))
+      probe.style.backgroundColor = `var(${reduced ? '--opaque-control' : '--control-surface'})`
+      element.append(probe)
+      const expectedFill = getComputedStyle(probe).backgroundColor
+      probe.remove()
+      return {
+        expectedFill,
+        cardBorderWidth: getComputedStyle(element).borderWidth,
+        cardBorderColor: getComputedStyle(element).borderColor,
+        infoShadows: Array.from(element.querySelectorAll('.node-card-info-surface'), item => getComputedStyle(item).boxShadow),
+        stripShadows: Array.from(element.querySelectorAll('.node-card-ping-task-strip'), item => getComputedStyle(item).boxShadow),
+        fills: Array.from(element.querySelectorAll('.node-card-info-surface,.node-card-ping-task-strip'), item => getComputedStyle(item).backgroundColor),
+        contained: element.scrollWidth <= element.clientWidth + 1,
+      }
+    })
     expect(styles.cardBorderWidth).toBe('1px')
     expect(styles.cardBorderColor).not.toBe('rgba(0, 0, 0, 0)')
     expect(styles.infoShadows).toHaveLength(3)
@@ -1714,7 +1727,8 @@ for (const background of [
     expect(styles.stripShadows).toHaveLength(3)
     expect(styles.stripShadows.every(shadow => shadow === 'none')).toBe(true)
     expect(styles.fills).toHaveLength(6)
-    expect(styles.fills.every(fill => fill === 'rgba(226, 232, 240, 0.76)')).toBe(true)
+    expect(styles.expectedFill).not.toBe('rgba(0, 0, 0, 0)')
+    expect(styles.fills.every(fill => fill === styles.expectedFill)).toBe(true)
     expect(styles.contained).toBe(true)
 
     await expect(page.locator('.background-container')).toBeVisible()
@@ -3218,6 +3232,13 @@ test.describe('node-card per-node ping task bindings', () => {
       await expect(card.locator('[data-node-ping-bars="loss"] [data-node-ping-bar]')).toHaveCount((threeNetworkEnabled ? 3 : 1) * 20)
 
       const surfaceStyles = await card.evaluate((element) => {
+        const reduced = matchMedia('(prefers-reduced-transparency: reduce)').matches
+          || !(CSS.supports('backdrop-filter', 'blur(1px)') || CSS.supports('-webkit-backdrop-filter', 'blur(1px)'))
+        const probe = document.createElement('span')
+        probe.style.backgroundColor = `var(${reduced ? '--opaque-control' : '--control-surface'})`
+        element.append(probe)
+        const expectedFill = getComputedStyle(probe).backgroundColor
+        probe.remove()
         const styleFor = (target: Element) => {
           const style = getComputedStyle(target)
           return {
@@ -3228,6 +3249,7 @@ test.describe('node-card per-node ping task bindings', () => {
           }
         }
         return {
+          expectedFill,
           card: styleFor(element),
           info: Array.from(element.querySelectorAll('.node-card-info-surface'), styleFor),
           strips: Array.from(element.querySelectorAll('.node-card-ping-task-strip'), styleFor),
@@ -3239,16 +3261,11 @@ test.describe('node-card per-node ping task bindings', () => {
       expect(surfaceStyles.info).toHaveLength(3)
       expect(surfaceStyles.strips).toHaveLength(threeNetworkEnabled ? 3 : 1)
       expect(surfaceStyles.contained).toBe(true)
-      if (scenario.dark) {
-        expect(surfaceStyles.info.every(style => style.boxShadow === 'none')).toBe(true)
-        expect(surfaceStyles.strips.every(style => style.boxShadow === 'none')).toBe(true)
-      }
-      else {
-        // v2.8.1 intentionally replaces the inner inset with the default
-        // light control fill; retain the outer border and all geometry checks.
-        expect(surfaceStyles.info.every(style => style.boxShadow === 'none' && style.backgroundColor === 'rgba(226, 232, 240, 0.76)')).toBe(true)
-        expect(surfaceStyles.strips.every(style => style.boxShadow === 'none' && style.backgroundColor === 'rgba(226, 232, 240, 0.76)')).toBe(true)
-      }
+      // Both modes now use effective Control, with a deliberate opaque fallback
+      // for reduced transparency. Preserve all original density/geometry checks.
+      expect(surfaceStyles.expectedFill).not.toBe('rgba(0, 0, 0, 0)')
+      expect(surfaceStyles.info.every(style => style.boxShadow === 'none' && style.backgroundColor === surfaceStyles.expectedFill)).toBe(true)
+      expect(surfaceStyles.strips.every(style => style.boxShadow === 'none' && style.backgroundColor === surfaceStyles.expectedFill)).toBe(true)
 
       const layouts = await strips.evaluateAll(elements => elements.map((element) => {
         const query = (selector: string) => element.querySelector<HTMLElement>(selector)!.getBoundingClientRect()

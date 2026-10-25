@@ -7,6 +7,7 @@ import type {
 } from '@/utils/nodeCardPingConfig'
 import { loadPublicPingTasks } from '@/services/metrics.service'
 import { requestManager } from '@/services/request.service'
+import { enqueueThemeSettingsSave, parseThemeSettingsForSave } from '@/services/theme-settings-save.service'
 import { orderPingTasksByBackend } from '@/utils/metricSeries'
 import {
   isNodeCardPingBindingUuid,
@@ -180,7 +181,12 @@ function normalizePublicSettings(value: unknown): PublicSettings {
 }
 
 function themeSettingsFromPublicSettings(publicSettings: PublicSettings): Record<string, unknown> {
-  return isRecord(publicSettings.theme_settings) ? { ...publicSettings.theme_settings } : {}
+  try {
+    return parseThemeSettingsForSave(publicSettings.theme_settings)
+  }
+  catch (error) {
+    throw new NodeCardPingBindingApiError(error instanceof Error ? error.message : '主题设置格式异常')
+  }
 }
 
 function hasAssignedTask(tasks: AdminPingTask[], nodeUuid: string, taskId: number): boolean {
@@ -339,72 +345,70 @@ export async function saveNodeCardPingTaskBindings(options: SaveNodeCardPingBind
   if (!options.theme.trim())
     throw new NodeCardPingBindingApiError('未找到当前主题名称')
 
-  return runAdminRequest('node-card-ping-bindings:save', async (signal) => {
-    const [publicSettings, tasks, clients, publicTasks] = await Promise.all([
-      loadFreshPublicSettings(signal),
-      loadFreshAdminPingTasks(signal),
-      loadFreshAdminClients(signal),
-      loadPublicPingTasks().catch(() => []),
-    ])
-    const orderedTasks = orderAdminPingTasksByPublic(tasks, publicTasks)
-    const freshSettings = themeSettingsFromPublicSettings(publicSettings)
-    if (publicSettings.theme !== options.theme)
-      throw new NodeCardPingBindingApiError('当前主题已切换，请重新打开绑定页面后再保存')
-    const originalBindings = parseNodeCardPingTaskBindings(freshSettings[NODE_CARD_PING_BINDINGS_SETTING_KEY])
-    const nextBindings = { ...pruneNodeCardPingTaskBindings(originalBindings, clients, orderedTasks) }
+  const queuedGeneration = adminSessionGeneration
+  return enqueueThemeSettingsSave(() => {
+    if (queuedGeneration !== adminSessionGeneration)
+      throw new NodeCardPingBindingApiError('管理会话已失效，请重新加载', 401)
+    return runAdminRequest('node-card-ping-bindings:save', async (signal) => {
+      const [publicSettings, tasks, clients, publicTasks] = await Promise.all([
+        loadFreshPublicSettings(signal),
+        loadFreshAdminPingTasks(signal),
+        loadFreshAdminClients(signal),
+        loadPublicPingTasks().catch(() => []),
+      ])
+      const orderedTasks = orderAdminPingTasksByPublic(tasks, publicTasks)
+      const freshSettings = themeSettingsFromPublicSettings(publicSettings)
+      if (publicSettings.theme !== options.theme)
+        throw new NodeCardPingBindingApiError('当前主题已切换，请重新打开绑定页面后再保存')
+      const originalBindings = parseNodeCardPingTaskBindings(freshSettings[NODE_CARD_PING_BINDINGS_SETTING_KEY])
+      const nextBindings = { ...pruneNodeCardPingTaskBindings(originalBindings, clients, orderedTasks) }
 
-    if (options.selectedNodeUuid) {
-      const nodeUuid = options.selectedNodeUuid.toLowerCase()
-      if (!clients.some(client => client.uuid === nodeUuid))
-        throw new NodeCardPingBindingApiError('节点已不存在，无法保存绑定')
+      if (options.selectedNodeUuid) {
+        const nodeUuid = options.selectedNodeUuid.toLowerCase()
+        if (!clients.some(client => client.uuid === nodeUuid))
+          throw new NodeCardPingBindingApiError('节点已不存在，无法保存绑定')
 
-      if (options.selectedTaskId === undefined) {
-        delete nextBindings[nodeUuid]
+        if (options.selectedTaskId === undefined) {
+          delete nextBindings[nodeUuid]
+        }
+        else if (isNodeCardPingTaskId(options.selectedTaskId) && hasAssignedTask(orderedTasks, nodeUuid, options.selectedTaskId)) {
+          nextBindings[nodeUuid] = options.selectedTaskId
+        }
+        else {
+          throw new NodeCardPingBindingApiError('所选延迟任务已删除或不再分配给该节点')
+        }
       }
-      else if (isNodeCardPingTaskId(options.selectedTaskId) && hasAssignedTask(orderedTasks, nodeUuid, options.selectedTaskId)) {
-        nextBindings[nodeUuid] = options.selectedTaskId
+
+      const serializedBindings = serializeNodeCardPingTaskBindings(nextBindings)
+      const mergedSettings = {
+        ...freshSettings,
+        [NODE_CARD_PING_BINDINGS_SETTING_KEY]: serializedBindings,
       }
-      else {
-        throw new NodeCardPingBindingApiError('所选延迟任务已删除或不再分配给该节点')
+      await requestJson<unknown>(`/api/admin/theme/settings?theme=${encodeURIComponent(options.theme)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mergedSettings),
+      }, signal)
+
+      const verifiedPublicSettings = await loadFreshPublicSettings(signal)
+      const verifiedSettings = themeSettingsFromPublicSettings(verifiedPublicSettings)
+      const verifiedBindings = parseNodeCardPingTaskBindings(verifiedSettings[NODE_CARD_PING_BINDINGS_SETTING_KEY])
+      if (serializeNodeCardPingTaskBindings(verifiedBindings) !== serializedBindings)
+        throw new NodeCardPingBindingApiError('主题设置保存后未能确认，请刷新后重试')
+
+      return {
+        bindings: verifiedBindings,
+        prunedCount: Object.keys(originalBindings).length - Object.keys(pruneNodeCardPingTaskBindings(originalBindings, clients, orderedTasks)).length,
+        publicSettings: verifiedPublicSettings,
+        settings: verifiedSettings,
+        tasks: orderedTasks,
+        clients,
       }
-    }
-
-    const serializedBindings = serializeNodeCardPingTaskBindings(nextBindings)
-    const mergedSettings = {
-      ...freshSettings,
-      [NODE_CARD_PING_BINDINGS_SETTING_KEY]: serializedBindings,
-    }
-    await requestJson<unknown>(`/api/admin/theme/settings?theme=${encodeURIComponent(options.theme)}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(mergedSettings),
-    }, signal)
-
-    const verifiedPublicSettings = await loadFreshPublicSettings(signal)
-    const verifiedSettings = themeSettingsFromPublicSettings(verifiedPublicSettings)
-    const verifiedBindings = parseNodeCardPingTaskBindings(verifiedSettings[NODE_CARD_PING_BINDINGS_SETTING_KEY])
-    if (serializeNodeCardPingTaskBindings(verifiedBindings) !== serializedBindings)
-      throw new NodeCardPingBindingApiError('主题设置保存后未能确认，请刷新后重试')
-
-    return {
-      bindings: verifiedBindings,
-      prunedCount: Object.keys(originalBindings).length - Object.keys(pruneNodeCardPingTaskBindings(originalBindings, clients, orderedTasks)).length,
-      publicSettings: verifiedPublicSettings,
-      settings: verifiedSettings,
-      tasks: orderedTasks,
-      clients,
-    }
+    })
   })
 }
 
-let pingConfigSaveQueue: Promise<void> = Promise.resolve()
 let pingConfigSaveSequence = 0
-
-function enqueuePingConfigSave<T>(task: () => Promise<T>): Promise<T> {
-  const result = pingConfigSaveQueue.then(task, task)
-  pingConfigSaveQueue = result.then(() => undefined, () => undefined)
-  return result
-}
 
 export async function saveNodeCardPingDisplayConfigV3(
   options: SaveNodeCardPingDisplayConfigV3Options,
@@ -418,7 +422,10 @@ export async function saveNodeCardPingDisplayConfigV3(
   const requestedConfig = requestedInspection.config
   const serializedConfig = serializeNodeCardPingConfig(requestedConfig)
 
-  return enqueuePingConfigSave(() => {
+  const queuedGeneration = adminSessionGeneration
+  return enqueueThemeSettingsSave(() => {
+    if (queuedGeneration !== adminSessionGeneration)
+      throw new NodeCardPingBindingApiError('管理会话已失效，请重新加载', 401)
     const requestKey = `node-card-ping-config-v3:save:${++pingConfigSaveSequence}`
     return runAdminRequest(requestKey, async (signal) => {
       const [publicSettings, tasks, clients, publicTasks] = await Promise.all([

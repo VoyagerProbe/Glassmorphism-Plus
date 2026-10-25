@@ -1,6 +1,8 @@
 // Official release assets, verified against GitHub release digests on 2026-09-25.
 // No moving latest/main binary is used in the compatibility matrix.
 export const binaries = {
+  // Fixed 1.6.0 release digests checked on 2026-10-26.
+  '1.6.0': { linux: '81657c0f616edb64a247d9f7a1628be104e344e6cd6eec6da82d43050a3d56e5', win32: '5e51a2880d7fb86ce7e81ad6fdd1f6847800be5c1e7c889be5221ad01aacc13a' },
   '1.4.3': { linux: '0ecded3f54270e98efd4d8853ed45f82239e2182d9f0f671c489bb4b4c3d14db', win32: '459839e1cd4e07d674f246f4b409163d24277d2eb23accaf0ab73cfb10861a49' },
   '1.5.0': { linux: '480acddb1cbc2542daba7f8b256f733fa7e5bd88526cd9f9f6ad8aec09092128', win32: 'a440e7a5ac7386d9da7f87be619fb827783ee20425b34539e7455efc9869c308' },
   '1.5.0-fix1': { linux: 'b82c0551577e70aa609121d90ed9e073b16f72ba597dd576e18297122dc9ef4c', win32: 'afe1277a5ae451807ba64c999515737e735bca5b39e9b9162d10d249c709e23c' },

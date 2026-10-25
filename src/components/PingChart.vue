@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useChartTheme } from '@/composables/useChartTheme'
 import { usePingTooltipTouch } from '@/composables/usePingTooltipTouch'
 import { CACHE_CONFIG } from '@/constants/cache'
 import { PING_RECORD_MAX_COUNT } from '@/constants/load'
@@ -33,7 +34,6 @@ const props = defineProps<{
 }>()
 
 const appStore = useAppStore()
-const isDark = computed(() => appStore.isDark)
 
 interface CustomRange {
   start: dayjs.Dayjs
@@ -54,21 +54,12 @@ interface PingChartRecord extends PingRecord {
 }
 
 // 图表主题相关颜色
-const chartThemeColors = computed(() => ({
-  text: isDark.value ? 'rgba(255, 255, 255, 0.85)' : 'rgba(0, 0, 0, 0.85)',
-  textSecondary: isDark.value ? 'rgba(255, 255, 255, 0.55)' : 'rgba(0, 0, 0, 0.55)',
-  textTertiary: isDark.value ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)',
-  borderColor: isDark.value ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
-  splitLineColor: isDark.value ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
-  tooltipBg: isDark.value ? 'rgba(40, 40, 40, 0.95)' : 'rgba(255, 255, 255, 0.8)',
-  tooltipShadow: isDark.value ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.06)',
-  crosshairColor: isDark.value ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
-}))
+const chartThemeColors = useChartTheme()
 
-const chartColors = reactive(getChartSeriesPalette(appStore.colorVisionFriendly))
+const chartColors = reactive(getChartSeriesPalette(appStore.colorVisionFriendly, appStore.isDark))
 
 watchEffect(() => {
-  chartColors.splice(0, chartColors.length, ...getChartSeriesPalette(appStore.colorVisionFriendly))
+  chartColors.splice(0, chartColors.length, ...getChartSeriesPalette(appStore.colorVisionFriendly, appStore.isDark))
 })
 
 // 从 publicSettings 获取记录保留时间
@@ -685,7 +676,7 @@ const baseTooltipConfig = computed(() => ({
   trigger: 'axis' as const,
   confine: false,
   backgroundColor: chartThemeColors.value.tooltipBg,
-  borderColor: 'transparent',
+  borderColor: chartThemeColors.value.borderColor,
   borderWidth: 0,
   borderRadius: 6,
   textStyle: {

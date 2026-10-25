@@ -16,6 +16,7 @@ import { Empty } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useChartTheme } from '@/composables/useChartTheme'
 import { loadNodeLoadRecords, useNodeLoadStats } from '@/composables/useNodeLoadStats'
 import { LOAD_RECORD_MAX_COUNT } from '@/constants/load'
 import { loadMetricDefinitions, loadPublicPingTasks, queryMetrics } from '@/services/metrics.service'
@@ -42,12 +43,11 @@ const dataUpdateInterval = computed(() => appStore.dataUpdateInterval * 1000)
 const detailLoadStatsHours = computed(() => appStore.publicSettings?.record_preserve_time || 720)
 
 // 使用 store 中的 isDark computed
-const isDark = computed(() => appStore.isDark)
 
-const chartColors = reactive(getLoadChartPalette(appStore.colorVisionFriendly))
+const chartColors = reactive(getLoadChartPalette(appStore.colorVisionFriendly, appStore.isDark))
 
 watchEffect(() => {
-  Object.assign(chartColors, getLoadChartPalette(appStore.colorVisionFriendly))
+  Object.assign(chartColors, getLoadChartPalette(appStore.colorVisionFriendly, appStore.isDark))
 })
 
 const LOAD_METRIC_KEYS = [
@@ -100,23 +100,14 @@ interface CustomRange {
 }
 
 // 图表主题相关颜色
-const chartThemeColors = computed(() => ({
-  text: isDark.value ? 'rgba(255, 255, 255, 0.85)' : 'rgba(0, 0, 0, 0.85)',
-  textSecondary: isDark.value ? 'rgba(255, 255, 255, 0.55)' : 'rgba(0, 0, 0, 0.55)',
-  textTertiary: isDark.value ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)',
-  borderColor: isDark.value ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-  splitLineColor: isDark.value ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
-  tooltipBg: isDark.value ? 'rgba(40, 40, 40, 0.95)' : 'rgba(255, 255, 255, 0.8)',
-  tooltipShadow: isDark.value ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.06)',
-  crosshairColor: isDark.value ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
-}))
+const chartThemeColors = useChartTheme()
 
 // 通用 Tooltip 配置
 const baseTooltipConfig = computed(() => ({
   trigger: 'axis' as const,
   confine: false,
   backgroundColor: chartThemeColors.value.tooltipBg,
-  borderColor: 'transparent',
+  borderColor: chartThemeColors.value.borderColor,
   borderWidth: 0,
   borderRadius: 6,
   textStyle: {
@@ -768,10 +759,10 @@ const latestStatus = computed(() => {
 
 const hasGpuData = computed(() => chartData.value.some(record => record.gpu != null || record.gpu_usage != null || record.gpu_memory != null || record.gpu_detailed))
 
-const metricSeriesColors = reactive(getChartSeriesPalette(appStore.colorVisionFriendly))
+const metricSeriesColors = reactive(getChartSeriesPalette(appStore.colorVisionFriendly, appStore.isDark))
 
 watchEffect(() => {
-  metricSeriesColors.splice(0, metricSeriesColors.length, ...getChartSeriesPalette(appStore.colorVisionFriendly))
+  metricSeriesColors.splice(0, metricSeriesColors.length, ...getChartSeriesPalette(appStore.colorVisionFriendly, appStore.isDark))
 })
 
 const pingTaskMap = computed(() => new Map(pingTasks.value.map(task => [String(task.id), task])))

@@ -28,7 +28,7 @@ for (const scenario of [
   test(`Header Tooltip: ${scenario.name} uses one custom bubble without a native title`, async ({ page }, info) => {
     await installKomariFixture(page, { managedThemeMode: scenario.mode, clockNow: scenario.time, hideEarth: true, adminAccess: 'admin' })
     await page.goto('/')
-    for (const name of ['显示首页工具', '延迟监测中心', '后台管理']) {
+    for (const name of ['显示首页工具', '延迟监测中心', '配色中心', '后台管理']) {
       const button = page.getByRole('button', { name, exact: true })
       await button.hover()
       await expectBubble(page, name)
@@ -85,8 +85,8 @@ test('Header Tooltip: keyboard order, dynamic tools and single action audit', as
   })
   await page.goto('/?retained=fixture')
   const actions = page.getByTestId('header-actions')
-  const names = ['浅色模式', '北京时间自动', '深色模式', '显示首页工具', '延迟监测中心', '后台管理']
-  await expect(actions.locator('button')).toHaveCount(6)
+  const names = ['浅色模式', '北京时间自动', '深色模式', '显示首页工具', '延迟监测中心', '配色中心', '后台管理']
+  await expect(actions.locator('button')).toHaveCount(7)
   await page.getByTestId('theme-mode-light').focus()
   for (const [i, name] of names.entries()) {
     const button = actions.getByRole('button', { name, exact: true })
@@ -157,7 +157,7 @@ for (const width of [360, 390]) {
       await page.keyboard.press('Escape')
       await expect(bubbles(page)).toHaveCount(0)
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-      await expect(page.getByTestId('header-actions').locator('button')).toHaveCount(6)
+      await expect(page.getByTestId('header-actions').locator('button')).toHaveCount(7)
       await noNativeTitle(dark)
     }
     finally {
@@ -170,7 +170,8 @@ test('Header Tooltip: hidden guest entries and detail route stay scoped', async 
   await installKomariFixture(page, { hideEarth: true, hideAdminEntryWhenLoggedOut: true, hidePingTaskBindingEntry: true })
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Komari Visual Lab', exact: true })).toBeVisible()
-  await expect(page.getByTestId('header-actions').locator('button')).toHaveCount(4)
+  await expect(page.getByTestId('header-actions').locator('button')).toHaveCount(5)
+  await expect(page.getByTestId('palette-entry')).toBeVisible()
   await expect(page.getByTestId('ping-center-entry')).toHaveCount(0)
   await expect(page.getByRole('button', { name: '后台管理', exact: true })).toHaveCount(0)
   await page.goto(`/instance/${PRIMARY_NODE_UUID}`)

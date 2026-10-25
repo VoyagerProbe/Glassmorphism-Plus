@@ -44,6 +44,10 @@ const actionButtons = computed(() => {
     })
   }
 
+  if (router.currentRoute.value.name === 'home') {
+    buttons.push({ title: '配色中心', icon: 'lucide:palette', action: 'togglePalette', pressed: appStore.paletteOpen })
+  }
+
   if (!appStore.loading && (appStore.privateFeaturesAllowed || !appStore.hideAdminEntryWhenLoggedOut)) {
     buttons.push({
       title: '后台管理',
@@ -56,6 +60,12 @@ const actionButtons = computed(() => {
 
 function handleButtonClick(action: string) {
   switch (action) {
+    case 'togglePalette':
+      if (appStore.paletteOpen)
+        appStore.closePaletteEditor()
+      else
+        appStore.openPaletteEditor()
+      break
     case 'toggleHomeTools':
       appStore.homeAdvancedToolsVisible = !appStore.homeAdvancedToolsVisible
       break
@@ -97,7 +107,7 @@ const sitename = computed(() => appStore.siteName)
     class="transition-all duration-200 top-0 sticky z-10 border-b border-transparent"
     :class="isScrolled ? '!border-slate-500/10 backdrop-blur-lg' : 'bg-transparent'"
   >
-    <div class="px-4 flex-between h-14 max-w-[1280px] mx-auto gap-2">
+    <div class="px-2 sm:px-4 flex-between h-14 max-w-[1280px] mx-auto gap-1 sm:gap-2">
       <div class="flex min-w-0 items-center gap-2 sm:gap-3 cursor-pointer" @click="router.push('/')">
         <Avatar class="size-8 shrink-0">
           <AvatarImage :src="siteFavicon" :alt="sitename" />
@@ -141,9 +151,11 @@ const sitename = computed(() => appStore.siteName)
                 variant="ghost"
                 size="icon-sm"
                 :aria-label="button.title"
-                :data-testid="button.action === 'openPingCenter' ? 'ping-center-entry' : undefined"
+                :data-testid="button.action === 'openPingCenter' ? 'ping-center-entry' : button.action === 'togglePalette' ? 'palette-entry' : undefined"
+                :aria-expanded="button.action === 'togglePalette' ? appStore.paletteOpen : undefined"
+                :aria-controls="button.action === 'togglePalette' ? 'palette-center' : undefined"
                 :aria-pressed="button.pressed"
-                :class="button.pressed && 'bg-background/70 text-selection'"
+                :class="[button.pressed && 'bg-background/70 text-selection', button.action === 'togglePalette' && 'palette-entry-safe']"
                 @click="handleButtonClick(button.action)"
               >
                 <Icon :icon="button.icon" :width="18" :height="18" />
@@ -158,3 +170,22 @@ const sitename = computed(() => appStore.siteName)
     </div>
   </div>
 </template>
+
+<style scoped>
+.palette-entry-safe {
+  background: #e8edf4 !important;
+  color: #111111 !important;
+  border-color: #6f7c90 !important;
+}
+.dark .palette-entry-safe {
+  background: #2c3744 !important;
+  color: #f2f5fa !important;
+  border-color: #9aa9bd !important;
+}
+.palette-entry-safe[aria-expanded='true'] {
+  box-shadow: inset 0 0 0 2px #246bce;
+}
+.dark .palette-entry-safe[aria-expanded='true'] {
+  box-shadow: inset 0 0 0 2px #8bb8ff;
+}
+</style>

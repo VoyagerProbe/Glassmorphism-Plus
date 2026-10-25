@@ -38,6 +38,22 @@ let authSession: AuthSession = {
   lastVerifiedAt: 0,
 }
 let verifyPromise: Promise<AuthSession> | null = null
+let sessionRevision = 0
+
+export function getAuthSessionRevision(): number {
+  return sessionRevision
+}
+
+function sessionIdentity(session: AuthSession): string {
+  return JSON.stringify([session.authenticated, session.user?.uuid, session.user?.username, session.user?.sso_id])
+}
+
+function replaceSession(session: AuthSession, explicit = false): AuthSession {
+  if (explicit || sessionIdentity(session) !== sessionIdentity(authSession))
+    sessionRevision++
+  authSession = session
+  return authSession
+}
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
@@ -66,13 +82,12 @@ export function getCurrentUser(): MeInfo | null {
 }
 
 export function setAuthSessionFromLogin(loggedIn: boolean, user: MeInfo | null = null): AuthSession {
-  authSession = {
+  return replaceSession({
     status: loggedIn ? 'authenticated' : 'guest',
     authenticated: loggedIn,
     user: loggedIn ? user : null,
     lastVerifiedAt: Date.now(),
-  }
-  return authSession
+  }, true)
 }
 
 export async function verifyLogin(options: VerifyLoginOptions = {}): Promise<AuthSession> {
@@ -84,18 +99,21 @@ export async function verifyLogin(options: VerifyLoginOptions = {}): Promise<Aut
   if (verifyPromise)
     return verifyPromise
 
+  const requestedRevision = sessionRevision
   verifyPromise = getSharedApi().getMe().then((user) => {
-    authSession = createSessionFromMe(user)
-    return authSession
+    if (requestedRevision !== sessionRevision)
+      return authSession
+    return replaceSession(createSessionFromMe(user))
   }).catch((error) => {
-    authSession = {
+    if (requestedRevision !== sessionRevision)
+      return authSession
+    return replaceSession({
       status: 'error',
       authenticated: false,
       user: null,
       lastVerifiedAt: Date.now(),
       errorMessage: getErrorMessage(error),
-    }
-    return authSession
+    })
   }).finally(() => {
     verifyPromise = null
   })

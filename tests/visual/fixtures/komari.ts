@@ -17,6 +17,7 @@ const REGION_FIXTURES = [
 ] as const
 
 export interface VisualFixtureOptions {
+  themeShort?: string
   dark?: boolean
   managedThemeMode?: 'beijing' | 'light' | 'dark'
   earthRenderer?: 'cobe' | 'realistic' | 'tiled'
@@ -1222,7 +1223,7 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
         record_preserve_time: 720,
         ping_record_preserve_time: options.pingRecordPreserveTime ?? 720,
         sitename: siteName,
-        theme: 'Glassmorphism',
+        theme: options.themeShort ?? 'Glassmorphism',
         theme_settings: settings,
         visitor_audit_enabled: options.visitorAuditEnabled ?? false,
       },

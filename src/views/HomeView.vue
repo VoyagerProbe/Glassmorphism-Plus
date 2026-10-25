@@ -57,6 +57,7 @@ const NodeTopologyPanel = defineAsyncComponent(() => import('@/components/NodeTo
 const ProviderValuePanel = defineAsyncComponent(() => import('@/components/ProviderValuePanel.vue'))
 const SnapshotExportPanel = defineAsyncComponent(() => import('@/components/SnapshotExportPanel.vue'))
 const NodePingBindingManager = defineAsyncComponent(() => import('@/components/NodePingBindingManager.vue'))
+const PalettePanel = defineAsyncComponent(() => import('@/components/PalettePanel.vue'))
 
 const nodeItemStaggerMs = UI_CONFIG.motion.staggerMs
 const nodeItemStaggerLimit = UI_CONFIG.motion.staggerLimit
@@ -109,6 +110,7 @@ onActivated(() => {
 
 onDeactivated(() => {
   isViewActive.value = false
+  appStore.closePaletteEditor()
   appStore.homeScrollPosition = window.scrollY
 })
 
@@ -462,6 +464,13 @@ const nodeCardGridClass = computed(() => {
 
 <template>
   <div class="home-view" :class="!appStore.disablePageAnimation && 'home-view--motion'">
+    <PalettePanel v-if="appStore.paletteOpen" />
+    <div v-if="appStore.paletteNotice" class="mx-4 my-3 rounded-xl bg-slate-100 p-3 text-sm text-slate-900 dark:bg-slate-800 dark:text-slate-100" role="status" data-testid="palette-notice">
+      {{ appStore.paletteNotice }}
+      <button type="button" class="ml-2 underline" @click="appStore.paletteNotice = ''">
+        关闭提示
+      </button>
+    </div>
     <NodePingBindingManager v-if="isPingCenterView" />
     <template v-else>
       <div v-if="appStore.alertEnabled && appStore.alertContent" class="alert px-4">

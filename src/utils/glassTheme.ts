@@ -1,6 +1,17 @@
-import type { GlassCustomColors } from '@/stores/app'
+import type { GlassColorPreset, GlassCustomColors, PaletteConfig } from '@/utils/paletteColors'
+import { GLASS_COLOR_KEYS, parseGlassColorPreset, parseManagedGlassColors, SOFT_FROST_COLORS, withHoverAlpha } from '@/utils/paletteColors'
 
-export type GlassColorPreset = 'emerald' | 'soft' | 'contrast' | 'midnight' | 'custom'
+export type { GlassColorPreset } from '@/utils/paletteColors'
+
+export function resolveManagedPalette(settings: Record<string, unknown>): PaletteConfig {
+  const preset = parseGlassColorPreset(settings.glassColorPreset)
+  return paletteForPreset(preset, parseManagedGlassColors(settings))
+}
+
+export function paletteForPreset(preset: GlassColorPreset, colors: GlassCustomColors): PaletteConfig {
+  const tokens = buildGlassThemeTokens(preset, colors)
+  return { preset, colors: Object.fromEntries(GLASS_COLOR_KEYS.map(key => [key, tokens[key]])) as GlassCustomColors }
+}
 
 interface GlassThemeTokens {
   lightCard: string
@@ -22,6 +33,15 @@ interface GlassThemeTokens {
 }
 
 const PRESET_TOKENS: Record<Exclude<GlassColorPreset, 'custom'>, GlassThemeTokens> = {
+  softFrost: {
+    ...SOFT_FROST_COLORS,
+    lightCardHover: '#F8FAFCF0',
+    lightHeader: SOFT_FROST_COLORS.lightControl,
+    darkCardHover: '#1E2732F0',
+    darkHeader: SOFT_FROST_COLORS.darkControl,
+    lightShadow: '0 6px 20px rgb(23 35 52 / 0.08)',
+    darkShadow: '0 8px 24px rgb(0 0 0 / 0.22)',
+  },
   emerald: {
     lightCard: '#f1f5f9bd',
     lightCardHover: '#f8fafccc',
@@ -96,13 +116,17 @@ const PRESET_TOKENS: Record<Exclude<GlassColorPreset, 'custom'>, GlassThemeToken
   },
 }
 
-function withHoverAlpha(color: string): string {
-  return color.length === 9 ? `${color.slice(0, 7)}e6` : color
-}
-
 export function buildGlassThemeTokens(preset: GlassColorPreset, customColors: GlassCustomColors): GlassThemeTokens {
-  if (preset !== 'custom')
-    return PRESET_TOKENS[preset]
+  if (preset !== 'custom') {
+    const tokens = PRESET_TOKENS[preset]
+    return {
+      ...tokens,
+      lightCardHover: withHoverAlpha(tokens.lightCard),
+      darkCardHover: withHoverAlpha(tokens.darkCard),
+      lightShadow: '0 6px 20px rgb(23 35 52 / 0.08)',
+      darkShadow: '0 8px 24px rgb(0 0 0 / 0.22)',
+    }
+  }
 
   return {
     lightCard: customColors.lightCard,
@@ -112,7 +136,7 @@ export function buildGlassThemeTokens(preset: GlassColorPreset, customColors: Gl
     lightText: customColors.lightText,
     lightMutedText: customColors.lightMutedText,
     lightBorder: customColors.lightBorder,
-    lightShadow: '0 8px 28px rgb(15 23 42 / 0.16)',
+    lightShadow: '0 6px 20px rgb(23 35 52 / 0.08)',
     darkCard: customColors.darkCard,
     darkCardHover: withHoverAlpha(customColors.darkCard),
     darkControl: customColors.darkControl,
@@ -120,6 +144,6 @@ export function buildGlassThemeTokens(preset: GlassColorPreset, customColors: Gl
     darkText: customColors.darkText,
     darkMutedText: customColors.darkMutedText,
     darkBorder: customColors.darkBorder,
-    darkShadow: '0 8px 30px rgb(0 0 0 / 0.48)',
+    darkShadow: '0 8px 24px rgb(0 0 0 / 0.22)',
   }
 }

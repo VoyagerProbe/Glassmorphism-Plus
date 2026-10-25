@@ -3,6 +3,7 @@ import { provide, ref, watch } from 'vue'
 import { BackTop } from '@/components/ui/back-top'
 import { useAppStore } from '@/stores/app'
 import { buildGlassThemeTokens } from '@/utils/glassTheme'
+import { opaqueColorOver } from '@/utils/paletteColors'
 
 const appStore = useAppStore()
 
@@ -42,6 +43,10 @@ watch(
     root.style.setProperty('--glass-dark-muted-text', tokens.darkMutedText)
     root.style.setProperty('--glass-dark-border', tokens.darkBorder)
     root.style.setProperty('--glass-dark-shadow', tokens.darkShadow)
+    root.style.setProperty('--glass-light-opaque-card', opaqueColorOver(tokens.lightCard, '#F2F5F9'))
+    root.style.setProperty('--glass-light-opaque-control', opaqueColorOver(tokens.lightControl, '#F2F5F9'))
+    root.style.setProperty('--glass-dark-opaque-card', opaqueColorOver(tokens.darkCard, '#18212C'))
+    root.style.setProperty('--glass-dark-opaque-control', opaqueColorOver(tokens.darkControl, '#18212C'))
   },
   { immediate: true, deep: true },
 )
