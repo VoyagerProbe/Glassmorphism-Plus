@@ -345,26 +345,35 @@ test('conflict and permission loss cannot become successful saves or personal fa
   expect(fixture.getThemeSaveCount()).toBe(0)
 })
 
-test('readback failure blocks duplicate submission and close cannot claim to undo a sent request', async ({ page }) => {
-  const fixture = await setup(page)
-  await open(page)
-  await page.locator('#palette-hex').fill('#112233E6')
-  await page.route('**/api/public', async route => fixture.getThemeSaveCount() > 0 ? route.fulfill({ status: 503, json: { status: 'error' } }) : route.fallback())
-  await page.getByTestId('palette-save-site').click()
-  await expect(page.getByTestId('palette-status')).toContainText('保存结果待确认')
-  await expect(page.getByTestId('palette-save-site')).toBeDisabled()
-  expect(fixture.getThemeSaveCount()).toBe(1)
-  // Escape is scoped to the editor. Observe its existing post-disable focus
-  // recovery before sending the key; never move focus from the test itself.
-  await expect.poll(() => page.getByTestId('palette-panel').evaluate(panel => ({
-    within: panel.contains(document.activeElement),
-    disabled: document.activeElement?.matches(':disabled'),
-    focused: document.activeElement?.id || document.activeElement?.tagName,
-  }))).toMatchObject({ within: true, disabled: false })
-  await page.keyboard.press('Escape')
-  await expect(page.getByTestId('palette-panel')).toHaveCount(0)
-  await expect(page.getByTestId('palette-notice')).toContainText('关闭不能撤回')
-})
+for (const saveInput of ['pointer', 'keyboard'] as const) {
+  test(`readback failure blocks duplicate submission and close cannot claim to undo a sent request (${saveInput})`, async ({ page }) => {
+    const fixture = await setup(page)
+    await open(page)
+    await page.locator('#palette-hex').fill('#112233E6')
+    await page.route('**/api/public', async route => fixture.getThemeSaveCount() > 0 ? route.fulfill({ status: 503, json: { status: 'error' } }) : route.fallback())
+    if (saveInput === 'keyboard') {
+      await page.getByTestId('palette-save-site').focus()
+      await page.keyboard.press('Enter')
+    }
+    else {
+      await page.getByTestId('palette-save-site').click()
+    }
+    await expect(page.locator('#palette-heading')).toBeFocused()
+    await expect(page.getByTestId('palette-status')).toContainText('保存结果待确认')
+    await expect(page.getByTestId('palette-save-site')).toBeDisabled()
+    expect(fixture.getThemeSaveCount()).toBe(1)
+    // Escape is scoped to the editor. Direct save must retain enabled focus
+    // without a test-induced focus change after submission.
+    await expect.poll(() => page.getByTestId('palette-panel').evaluate(panel => ({
+      within: panel.contains(document.activeElement),
+      disabled: document.activeElement?.matches(':disabled'),
+      focused: document.activeElement?.id || document.activeElement?.tagName,
+    }))).toMatchObject({ within: true, disabled: false })
+    await page.keyboard.press('Escape')
+    await expect(page.getByTestId('palette-panel')).toHaveCount(0)
+    await expect(page.getByTestId('palette-notice')).toContainText('关闭不能撤回')
+  })
+}
 
 test('logout removes preview; delayed permission result cannot reactivate it across login', async ({ page }) => {
   const fixture = await setup(page)

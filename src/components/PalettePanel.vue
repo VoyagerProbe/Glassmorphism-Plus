@@ -32,7 +32,7 @@ const {
   importJson,
   copyJson,
   cancel,
-  saveSite,
+  saveSite: saveSiteSafely,
 } = usePaletteEditor()
 const heading = ref<HTMLElement | null>(null)
 const inputKinds = ['hex', 'rgb', 'alpha'] as const
@@ -44,6 +44,13 @@ watch([busy, draft], async () => {
   if (app.paletteOpen && document.activeElement === document.body)
     heading.value?.focus({ preventScroll: true })
 })
+
+function saveSite() {
+  // The direct save disables its triggering control. Move focus first, while
+  // handling that explicit action, so WebKit cannot strand Escape on body.
+  heading.value?.focus({ preventScroll: true })
+  void saveSiteSafely()
+}
 
 function moveField(event: KeyboardEvent) {
   const direction = ['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : ['ArrowLeft', 'ArrowUp'].includes(event.key) ? -1 : 0
