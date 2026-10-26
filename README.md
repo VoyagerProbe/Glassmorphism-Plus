@@ -27,14 +27,14 @@
 
 | 项目               | 当前状态                                                                                                                      |
 | :----------------- | :---------------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v3.0.0（预发布）**                                                                                                          |
-| 当前稳定 Latest    | [v2.8.4](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.4)                                              |
+| 当前 Plus 版本     | **v3.0.0（正式发布）**                                                                                                        |
+| 当前稳定 Latest    | [v3.0.0](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)                                              |
 | 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7)        |
 | 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                               |
 | 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                                    |
 | 已验证 Komari 版本 | **1.6.0、1.5.1、1.5.0-fix1、1.5.0、1.4.3**（平台与范围见下文；不是全部设备保证）                                              |
 | 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                                |
-| 源码发布           | GitHub `main` 与 [v3.0.0 Pre-release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)；唯一客户安装包 |
+| 源码发布           | GitHub `main` 与 [v3.0.0 Release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)；唯一客户安装包     |
 | 本地安装包         | `3.0.0/Glassmorphism-Plus-release-3.0.0.zip`                                                                                  |
 
 Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用自己的版本体系；上游 v3.3.7 仅代表当前同步基线，并非 Plus 的版本号。同步来源、选择性合并和署名详见 [UPSTREAM.md](UPSTREAM.md)。
@@ -95,8 +95,8 @@ _历史数据的实际可查看范围取决于后端保留时间及已有采样�
 
 ### 重要说明
 
-- **[v3.0.0 预发布](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)只附加一个客户安装包：** `Glassmorphism-Plus-release-3.0.0.zip`，请先在测试环境试用。
-- 当前 Stable／Latest 为 [v2.8.4](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v2.8.4)。
+- **[v3.0.0 正式版](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)只附加一个客户安装包：** `Glassmorphism-Plus-release-3.0.0.zip`。
+- 当前 Stable／Latest 为 [v3.0.0](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)。本次转正沿用当前已验证的安装包，已安装该包无需重复导入。
 - GitHub 自动生成的 **Source code (zip)** 是源码快照，**不是** Komari 可安装主题包。
 - Komari 的远程仓库导入流程应使用正式 Release 中的 installer asset；仍不要用 GitHub 自动生成的源码压缩包代替。
 
@@ -144,7 +144,7 @@ v2.8.3 安装包原样附带既有 LICENSE，并校验内容一致性；已发�
 
 ### Komari 官方 Theme Market
 
-本项目已收录，标识保持 `glassmorphism-plus`。本轮只读核对的官方市场目录为 v2.8.4，仍对应 Stable／Latest；v3.0.0 是预发布，不推动市场自动升级。市场只自动同步正式 Latest 的版本／下载／校验值，不同步简介或预览图；README 首页图片不影响市场 preview。[人工更新资料](docs/theme-market-submission.md)供维护者本人更新既有条目，历史核验记录见 [Theme Market 检查报告](docs/theme-market.md)。
+本项目已收录，标识保持 `glassmorphism-plus`。正式 Latest 的版本／下载／校验值由官方市场流程同步，实际收录版本以市场目录为准；简介和预览图不随版本自动同步，README 首页图片不影响市场 preview。[人工更新资料](docs/theme-market-submission.md)供维护者本人更新既有条目，历史核验记录见 [Theme Market 检查报告](docs/theme-market.md)。
 
 ---
 
@@ -152,7 +152,7 @@ v2.8.3 安装包原样附带既有 LICENSE，并校验内容一致性；已发�
 
 | Komari 版本     | 状态                     | 说明                                                                                                                                                                 |
 | :-------------- | :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1.6.0**       | **Verified with limits** | 官方 Linux／Windows 同包新安装、v2.8.4 升级、配色／Ping 保存、HTTP／WebSocket 重连与静态资源通过；实体 Safari 待实测，见[记录](docs/compatibility/komari-1.6.0.md)。 |
+| **1.6.0**       | **Verified with limits** | 官方 Linux／Windows 同包新安装、v2.8.4 升级、配色／Ping 保存、HTTP／WebSocket 重连与静态资源通过；平台与设备覆盖范围见[记录](docs/compatibility/komari-1.6.0.md)。 |
 | **1.5.1**       | **Verified with limits** | 官方 Linux／Windows 同包实装、升级、两入口 Ping、HTTP／WebSocket、后台与 `/admin` 转址通过；沿用当前在线 Worker 合同。                                               |
 | **1.5.0-fix1**  | **Verified with limits** | 普通浏览与图表／配置通过；WebKit 手机仿真通过。同 origin 从 1.5.0 升级仍复现旧 Worker 导航限制。                                                                     |
 | **1.5.0**       | **Verified with limits** | 普通浏览与图表／配置通过；已有官方 PWA Worker 的普通刷新可能仍返回默认主题。                                                                                         |
@@ -160,7 +160,7 @@ v2.8.3 安装包原样附带既有 LICENSE，并校验内容一致性；已发�
 | **1.2.6–1.4.2** | **Best effort**          | 保留能力检测与 Legacy fallback，但没有对每个中间版本执行完整回归矩阵。                                                                                               |
 | **1.2.5**       | **Not tested**           | 保留旧 records／Ping fallback；该版本缺少当前主要 `queryMetrics` 能力，不作完整兼容承诺。                                                                            |
 
-兼容状态只描述已取得的测试证据，不是整个后端系列、所有数据库、反代或实体设备的保证。[v3.0.0 验证及旧后台未知字段边界](docs/compatibility/komari-1.6.0.md)与 [v2.8.4 历史同包验证](docs/compatibility/komari-1.5.1.md)分开记录；测试使用隔离 SQLite 与合成节点。1.6.0 已移除旧访客审计等能力，Plus 不恢复这些接口。上述官方 PWA 限制为[最初适配记录](docs/compatibility/komari-1.5.md)；当前同地址 Worker 兼容层及离线能力影响见[启动兼容说明](docs/compatibility/service-worker.md)，不清空浏览器数据。预发布请先在测试环境检查首页、节点详情、Ping、配色和后台；实体 iPhone Safari 留待用户实测。
+兼容状态只描述已取得的测试证据，不是整个后端系列、所有数据库、反代或实体设备的保证。[v3.0.0 验证及旧后台未知字段边界](docs/compatibility/komari-1.6.0.md)与 [v2.8.4 历史同包验证](docs/compatibility/komari-1.5.1.md)分开记录；测试使用隔离 SQLite 与合成节点。1.6.0 已移除旧访客审计等能力，Plus 不恢复这些接口。上述官方 PWA 限制为[最初适配记录](docs/compatibility/komari-1.5.md)；当前同地址 Worker 兼容层及离线能力影响见[启动兼容说明](docs/compatibility/service-worker.md)，不清空浏览器数据。部署前建议在测试环境检查首页、节点详情、Ping、配色和后台；自动化结果不等于所有实体设备均已验证。
 
 ---
 
