@@ -354,7 +354,15 @@ test('readback failure blocks duplicate submission and close cannot claim to und
   await expect(page.getByTestId('palette-status')).toContainText('保存结果待确认')
   await expect(page.getByTestId('palette-save-site')).toBeDisabled()
   expect(fixture.getThemeSaveCount()).toBe(1)
+  // Escape is scoped to the editor. Observe its existing post-disable focus
+  // recovery before sending the key; never move focus from the test itself.
+  await expect.poll(() => page.getByTestId('palette-panel').evaluate(panel => ({
+    within: panel.contains(document.activeElement),
+    disabled: document.activeElement?.matches(':disabled'),
+    focused: document.activeElement?.id || document.activeElement?.tagName,
+  }))).toMatchObject({ within: true, disabled: false })
   await page.keyboard.press('Escape')
+  await expect(page.getByTestId('palette-panel')).toHaveCount(0)
   await expect(page.getByTestId('palette-notice')).toContainText('关闭不能撤回')
 })
 
