@@ -101,6 +101,7 @@ interface CustomRange {
 
 // 图表主题相关颜色
 const chartThemeColors = useChartTheme('load')
+const chartText = computed(() => ({ fontFamily: chartThemeColors.value.fontFamily }))
 
 // 通用 Tooltip 配置
 const baseTooltipConfig = computed(() => ({
@@ -111,6 +112,7 @@ const baseTooltipConfig = computed(() => ({
   borderWidth: 0,
   borderRadius: 6,
   textStyle: {
+    ...chartText.value,
     color: chartThemeColors.value.text,
     fontSize: 12,
     lineHeight: 20,
@@ -118,6 +120,7 @@ const baseTooltipConfig = computed(() => ({
   extraCssText: `backdrop-filter: blur(5px);z-index:9;box-shadow:0 0 0 1px ${chartThemeColors.value.tooltipShadow}, 0 0 16px ${chartThemeColors.value.tooltipShadow}`,
   axisPointer: {
     type: 'cross' as const,
+    label: chartText.value,
     crossStyle: {
       color: chartThemeColors.value.textTertiary,
     },
@@ -896,6 +899,7 @@ const baseXAxisConfig = computed(() => ({
   type: 'category' as const,
   data: chartData.value.map(r => formatTime(r.time, showDateInAxis.value)),
   axisLabel: {
+    ...chartText.value,
     fontSize: 11,
     color: chartThemeColors.value.textSecondary,
     margin: 12,
@@ -912,6 +916,7 @@ const baseXAxisConfig = computed(() => ({
 const baseYAxisConfig = computed(() => ({
   type: 'value' as const,
   axisLabel: {
+    ...chartText.value,
     fontSize: 11,
     color: chartThemeColors.value.textSecondary,
   },
@@ -930,6 +935,7 @@ const baseYAxisConfig = computed(() => ({
 // CPU 图表
 const cpuChartOption = computed(() => ({
   animation: false,
+  textStyle: chartText.value,
   // 全局颜色配置（确保 Tooltip 圆点颜色与线条一致）
   color: [chartColors.primary, chartColors.secondary],
   tooltip: {
@@ -968,7 +974,7 @@ const cpuChartOption = computed(() => ({
     {
       ...baseYAxisConfig.value,
       name: 'CPU %',
-      nameTextStyle: { color: chartThemeColors.value.textSecondary, padding: [0, 40, 0, 0] },
+      nameTextStyle: { ...chartText.value, color: chartThemeColors.value.textSecondary, padding: [0, 40, 0, 0] },
       min: 0,
       max: 100,
       axisLabel: { ...baseYAxisConfig.value.axisLabel, formatter: '{value}%' },
@@ -976,7 +982,7 @@ const cpuChartOption = computed(() => ({
     {
       ...baseYAxisConfig.value,
       name: '负载',
-      nameTextStyle: { color: chartThemeColors.value.textSecondary, padding: [0, 0, 0, 40] },
+      nameTextStyle: { ...chartText.value, color: chartThemeColors.value.textSecondary, padding: [0, 0, 0, 40] },
       min: 0,
       splitLine: { show: false },
     },
@@ -1019,6 +1025,7 @@ const cpuChartOption = computed(() => ({
 // 内存图表
 const memoryChartOption = computed(() => ({
   animation: false,
+  textStyle: chartText.value,
   color: [chartColors.primary, chartColors.quinary, chartColors.secondary, chartColors.quaternary],
   tooltip: {
     ...baseTooltipConfig.value,
@@ -1068,14 +1075,15 @@ const memoryChartOption = computed(() => ({
     bottom: 4,
     itemWidth: 10,
     itemHeight: 8,
-    textStyle: { fontSize: 10, color: chartThemeColors.value.textSecondary },
+    pageTextStyle: chartText.value,
+    textStyle: { ...chartText.value, fontSize: 10, color: chartThemeColors.value.textSecondary },
   },
   grid: chartMarginWithLegend,
   xAxis: baseXAxisConfig.value,
   yAxis: {
     ...baseYAxisConfig.value,
     name: '内存',
-    nameTextStyle: { color: chartThemeColors.value.textSecondary, padding: [0, 40, 0, 0] },
+    nameTextStyle: { ...chartText.value, color: chartThemeColors.value.textSecondary, padding: [0, 40, 0, 0] },
     axisLabel: {
       ...baseYAxisConfig.value.axisLabel,
       formatter: (val: number) => formatBytes(val),
@@ -1131,6 +1139,7 @@ const memoryChartOption = computed(() => ({
 // 磁盘图表
 const diskChartOption = computed(() => ({
   animation: false,
+  textStyle: chartText.value,
   color: [chartColors.tertiary, chartColors.quinary],
   tooltip: {
     ...baseTooltipConfig.value,
@@ -1166,14 +1175,15 @@ const diskChartOption = computed(() => ({
     bottom: 4,
     itemWidth: 10,
     itemHeight: 8,
-    textStyle: { fontSize: 10, color: chartThemeColors.value.textSecondary },
+    pageTextStyle: chartText.value,
+    textStyle: { ...chartText.value, fontSize: 10, color: chartThemeColors.value.textSecondary },
   },
   grid: chartMarginWithLegend,
   xAxis: baseXAxisConfig.value,
   yAxis: {
     ...baseYAxisConfig.value,
     name: '磁盘',
-    nameTextStyle: { color: chartThemeColors.value.textSecondary, padding: [0, 40, 0, 0] },
+    nameTextStyle: { ...chartText.value, color: chartThemeColors.value.textSecondary, padding: [0, 40, 0, 0] },
     axisLabel: {
       ...baseYAxisConfig.value.axisLabel,
       formatter: (val: number) => formatBytes(val),
@@ -1214,6 +1224,7 @@ const diskChartOption = computed(() => ({
 // 网络图表
 const networkChartOption = computed(() => ({
   animation: false,
+  textStyle: chartText.value,
   color: [chartColors.quinary, chartColors.quaternary],
   tooltip: {
     ...baseTooltipConfig.value,
@@ -1248,14 +1259,15 @@ const networkChartOption = computed(() => ({
     itemHeight: 12,
     itemGap: 20,
     icon: 'roundRect',
-    textStyle: { fontSize: 11, color: chartThemeColors.value.textSecondary },
+    pageTextStyle: chartText.value,
+    textStyle: { ...chartText.value, fontSize: 11, color: chartThemeColors.value.textSecondary },
   },
   grid: chartMarginWithLegend,
   xAxis: baseXAxisConfig.value,
   yAxis: {
     ...baseYAxisConfig.value,
     name: '速度',
-    nameTextStyle: { color: chartThemeColors.value.textSecondary, padding: [0, 40, 0, 0] },
+    nameTextStyle: { ...chartText.value, color: chartThemeColors.value.textSecondary, padding: [0, 40, 0, 0] },
     axisLabel: {
       ...baseYAxisConfig.value.axisLabel,
       formatter: (val: number) => formatBytes(val),
@@ -1297,6 +1309,7 @@ const gpuDeviceUsageEChartSeries = computed(() => gpuDeviceEntries().map((device
 // GPU 图表
 const gpuChartOption = computed(() => ({
   animation: false,
+  textStyle: chartText.value,
   color: [chartColors.senary, chartColors.quaternary],
   tooltip: {
     ...baseTooltipConfig.value,
@@ -1343,14 +1356,15 @@ const gpuChartOption = computed(() => ({
     itemHeight: 12,
     itemGap: 20,
     icon: 'roundRect',
-    textStyle: { fontSize: 11, color: chartThemeColors.value.textSecondary },
+    pageTextStyle: chartText.value,
+    textStyle: { ...chartText.value, fontSize: 11, color: chartThemeColors.value.textSecondary },
   },
   grid: chartMarginWithLegend,
   xAxis: baseXAxisConfig.value,
   yAxis: {
     ...baseYAxisConfig.value,
     name: 'GPU %',
-    nameTextStyle: { color: chartThemeColors.value.textSecondary, padding: [0, 40, 0, 0] },
+    nameTextStyle: { ...chartText.value, color: chartThemeColors.value.textSecondary, padding: [0, 40, 0, 0] },
     min: 0,
     max: 100,
     axisLabel: { ...baseYAxisConfig.value.axisLabel, formatter: '{value}%' },
@@ -1410,6 +1424,7 @@ function getChartCardStyle(key: ChartDashboardCardKey): Record<string, string> {
 // 连接数图表
 const connectionsChartOption = computed(() => ({
   animation: false,
+  textStyle: chartText.value,
   color: [chartColors.primary, chartColors.tertiary],
   tooltip: {
     ...baseTooltipConfig.value,
@@ -1444,14 +1459,15 @@ const connectionsChartOption = computed(() => ({
     itemHeight: 12,
     itemGap: 20,
     icon: 'roundRect',
-    textStyle: { fontSize: 11, color: chartThemeColors.value.textSecondary },
+    pageTextStyle: chartText.value,
+    textStyle: { ...chartText.value, fontSize: 11, color: chartThemeColors.value.textSecondary },
   },
   grid: chartMarginWithLegend,
   xAxis: baseXAxisConfig.value,
   yAxis: {
     ...baseYAxisConfig.value,
     name: '连接数',
-    nameTextStyle: { color: chartThemeColors.value.textSecondary, padding: [0, 40, 0, 0] },
+    nameTextStyle: { ...chartText.value, color: chartThemeColors.value.textSecondary, padding: [0, 40, 0, 0] },
     min: 0,
     axisLabel: {
       ...baseYAxisConfig.value.axisLabel,
@@ -1481,6 +1497,7 @@ const connectionsChartOption = computed(() => ({
 // 进程数图表
 const processChartOption = computed(() => ({
   animation: false,
+  textStyle: chartText.value,
   color: [chartColors.quaternary],
   tooltip: {
     ...baseTooltipConfig.value,
@@ -1511,7 +1528,7 @@ const processChartOption = computed(() => ({
   yAxis: {
     ...baseYAxisConfig.value,
     name: '进程',
-    nameTextStyle: { color: chartThemeColors.value.textSecondary, padding: [0, 40, 0, 0] },
+    nameTextStyle: { ...chartText.value, color: chartThemeColors.value.textSecondary, padding: [0, 40, 0, 0] },
     min: 0,
     axisLabel: {
       ...baseYAxisConfig.value.axisLabel,
@@ -1597,7 +1614,7 @@ onMounted(() => {
     <!-- 时间选择器 -->
     <div class="flex flex-col items-center gap-2">
       <Tabs v-model="selectedView" class="w-full items-center">
-        <TabsList class="h-8 bg-background/50 backdrop-blur-xl pointer-events-auto rounded-md" data-load-chart-range>
+        <TabsList class="gp-control max-w-full h-8 overflow-x-auto pointer-events-auto" data-load-chart-range>
           <TabsTrigger
             v-for="view in availableViews" :key="view.label" :value="view.label"
             class="h-6.5 text-xs border-none data-[state=active]:text-green-600 shadow-none rounded-sm"
@@ -1613,20 +1630,20 @@ onMounted(() => {
             v-model="customStartInput"
             type="datetime-local"
             aria-label="负载图开始时间"
-            class="h-8 bg-background/50 text-xs"
+            class="gp-control min-w-0 h-8 text-xs"
           />
           <Input
             v-model="customEndInput"
             type="datetime-local"
             aria-label="负载图结束时间"
-            class="h-8 bg-background/50 text-xs"
+            class="gp-control min-w-0 h-8 text-xs"
           />
           <Button
             type="button"
             size="sm"
             variant="outline"
             :disabled="!customRange"
-            class="h-8 text-xs"
+            class="gp-control h-8 text-xs"
             @click="fetchData"
           >
             应用
@@ -1650,7 +1667,7 @@ onMounted(() => {
       <!-- 图表网格 -->
       <div v-else class="gap-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
         <!-- CPU 卡片 -->
-        <CardX v-if="isChartCardEnabled('cpu')" size="small" class="bg-background/50 border-none hover:bg-background transition-all rounded-md" data-load-chart-card="cpu" :style="getChartCardStyle('cpu')">
+        <CardX v-if="isChartCardEnabled('cpu')" size="small" class="gp-surface bg-(--gp-card) min-w-0" data-load-chart-card="cpu" :style="getChartCardStyle('cpu')">
           <template #header>
             <MetricChartHeader title="CPU 与负载" icon="tabler:cpu" tone="rose">
               <div v-if="latestStatus?.cpu != null" class="text-xs flex gap-0.5 items-baseline">
@@ -1666,7 +1683,7 @@ onMounted(() => {
         </CardX>
 
         <!-- 内存卡片 -->
-        <CardX v-if="isChartCardEnabled('memory')" size="small" class="bg-background/50 border-none hover:bg-background transition-all rounded-md" :style="getChartCardStyle('memory')">
+        <CardX v-if="isChartCardEnabled('memory')" size="small" class="gp-surface bg-(--gp-card) min-w-0" :style="getChartCardStyle('memory')">
           <template #header>
             <MetricChartHeader title="内存与 Swap" icon="tabler:database" tone="violet">
               <div class="text-xs flex gap-1 items-baseline">
@@ -1691,7 +1708,7 @@ onMounted(() => {
         </CardX>
 
         <!-- 磁盘卡片 -->
-        <CardX v-if="isChartCardEnabled('disk')" size="small" class="bg-background/50 border-none hover:bg-background transition-all rounded-md" :style="getChartCardStyle('disk')">
+        <CardX v-if="isChartCardEnabled('disk')" size="small" class="gp-surface bg-(--gp-card) min-w-0" :style="getChartCardStyle('disk')">
           <template #header>
             <MetricChartHeader title="磁盘" icon="tabler:device-floppy" tone="emerald" :subtitle="diskPredictionSummary">
               <div class="text-xs flex gap-1 items-baseline shrink-0">
@@ -1715,7 +1732,7 @@ onMounted(() => {
         </CardX>
 
         <!-- 网络卡片 -->
-        <CardX v-if="isChartCardEnabled('network')" size="small" class="bg-background/50 border-none hover:bg-background transition-all rounded-md" :style="getChartCardStyle('network')">
+        <CardX v-if="isChartCardEnabled('network')" size="small" class="gp-surface bg-(--gp-card) min-w-0" :style="getChartCardStyle('network')">
           <template #header>
             <MetricChartHeader title="实时网络" icon="tabler:network" tone="sky">
               <div class="text-xs flex gap-2 items-baseline">
@@ -1753,7 +1770,7 @@ onMounted(() => {
         />
 
         <!-- GPU 卡片 -->
-        <CardX v-if="isChartCardEnabled('gpu')" size="small" class="bg-background/50 border-none hover:bg-background transition-all rounded-md" :style="getChartCardStyle('gpu')">
+        <CardX v-if="isChartCardEnabled('gpu')" size="small" class="gp-surface bg-(--gp-card) min-w-0" :style="getChartCardStyle('gpu')">
           <template #header>
             <MetricChartHeader title="GPU 利用率" icon="tabler:device-desktop-analytics" tone="cyan" :subtitle="getGpuDeviceNames(latestStatus)">
               <div class="text-xs flex gap-1 items-baseline shrink-0">
@@ -1789,7 +1806,7 @@ onMounted(() => {
         />
 
         <!-- 连接数卡片 -->
-        <CardX v-if="isChartCardEnabled('connections')" size="small" class="bg-background/50 border-none hover:bg-background transition-all rounded-md" :style="getChartCardStyle('connections')">
+        <CardX v-if="isChartCardEnabled('connections')" size="small" class="gp-surface bg-(--gp-card) min-w-0" :style="getChartCardStyle('connections')">
           <template #header>
             <MetricChartHeader title="网络连接" icon="tabler:binary-tree" tone="amber">
               <div class="text-xs flex gap-1 items-baseline">
@@ -1805,7 +1822,7 @@ onMounted(() => {
         </CardX>
 
         <!-- 进程卡片 -->
-        <CardX v-if="isChartCardEnabled('process')" size="small" class="bg-background/50 border-none hover:bg-background transition-all rounded-md" :style="getChartCardStyle('process')">
+        <CardX v-if="isChartCardEnabled('process')" size="small" class="gp-surface bg-(--gp-card) min-w-0" :style="getChartCardStyle('process')">
           <template #header>
             <MetricChartHeader title="进程" icon="tabler:activity" tone="slate">
               <span class="text-xs">

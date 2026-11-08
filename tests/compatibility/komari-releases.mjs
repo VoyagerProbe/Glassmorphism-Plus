@@ -94,7 +94,7 @@ async function main() {
           const history = await rpc('common:getRecords', { type: 'ping', uuid: client.uuid, start, end })
           return new Set(history.records?.map(record => record.task_id)).size
         }, { timeout: 15000, intervals: [250, 500, 1000] }).toBe(3)
-        const settings = { themeMode: 'dark', themeColor: '#00c99c', hideEarth: true, disablePageAnimation: true, rpcTransportMode: 'http', glassColorPreset: '自定义', glassCustomColors: '{"lightText":"#123456","darkText":"#E1E2E3"}', backgroundEnabled: false, lightBackgroundUrl: 'https://example.invalid/preserved.png', colorVisionMode: '色觉友好', futureOpaqueSetting: { array: [false, null, 17], nested: { preserve: 'synthetic' } }, nodeCardPingDisplayConfigV3: JSON.stringify({ schemaVersion: 3, global: { threeNetworkEnabled: true, taskIds: tasks }, nodes: {} }) }
+        const settings = { nodeCardSize: 'comfortable', themeMode: 'dark', themeColor: '#00c99c', hideEarth: true, disablePageAnimation: true, rpcTransportMode: 'http', glassColorPreset: '自定义', glassCustomColors: '{"lightText":"#123456","darkText":"#E1E2E3"}', backgroundEnabled: false, lightBackgroundUrl: 'https://example.invalid/preserved.png', colorVisionMode: '色觉友好', futureOpaqueSetting: { array: [false, null, 17], nested: { preserve: 'synthetic' } }, nodeCardPingDisplayConfigV3: JSON.stringify({ schemaVersion: 3, global: { threeNetworkEnabled: true, taskIds: tasks }, nodes: {} }) }
         const saveSettings = body => lab.request('/api/admin/theme/settings?theme=glassmorphism-plus', { auth: true, body })
         await saveSettings(settings)
         const beforeSettings = (await rpc('public:getPublicSettings')).theme_settings
@@ -163,6 +163,8 @@ async function main() {
         assert.notEqual(await page.locator('script[type="module"][src]').first().getAttribute('src'), entry)
         await expect(page.getByRole('button', { name: '取消收藏 Synthetic compatibility node', exact: true })).toBeVisible()
         await expect(page.locator('html')).toHaveClass(accessibleClass)
+        // Same settings and browser profile after importing the candidate; no preference write.
+        await expect(page.locator('.gmp-a2')).toHaveAttribute('data-density', 'comfortable')
         assert(await page.evaluate(() => document.cookie.includes('compat_sentinel=preserved') && localStorage.getItem('compat_sentinel') === 'preserved'))
         assert.equal(await page.evaluate(() => navigator.serviceWorker.controller?.scriptURL), `${lab.base}/sw.js`)
         if (sameVersionRevision) {

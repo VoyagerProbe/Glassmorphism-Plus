@@ -16,9 +16,6 @@
   --a2-pad: 18px;
   --a2-title: 16px;
   --a2-gutter: 32px;
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'PingFang TC', 'Microsoft YaHei UI',
-    'Noto Sans CJK SC', sans-serif;
   font-variant-numeric: tabular-nums;
 }
 .dark .gmp-a2,
@@ -93,12 +90,12 @@ main > div:has(> .gmp-a2),
   }
 }
 @media (max-width: 640px) {
-  .gmp-a2[data-density],
+  .home-view.gmp-a2,
   .app-viewport:has(.gmp-a2) .a2-titlebar {
     --a2-gutter: 14px;
     --a2-pad: 16px;
   }
-  .gmp-a2[data-density] .a2-node-grid {
+  .home-view.gmp-a2 .a2-node-grid {
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
   }
@@ -242,6 +239,36 @@ html .gmp-a2 .a2-info-bar > .node-card-info-surface {
     font-size: 11px;
   }
 }
+/* Compact is also the store's safe default. Keep the same full card anatomy;
+ * change its rhythm, not grid columns, visibility, data or component identity. */
+.gmp-a2:is([data-density='compact'], :not([data-density])) {
+  --a2-pad: 16px;
+  --a2-title: 15px;
+}
+.gmp-a2:is([data-density='compact'], :not([data-density])) .a2-node-title {
+  line-height: 21px;
+  font-weight: 600;
+}
+.gmp-a2:is([data-density='compact'], :not([data-density])) .a2-resources {
+  margin-top: 12px;
+  row-gap: 10px;
+}
+.gmp-a2:is([data-density='compact'], :not([data-density])) .a2-resources > div {
+  gap: 4px;
+}
+.gmp-a2:is([data-density='compact'], :not([data-density])) .a2-resources .justify-between > .tabular-nums {
+  font-weight: 600;
+}
+.gmp-a2:is([data-density='compact'], :not([data-density])) .a2-resources > div > .truncate {
+  font-size: 11px;
+  line-height: 16px;
+}
+.gmp-a2:is([data-density='compact'], :not([data-density])) .a2-info-bar {
+  margin-top: 12px;
+  min-height: 48px;
+  padding-block: 5px;
+}
+
 @media (max-width: 359px) {
   .gmp-a2 .a2-info-bar > .node-card-info-surface {
     padding-inline: 6px;
@@ -379,7 +406,7 @@ html .gmp-a2 .a2-info-bar > .node-card-info-surface {
   }
 }
 /* Only theme-owned default backing. Uploaded images/videos are never recoloured. */
-#app:has(.gmp-a2) .background-container > .default-background {
+#app:has(.gmp-a2, .gp-detail) .background-container > .default-background {
   /* The v3.0.0 photo had a darkening filter. The A2 canvas is already dark. */
   filter: none;
   transform: none;
@@ -387,7 +414,7 @@ html .gmp-a2 .a2-info-bar > .node-card-info-surface {
     radial-gradient(ellipse at 2% 0, rgb(156 211 255 / 20%), transparent 48%),
     radial-gradient(ellipse at 98% 10%, rgb(180 163 255 / 16%), transparent 48%), #f1f4fa;
 }
-.dark #app:has(.gmp-a2) .background-container > .default-background {
+.dark #app:has(.gmp-a2, .gp-detail) .background-container > .default-background {
   background: radial-gradient(ellipse at 15% 0, #ffffff03, transparent 50%), #101114;
 }
 .a2-action-group {

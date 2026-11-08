@@ -1,0 +1,96 @@
+/* Layout stays in the route / existing modal owner. Provider's shared card,
+ * control and text aliases are available on both sides of the body Portal. */
+.gp-detail,
+.gp-ping-viewer {
+  --muted-foreground: var(--gp-muted);
+  --card-foreground: var(--gp-text);
+  color: var(--gp-text);
+}
+.gp-detail .detail-field,
+.gp-detail .detail-provider-pill,
+.gp-detail .detail-benchmark,
+.gp-ping-viewer [data-app-dialog-header] button {
+  min-width: 0;
+  background-color: var(--gp-control);
+  border: 1px solid var(--gp-border);
+  border-radius: 10px;
+}
+.gp-detail .detail-provider-pill {
+  /* Keep the original 12px icon inset including the new hairline. */
+  padding-inline: calc(0.75rem - 1px);
+  border-radius: 999px;
+  color: var(--gp-muted);
+}
+.gp-detail .detail-metric-icon {
+  color: var(--gp-muted);
+  opacity: 0.7;
+}
+.gp-detail .detail-field,
+.gp-detail .gp-surface,
+:is(.gp-detail, .gp-ping-viewer) [data-ping-chart-task-id] {
+  font-variant-numeric: tabular-nums;
+}
+.gp-detail .detail-selector,
+.gp-detail .detail-provider-pill,
+.gp-detail .detail-field {
+  box-shadow: inset 0 1px var(--gp-highlight);
+}
+:is(.gp-detail, .gp-ping-viewer) .gp-control:is(:focus-visible, button:hover),
+.gp-detail .detail-selector:focus-within,
+.gp-ping-viewer [data-app-dialog-header] button:hover {
+  border-color: var(--selection);
+}
+:is(.gp-detail, .gp-ping-viewer) .gp-control[aria-pressed='true'],
+:is(.gp-detail, .gp-ping-viewer) .gp-control > [role='tab'][data-state='active'] {
+  color: var(--gp-text);
+  box-shadow: inset 0 -2px var(--selection);
+}
+:is(.gp-detail, .gp-ping-viewer) .gp-control > [role='tab']:not([data-state='active']) {
+  color: var(--gp-muted);
+}
+.gp-ping-viewer [data-app-dialog-header] {
+  border-color: var(--gp-border);
+}
+.gp-ping-viewer [data-app-dialog-header] h2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: 17px;
+  line-height: 22px;
+}
+.gp-ping-viewer [data-app-dialog-header] p,
+.gp-ping-viewer [data-app-dialog-header] button {
+  color: var(--gp-muted);
+}
+.gp-ping-viewer [data-app-dialog-header] button {
+  flex: none;
+  border-radius: 10px;
+}
+.gp-ping-viewer [data-app-dialog-body] {
+  /* The existing body is the only vertical scroll owner. */
+  min-width: 0;
+}
+.gp-ping-tip[data-slot='tooltip-content'] {
+  z-index: 102; /* above the Ping dialog (101), including Reka's Portal wrapper */
+  background-color: var(--gp-card);
+  color: var(--gp-text);
+  border: 1px solid var(--gp-border);
+  border-radius: 10px;
+  box-shadow: var(--gp-shadow);
+}
+.gp-ping-tip .fill-primary {
+  fill: var(--gp-card);
+  background-color: var(--gp-card);
+}
+.gp-ping-tip .text-muted-foreground {
+  color: var(--gp-muted);
+}
+@media (forced-colors: active) {
+  :is(.gp-detail, .gp-ping-viewer) :is(.gp-surface, .gp-control),
+  .gp-ping-viewer.gp-surface {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+}

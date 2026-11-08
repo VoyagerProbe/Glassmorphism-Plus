@@ -474,9 +474,9 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
 </script>
 
 <template>
-  <div class="instance-detail space-y-4">
+  <div class="instance-detail gp-detail space-y-4">
     <div v-if="!data" class="p-4">
-      <CardX>
+      <CardX class="gp-surface bg-(--gp-card)">
         <Empty description="节点不存在或已被删除">
           <template #extra>
             <Button @click="router.push('/')">
@@ -491,14 +491,14 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
       <!-- 顶部导航 -->
       <div class="detail-header px-4 grid min-w-0 gap-2 items-center lg:gap-x-4">
         <div class="detail-identity flex min-w-0 items-center gap-2">
-          <Button variant="ghost" size="icon-sm" class="shrink-0 bg-background/50 hover:bg-background" aria-label="返回首页" @click="router.push('/')">
+          <Button variant="ghost" size="icon-sm" class="gp-control shrink-0" aria-label="返回首页" @click="router.push('/')">
             <Icon icon="tabler:arrow-left" :width="16" :height="16" />
           </Button>
-          <div class="min-w-0 text-lg font-bold flex gap-2 items-center">
+          <div class="min-w-0 text-lg font-semibold flex gap-2 items-center">
             <img :src="`/images/flags/${getRegionCode(data.region)}.svg`" :alt="getRegionAltText(data.region)" class="size-6 shrink-0">
             <span class="truncate">{{ data.name }}</span>
           </div>
-          <Badge :variant="data.online ? 'default' : 'destructive'" class="shrink-0 text-xs !rounded">
+          <Badge :variant="data.online ? 'default' : 'destructive'" class="shrink-0 text-xs rounded-full">
             {{ data.online ? '在线' : '离线' }}
           </Badge>
         </div>
@@ -511,7 +511,7 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
             {{ tag }}
           </Badge>
         </div>
-        <div class="detail-selector flex h-8 w-full min-w-0 max-w-80 justify-self-end items-center gap-1 rounded-md bg-background/50 p-0.5 backdrop-blur-xs">
+        <div class="detail-selector gp-control flex h-8 w-full min-w-0 max-w-80 justify-self-end items-center gap-1 p-0.5">
           <Button
             variant="ghost" size="icon-sm"
             class="size-7 rounded-sm shadow-none"
@@ -559,7 +559,7 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
           class="detail-provider min-w-0 w-full max-w-full justify-self-stretch lg:w-auto lg:justify-self-start"
           content-class="w-72 whitespace-pre-wrap break-words px-2 py-1.5 text-left leading-relaxed"
         >
-          <div class="flex w-full max-w-full items-center justify-start gap-1.5 rounded-full bg-background/50 px-3 py-1 text-xs text-muted-foreground">
+          <div class="flex w-full max-w-full items-center justify-start gap-1.5 detail-provider-pill px-3 py-1 text-xs text-muted-foreground">
             <Icon :icon="vpsProvider.primary.icon" :width="14" :height="14" class="shrink-0" />
             <span class="min-w-0 truncate leading-snug">{{ vpsProvider.displayName }}</span>
           </div>
@@ -568,7 +568,7 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
 
       <div v-if="appStore.nodeDetailSectionTabsEnabled" class="px-4 overflow-x-auto">
         <Tabs v-model="activeDetailSection" class="w-full">
-          <TabsList class="w-max h-8 bg-background/50 backdrop-blur-xl rounded-md">
+          <TabsList class="gp-control w-max h-8">
             <TabsTrigger value="overview" class="h-6.5 flex-none shrink-0 gap-1 text-xs border-none data-[state=active]:text-selection shadow-none rounded-sm">
               <Icon icon="tabler:layout-dashboard" :width="12" :height="12" />
               概览
@@ -589,13 +589,13 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
       <div v-if="!appStore.nodeDetailSectionTabsEnabled || activeDetailSection === 'overview'" class="px-4 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
         <CardX
           v-for="item in metricCards" :key="item.key" hoverable size="small"
-          class="group h-full bg-background/50 border-none hover:bg-background transition-all rounded-md"
+          class="gp-surface group h-full bg-(--gp-card)"
           content-class="h-full !p-3"
         >
           <div :title="item.tooltip" class="flex h-full min-h-10 md:min-h-18 flex-col justify-between gap-3">
             <div class="flex items-center justify-between gap-2">
-              <span class="text-xs font-medium tracking-wider text-muted-foreground">{{ item.label }}</span>
-              <Icon :icon="item.icon" :width="20" :height="20" class="text-slate-500/25 transition-colors group-hover:text-slate-500" />
+              <span class="text-xs font-medium text-muted-foreground">{{ item.label }}</span>
+              <Icon :icon="item.icon" :width="20" :height="20" class="detail-metric-icon" />
             </div>
             <div class="min-w-0 space-y-1">
               <div class="flex min-w-0 items-baseline gap-1 truncate font-semibold leading-none" :class="item.valueClass">
@@ -611,11 +611,11 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
       <div v-if="!appStore.nodeDetailSectionTabsEnabled || activeDetailSection === 'overview'" class="px-4 gap-4 grid grid-cols-1 lg:grid-cols-2">
         <CardX
           title="硬件信息" size="small" content-class="flex-1"
-          class="group h-full bg-background/50 border-none hover:bg-background transition-all rounded-md"
+          class="gp-surface group h-full bg-(--gp-card)"
         >
           <div class="flex flex-col gap-3 h-full">
             <!-- CPU 信息（跨全宽） -->
-            <div class="min-w-0 flex flex-col gap-2 rounded-sm bg-slate-500/5 p-2">
+            <div class="min-w-0 flex flex-col gap-2 detail-field p-2">
               <div class="flex items-center justify-between gap-2 text-muted-foreground">
                 <div class="flex min-w-0 items-center gap-1">
                   <Icon icon="icon-park-outline:cpu" :width="14" :height="14" />
@@ -625,7 +625,7 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
                   :href="cpuBenchmarkUrl"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-sm bg-slate-500/8 px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-slate-500/12 hover:text-foreground"
+                  class="ml-auto inline-flex shrink-0 items-center gap-1.5 detail-benchmark px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-slate-500/12 hover:text-foreground"
                   title="在 PassMark 查看该 CPU 的公开 CPU Mark 跑分与排行"
                 >
                   <Icon icon="tabler:chart-bar" :width="13" :height="13" />
@@ -655,7 +655,7 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
             <div class="grid gap-3 flex-1 auto-rows-fr" :class="hardwareSmallItems.length <= 2 ? 'grid-cols-2' : 'grid-cols-3'">
               <div
                 v-for="item in hardwareSmallItems" :key="item.label"
-                class="min-w-0 flex flex-col gap-1 rounded-sm bg-slate-500/5 p-2"
+                class="min-w-0 flex flex-col gap-1 detail-field p-2"
               >
                 <div class="flex gap-1 items-center text-muted-foreground">
                   <Icon v-if="item.icon" :icon="item.icon" :width="14" :height="14" />
@@ -669,12 +669,12 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
 
         <CardX
           title="系统信息" size="small" content-class="flex-1"
-          class="group h-full bg-background/50 border-none hover:bg-background transition-all rounded-md"
+          class="gp-surface group h-full bg-(--gp-card)"
         >
           <div class="gap-3 grid grid-cols-1 sm:grid-cols-2 h-full sm:auto-rows-fr">
             <div
               v-for="item in systemInfo" :key="item.label"
-              class="min-w-0 flex flex-col gap-1 rounded-sm bg-slate-500/5 p-2"
+              class="min-w-0 flex flex-col gap-1 detail-field p-2"
             >
               <div class="flex gap-1 items-center text-muted-foreground">
                 <Icon v-if="item.icon" :icon="item.icon" :width="14" :height="14" />
@@ -690,12 +690,12 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
 
         <CardX
           title="存储信息" size="small"
-          class="group h-full bg-background/50 border-none hover:bg-background transition-all rounded-md"
+          class="gp-surface group h-full bg-(--gp-card)"
         >
           <div class="gap-3 grid grid-cols-3">
             <div
               v-for="item in storageInfo" :key="item.label"
-              class="min-w-0 flex flex-col gap-1 rounded-sm bg-slate-500/5 p-2"
+              class="min-w-0 flex flex-col gap-1 detail-field p-2"
             >
               <div class="flex gap-1 items-center text-muted-foreground">
                 <Icon v-if="item.icon" :icon="item.icon" :width="14" :height="14" />
@@ -708,11 +708,11 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
 
         <CardX
           title="网络信息" size="small"
-          class="group h-full bg-background/50 border-none hover:bg-background transition-all rounded-md"
+          class="gp-surface group h-full bg-(--gp-card)"
           content-class="pt-0"
         >
           <div class="gap-3 grid grid-cols-2">
-            <div class="relative min-w-0 overflow-hidden rounded-sm bg-slate-500/5 p-2">
+            <div class="relative min-w-0 overflow-hidden detail-field p-2">
               <div
                 v-if="hasTrafficLimit"
                 class="absolute inset-y-0 left-0 rounded-sm pointer-events-none transition-[width,background-color] duration-300 ease-out"
@@ -746,7 +746,7 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
                 </span>
               </div>
             </div>
-            <div class="min-w-0 flex flex-col gap-1 rounded-sm bg-slate-500/5 p-2">
+            <div class="min-w-0 flex flex-col gap-1 detail-field p-2">
               <div class="flex gap-1 items-center text-muted-foreground">
                 <Icon icon="icon-park-outline:dashboard-one" :width="14" :height="14" />
                 <span class="text-xs sm:text-sm">网络速率</span>

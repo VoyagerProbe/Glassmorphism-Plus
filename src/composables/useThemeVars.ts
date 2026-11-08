@@ -22,7 +22,7 @@ export function useThemeVars() {
 
   onMounted(() => {
     observer = new MutationObserver(refresh)
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style'] })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style', 'lang'] })
   })
 
   onUnmounted(() => {
@@ -35,6 +35,9 @@ export function useThemeVars() {
   return computed(() => {
     void revision.value
     return {
+      // Canvas cannot interpret a CSS var() expression. The computed token
+      // already contains the concrete families for the current document lang.
+      uiFont: read('--gp-font-ui', 'system-ui, sans-serif'),
       successColor: read('--success', 'oklch(0.696 0.17 162.48)'),
       successColorHover: read('--success', 'oklch(0.696 0.17 162.48)'),
       successColorPressed: read('--success', 'oklch(0.696 0.17 162.48)'),

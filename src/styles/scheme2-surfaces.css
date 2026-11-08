@@ -18,11 +18,11 @@
   --gp-highlight: rgb(255 255 255 / 8%);
   --gp-shadow: 0 2px 5px rgb(0 0 0 / 12%), 0 12px 28px -20px rgb(0 0 0 / 45%);
 }
-:is(.gp-ping-center, .gp-ping-dialog) {
+:is(.gp-ping-center, .gp-ping-dialog, .gp-detail, .gp-ping-viewer) {
   color: var(--gp-text);
 }
-:is(.gp-ping-center, .gp-ping-dialog) .gp-surface,
-.gp-ping-dialog.gp-surface {
+:is(.gp-ping-center, .gp-ping-dialog, .gp-detail, .gp-ping-viewer) .gp-surface,
+:is(.gp-ping-dialog, .gp-ping-viewer).gp-surface {
   background-color: var(--gp-card);
   border: 1px solid var(--gp-border);
   border-radius: 18px;
@@ -31,22 +31,22 @@
     inset 0 1px var(--gp-highlight),
     var(--gp-shadow);
 }
-:is(.gp-ping-center, .gp-ping-dialog) :is(.gp-control, .gp-field) {
+:is(.gp-ping-center, .gp-ping-dialog, .gp-detail, .gp-ping-viewer) :is(.gp-control, .gp-field) {
   background-color: var(--gp-control);
   color: var(--gp-text);
   border: 1px solid var(--gp-border);
   border-radius: 10px;
 }
-:is(.gp-ping-center, .gp-ping-dialog) .gp-field {
+:is(.gp-ping-center, .gp-ping-dialog, .gp-detail, .gp-ping-viewer) .gp-field {
   min-width: 0;
   min-height: 38px;
   font-size: 13px;
   line-height: 18px;
 }
-:is(.gp-ping-center, .gp-ping-dialog) .gp-title {
+:is(.gp-ping-center, .gp-ping-dialog, .gp-detail, .gp-ping-viewer) .gp-title {
   color: var(--gp-text);
 }
-:is(.gp-ping-center, .gp-ping-dialog) .gp-muted,
-:is(.gp-ping-center, .gp-ping-dialog) .gp-field::placeholder {
+:is(.gp-ping-center, .gp-ping-dialog, .gp-detail, .gp-ping-viewer) .gp-muted,
+:is(.gp-ping-center, .gp-ping-dialog, .gp-detail, .gp-ping-viewer) .gp-field::placeholder {
   color: var(--gp-muted);
 }

@@ -55,6 +55,7 @@ interface PingChartRecord extends PingRecord {
 
 // 图表主题相关颜色
 const chartThemeColors = useChartTheme()
+const chartText = computed(() => ({ fontFamily: chartThemeColors.value.fontFamily }))
 
 const chartColors = reactive(getChartSeriesPalette(appStore.colorVisionFriendly))
 
@@ -680,6 +681,7 @@ const baseTooltipConfig = computed(() => ({
   borderWidth: 0,
   borderRadius: 6,
   textStyle: {
+    ...chartText.value,
     color: chartThemeColors.value.text,
     fontSize: 12,
     lineHeight: 20,
@@ -687,6 +689,7 @@ const baseTooltipConfig = computed(() => ({
   extraCssText: `backdrop-filter: blur(5px);z-index:9;box-shadow:0 0 0 1px ${chartThemeColors.value.tooltipShadow}, 0 0 16px ${chartThemeColors.value.tooltipShadow}`,
   axisPointer: {
     type: 'cross' as const,
+    label: chartText.value,
     crossStyle: {
       color: chartThemeColors.value.textTertiary,
     },
@@ -742,6 +745,7 @@ const latencyChartOption = computed(() => {
 
   return {
     animation: false,
+    textStyle: chartText.value,
     // 全局颜色设置（用于图例等）
     color: tasks.value.map((_, idx) => {
       const safeIdx = Math.max(0, idx % chartColors.length)
@@ -789,7 +793,8 @@ const latencyChartOption = computed(() => {
       itemHeight: 12,
       itemGap: 16,
       icon: 'roundRect',
-      textStyle: { fontSize: 11, color: chartThemeColors.value.textSecondary },
+      pageTextStyle: chartText.value,
+      textStyle: { ...chartText.value, fontSize: 11, color: chartThemeColors.value.textSecondary },
       data: taskList.map(t => taskLabel(t.id)),
       selected: Object.fromEntries(taskList.map(task => [taskLabel(task.id), legendSelection.value[taskLabel(task.id)] !== false])),
     },
@@ -799,6 +804,7 @@ const latencyChartOption = computed(() => {
       min: displayDomain?.min,
       max: displayDomain?.max,
       axisLabel: {
+        ...chartText.value,
         fontSize: 11,
         color: chartThemeColors.value.textSecondary,
         margin: 12,
@@ -815,8 +821,8 @@ const latencyChartOption = computed(() => {
     yAxis: {
       type: 'value',
       name: '延迟 (ms)',
-      nameTextStyle: { color: chartThemeColors.value.textSecondary },
-      axisLabel: { fontSize: 11, color: chartThemeColors.value.textSecondary, formatter: '{value}' },
+      nameTextStyle: { ...chartText.value, color: chartThemeColors.value.textSecondary },
+      axisLabel: { ...chartText.value, fontSize: 11, color: chartThemeColors.value.textSecondary, formatter: '{value}' },
       axisLine: { show: false },
       axisTick: { show: false },
       splitLine: {
@@ -841,7 +847,7 @@ const lossPoints = computed(() => new Map(remoteData.value.map(record => [
 const pingChartOption = computed(() => {
   const base = latencyChartOption.value
   if (!dualChart.value)
-    return { ...base, tooltip: { ...base.tooltip, className: '', transitionDuration: 0.4 }, axisPointer: { link: [] } }
+    return { ...base, tooltip: { ...base.tooltip, className: '', transitionDuration: 0.4 }, axisPointer: { label: chartText.value, link: [] } }
 
   const rows = new Map(chartData.value.map(row => [parsePingTimestampMs(row.time), row]))
   const lossSeries = base.series.map((series, index) => ({
@@ -856,7 +862,7 @@ const pingChartOption = computed(() => {
     ...base,
     // Both x axes have identical domains, pixel bounds and timestamp arrays.
     // ECharts links the already-snapped source value without snapping it again.
-    axisPointer: { link: [{ xAxisIndex: 'all' }] },
+    axisPointer: { label: chartText.value, link: [{ xAxisIndex: 'all' }] },
     grid: [
       { ...chartMargin, id: 'latency-grid', bottom: undefined, height: 206, outerBoundsMode: 'none' },
       { ...chartMargin, id: 'loss-grid', top: 296, outerBoundsMode: 'none' },
@@ -866,7 +872,7 @@ const pingChartOption = computed(() => {
       id: `ping-time-${index}`,
       gridIndex: index,
       axisLabel: { ...base.xAxis.axisLabel, hideOverlap: true },
-      axisPointer: { snap: true, label: { show: index === 1 } },
+      axisPointer: { snap: true, label: { ...chartText.value, show: index === 1 } },
     })),
     yAxis: [
       { ...base.yAxis, id: 'latency-axis', gridIndex: 0, axisPointer: { show: false } },
@@ -961,7 +967,7 @@ onBeforeUnmount(() => {
     <div class="flex flex-col gap-2">
       <Tabs v-model="selectedView" class="w-full items-center">
         <div class="min-w-0 flex-1 overflow-x-auto rounded-sm pointer-events-auto">
-          <TabsList class="w-max h-8 bg-background/50 backdrop-blur-xl rounded-md">
+          <TabsList class="gp-control w-max h-8">
             <TabsTrigger
               v-for="view in availableViews" :key="view.label" :value="view.label"
               class="h-6.5 flex-none shrink-0 text-xs border-none data-[state=active]:text-green-600 shadow-none rounded-sm"
@@ -973,15 +979,15 @@ onBeforeUnmount(() => {
         <div class="md:flex-1" />
         <div class="flex gap-2 items-center">
           <Button
-            variant="ghost" size="xs" class="h-7 rounded-sm bg-background/50 hover:bg-background border-none"
-            :class="selectedTaskIds.length === tasks.length ? 'shadow-[0_0_0_2px] shadow-green-600/10 text-green-600' : ''"
+            variant="ghost" size="xs" class="gp-control h-7"
+            :aria-pressed="selectedTaskIds.length === tasks.length"
             @click="showAllTasks"
           >
             全选
           </Button>
           <Button
-            variant="ghost" size="xs" class="h-7 rounded-sm bg-background/50 hover:bg-background border-none"
-            :class="!selectedTaskIds.length && 'shadow-[0_0_0_2px] shadow-green-600/10 text-green-600'"
+            variant="ghost" size="xs" class="gp-control h-7"
+            :aria-pressed="!selectedTaskIds.length"
             @click="hideAllTasks"
           >
             全不选
@@ -995,20 +1001,20 @@ onBeforeUnmount(() => {
             v-model="customStartInput"
             type="datetime-local"
             aria-label="延迟图开始时间"
-            class="h-8 bg-background/50 text-xs"
+            class="gp-control h-8 min-w-0 text-xs"
           />
           <Input
             v-model="customEndInput"
             type="datetime-local"
             aria-label="延迟图结束时间"
-            class="h-8 bg-background/50 text-xs"
+            class="gp-control h-8 min-w-0 text-xs"
           />
           <Button
             type="button"
             size="sm"
             variant="outline"
             :disabled="!customRange"
-            class="h-8 text-xs"
+            class="gp-control h-8 text-xs"
             @click="fetchRecords"
           >
             应用
@@ -1036,11 +1042,11 @@ onBeforeUnmount(() => {
         <!-- 最新值统计卡片（可点击切换选中状态） -->
         <div
           v-if="latestValues.length > 0" class="gap-3 grid"
-          style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr))"
+          style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr))"
         >
           <div
             v-for="task in latestValues" :key="task.id"
-            class="p-2 rounded-md bg-background/50 hover:bg-background hover:shadow-[0_0_0_2px] hover:shadow-primary/10 flex gap-3 cursor-pointer select-none transition-all items-center"
+            class="gp-control ping-task-choice min-w-0 p-2 flex gap-3 cursor-pointer select-none transition-colors items-center"
             :class="[!selectedTaskIds.includes(task.id) && 'opacity-30']"
             :data-ping-chart-task-id="task.id"
             :onmouseover="(e: MouseEvent) => ((e.currentTarget as HTMLElement).style.borderColor = task.color)"
@@ -1062,7 +1068,7 @@ onBeforeUnmount(() => {
                         <Icon icon="carbon:information" :width="14" :height="14" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent class="ping-task-statistics !rounded p-3">
+                    <TooltipContent class="gp-ping-tip ping-task-statistics p-3">
                       <div class="text-xs gap-x-4 gap-y-1.5 grid grid-cols-4">
                         <template v-if="task.min !== undefined">
                           <span class="text-muted-foreground">最小</span>
@@ -1138,7 +1144,7 @@ onBeforeUnmount(() => {
               type="button"
               variant="outline"
               size="sm"
-              class="h-8 text-xs"
+              class="gp-control h-8 text-xs"
               :class="smoothPeaks && 'border-green-600/50 bg-green-600/10 text-green-700 dark:text-green-400'"
               :aria-pressed="smoothPeaks"
               @click="smoothPeaks = !smoothPeaks"
@@ -1150,7 +1156,7 @@ onBeforeUnmount(() => {
               type="button"
               variant="outline"
               size="sm"
-              class="h-8 text-xs"
+              class="gp-control h-8 text-xs"
               :class="showLoss && 'border-green-600/50 bg-green-600/10 text-green-700 dark:text-green-400'"
               :aria-pressed="showLoss"
               @click="showLoss = !showLoss"
@@ -1173,7 +1179,7 @@ onBeforeUnmount(() => {
                   <Icon icon="carbon:information" :width="14" :height="14" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>
+              <TooltipContent class="gp-ping-tip">
                 <span>仅平滑真实采样点；不填补缺失或待采样数据。</span>
               </TooltipContent>
             </Tooltip>
@@ -1181,7 +1187,7 @@ onBeforeUnmount(() => {
         </TooltipProvider>
 
         <!-- 图表 -->
-        <div ref="chartHost" class="ping-chart-host bg-background/50 p-4 rounded-md" :class="dualChart ? 'h-[560px]' : 'h-80'" @mouseleave="clearChartHover">
+        <div ref="chartHost" class="ping-chart-host gp-surface min-w-0 p-4" :class="dualChart ? 'h-[560px]' : 'h-80'" @mouseleave="clearChartHover">
           <!-- Task inventory changes must replace visible series, not infer color as a component. -->
           <VChart ref="chart" :option="pingChartOption" :update-options="{ replaceMerge: ['series', 'grid', 'xAxis', 'yAxis'] }" autoresize @legendselectchanged="handleLegendSelectionChanged" />
         </div>

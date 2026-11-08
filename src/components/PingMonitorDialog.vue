@@ -20,7 +20,7 @@ const PingChart = defineAsyncComponent(() => import('@/components/PingChart.vue'
     :open="open"
     :title="`${nodeName} 延迟 / 丢包`"
     description="探测任务延迟、丢包率与波动统计"
-    content-class="max-w-6xl"
+    content-class="gp-ping-viewer gp-surface max-w-6xl"
     safe-viewport
     @update:open="emit('update:open', $event)"
   >

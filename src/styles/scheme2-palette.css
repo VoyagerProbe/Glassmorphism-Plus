@@ -169,7 +169,7 @@
   display: block;
   margin-top: 6px;
   max-height: 16rem;
-  font-family: ui-monospace, monospace;
+  font-family: var(--gp-font-code);
   resize: vertical;
 }
 .gp-palette .palette-footer {

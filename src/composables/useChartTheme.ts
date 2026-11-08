@@ -10,6 +10,7 @@ export function useChartTheme(kind: 'ping' | 'load' = 'ping') {
     const dark = app.isDark
     const custom = app.glassColorPreset === 'custom'
     return {
+      fontFamily: theme.value.uiFont,
       text: custom ? theme.value.textColor1 : dark ? 'rgba(255, 255, 255, 0.85)' : 'rgba(0, 0, 0, 0.85)',
       textSecondary: custom ? theme.value.textColor3 : dark ? 'rgba(255, 255, 255, 0.55)' : 'rgba(0, 0, 0, 0.55)',
       textTertiary: custom ? theme.value.textColor3 : dark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)',

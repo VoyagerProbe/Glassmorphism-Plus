@@ -163,6 +163,24 @@ html .gmp-a2 .node-card .node-card-ping-task-strip {
   font-size: 10px;
   line-height: 20px;
 }
+/* Same task footprint and hit targets for live/pending/unavailable rows.
+ * Legacy reads the same outer spacing and already shares both rail grids. */
+.gmp-a2:is([data-density='compact'], :not([data-density])) :is(.node-card-ping-group, .a2-legacy-ping) {
+  margin-block-start: 12px;
+}
+.gmp-a2:is([data-density='compact'], :not([data-density])) .node-card-ping-group > .grid {
+  gap: 10px;
+}
+.gmp-a2:is([data-density='compact'], :not([data-density])) .node-card-ping-task-name {
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+}
+.gmp-a2:is([data-density='compact'], :not([data-density])) :is(.node-card-ping-summary, .a2-legacy-summary) strong {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+}
 .gmp-a2 .a2-legacy-summary strong {
   font-size: 13px;
   font-weight: 650;

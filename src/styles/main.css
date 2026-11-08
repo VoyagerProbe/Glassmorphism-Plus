@@ -59,7 +59,26 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.625rem;
-  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Tokens only at document level: Reka portals and the Canvas option
+     builders share the same language selection without styling other apps. */
+  --gp-font-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
+  --gp-font-cjk: 'PingFang SC', 'PingFang TC', 'Microsoft YaHei UI', 'Microsoft JhengHei UI', 'Noto Sans CJK SC';
+  --gp-font-ui: var(--gp-font-system), var(--gp-font-cjk), system-ui, sans-serif;
+  --gp-font-code: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+}
+
+:root:lang(en) {
+  --gp-font-cjk: system-ui, 'PingFang SC', 'PingFang TC', 'Microsoft YaHei UI', 'Noto Sans CJK SC';
+}
+:root:is(:lang(zh-CN), :lang(zh-SG), :lang(zh-Hans)) {
+  --gp-font-cjk: 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Noto Sans CJK SC';
+}
+:root:is(:lang(zh-TW), :lang(zh-Hant)) {
+  --gp-font-cjk: 'PingFang TC', 'Microsoft JhengHei UI', 'Microsoft JhengHei', 'Noto Sans CJK TC';
+}
+:root:is(:lang(zh-HK), :lang(zh-MO), :lang(zh-Hant-HK), :lang(zh-Hant-MO)) {
+  --gp-font-cjk:
+    'PingFang HK', 'PingFang TC', 'Microsoft JhengHei UI', 'Microsoft JhengHei', 'Noto Sans CJK HK', 'Noto Sans CJK TC';
 }
 
 .dark {
@@ -144,7 +163,8 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--gp-font-ui);
+  --font-mono: var(--gp-font-code);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -165,13 +185,11 @@
 
   html {
     background-color: var(--color-background);
-    font-family: var(--font-sans);
   }
 
   body,
   #app {
     color: var(--color-foreground);
-    font-family: var(--font-sans);
   }
 
   body {
@@ -191,6 +209,21 @@
   min-height: 100vh;
   min-height: 100dvh;
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+.app-viewport,
+.app-viewport .toaster[data-sonner-toaster],
+[data-app-dialog-content],
+[data-slot='data-tooltip-content'],
+[data-slot='tooltip-content'] {
+  font-family: var(--gp-font-ui);
+}
+:where(.app-viewport, [data-app-dialog-content]) :where(button, input, select, textarea, option, optgroup) {
+  font-family: inherit;
+}
+:where(.app-viewport, [data-app-dialog-content], [data-slot='data-tooltip-content'], [data-slot='tooltip-content'])
+  :is(code, pre, kbd, samp, .font-mono) {
+  font-family: var(--gp-font-code);
 }
 
 /* Keep the native detail-node menu in the same color scheme as the active theme.
