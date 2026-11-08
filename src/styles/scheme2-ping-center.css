@@ -1,0 +1,133 @@
+/* Layout/interaction details local to the public directory, the administrative
+ * settings view and its three portalled dialogs. Palette aliases come from
+ * the resolved document palette; none of these rules reach other dialogs. */
+.gp-ping-center,
+.gp-ping-dialog {
+  color: var(--gp-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.gp-ping-center .ping-page-title {
+  font-size: clamp(24px, 3vw, 28px);
+  line-height: 32px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+.gp-ping-center .ping-stat-grid > div {
+  display: flex;
+  min-height: 96px;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.gp-ping-center .ping-stat-value {
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: 650;
+}
+.gp-ping-center .ping-panel-title {
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 650;
+}
+.gp-ping-center .ping-item-title {
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 650;
+}
+.gp-ping-center .ping-status > div {
+  min-width: 0;
+}
+.gp-ping-center .ping-status > div + div {
+  padding-inline-start: 12px;
+  border-inline-start: 1px solid var(--gp-border);
+}
+.gp-ping-center .ping-segment {
+  min-height: 32px;
+  border-radius: 8px;
+  padding-inline: 11px;
+  color: var(--gp-muted);
+  font-size: 13px;
+  font-weight: 550;
+}
+.gp-ping-center .ping-segment:hover {
+  color: var(--gp-text);
+}
+.gp-ping-center .ping-segment[aria-pressed='true'] {
+  background-color: var(--gp-card);
+  color: var(--gp-text);
+  box-shadow: inset 0 -2px var(--selection);
+}
+/* Selected segments are an interaction accent, not an eleventh palette key.
+ * Keep the ordinary foreground/selection underline in accessible modes. */
+@media (forced-colors: none) and (prefers-contrast: no-preference) {
+  html:not(.color-vision-friendly) .gp-ping-center:not([data-palette='contrast']) .ping-segment[aria-pressed='true'] {
+    background: linear-gradient(var(--color-blue-600), var(--color-blue-700));
+    color: var(--color-white);
+    box-shadow: inset 0 1px var(--gp-highlight);
+  }
+}
+.gp-ping-center .ping-coverage-badge,
+.gp-ping-center [data-slot='badge'] {
+  border: 1px solid var(--gp-border);
+  border-radius: 7px;
+  background-color: var(--gp-control);
+  font-size: 12px;
+  line-height: 16px;
+}
+.gp-ping-center .ping-coverage-badge[aria-pressed='true'] {
+  border-color: var(--selection);
+  box-shadow: inset 0 0 0 1px var(--selection);
+}
+.gp-ping-center .ping-chip {
+  max-width: 100%;
+  padding: 2px 7px;
+  color: var(--gp-text);
+  font-weight: 500;
+}
+:is(.gp-ping-center, .gp-ping-dialog) [data-slot='button'] {
+  min-height: 36px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+:is(.gp-ping-center, .gp-ping-dialog) [data-slot='button']:is([data-variant='outline'], [data-variant='ghost']),
+.gp-ping-dialog [data-app-dialog-header] button {
+  color: var(--gp-text);
+  border: 1px solid var(--gp-border);
+  background-color: var(--gp-control);
+}
+:is(.gp-ping-center, .gp-ping-dialog) [data-slot='button']:not(:disabled):hover {
+  border-color: var(--selection);
+}
+:is(.gp-ping-center, .gp-ping-dialog) :is(button, input, select, [tabindex='0']):focus-visible {
+  outline: 2px solid var(--selection);
+  outline-offset: -2px;
+}
+:is(.gp-ping-center, .gp-ping-dialog) .gp-field {
+  height: 38px;
+  font-size: 13px;
+}
+:is(.gp-ping-center, .gp-ping-dialog) .gp-field::placeholder {
+  color: var(--gp-muted);
+  opacity: 1;
+}
+.gp-ping-center [data-slot='switch']:not([data-state='checked']) {
+  border-color: var(--gp-border);
+  background-color: var(--gp-card);
+}
+.gp-ping-dialog [data-app-dialog-header] {
+  border-color: var(--gp-border);
+}
+.gp-ping-dialog [data-app-dialog-header] p {
+  color: var(--gp-muted);
+}
+.gp-ping-dialog [data-app-dialog-header] button {
+  border-radius: 8px;
+}
+@media (max-width: 640px) {
+  .gp-ping-center .ping-stat-grid > div {
+    min-height: 78px;
+  }
+  .gp-ping-center .ping-status > div + div {
+    padding-inline-start: 8px;
+  }
+}

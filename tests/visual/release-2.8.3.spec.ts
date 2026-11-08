@@ -14,34 +14,26 @@ async function labelGeometry(strip: Locator) {
       const r = e.getBoundingClientRect()
       return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height }
     }
-    const status = element.querySelector('.node-card-ping-status-dot')!
     return {
       height: rect(element).height,
-      status: rect(status),
-      labels: Array.from(element.querySelectorAll<HTMLElement>('.node-card-ping-trend-label'), (label) => {
-        const dot = label.querySelector('.node-card-ping-trend-dot')!
+      status: rect(element.querySelector('.node-card-ping-status-dot')!),
+      labels: Array.from(element.querySelectorAll<HTMLElement>('[data-node-ping-header]'), (label) => {
+        const svg = label.querySelector('svg')!
         const row = label.parentElement!
         const rail = row.querySelector('[data-node-ping-bars]')!
-        const c = getComputedStyle(label)
-        const d = getComputedStyle(dot)
-        const range = document.createRange()
-        range.selectNodeContents(label)
         return {
           text: label.textContent?.trim(),
           label: rect(label),
-          dot: rect(dot),
+          icon: rect(svg),
+          markerColor: getComputedStyle(svg).color,
+          name: rail.getAttribute('aria-label'),
+          role: rail.getAttribute('role'),
+          interactiveMarker: label.matches('button,a,[tabindex],[title]') || Boolean(label.querySelector('button,a,[tabindex],title')),
+          wave: svg.querySelectorAll('path').length,
+          bars: svg.querySelectorAll('rect').length,
+          ariaHidden: svg.getAttribute('aria-hidden'),
           rail: rect(rail),
           row: rect(row),
-          bounds: Array.from(range.getClientRects(), r => ({ top: r.top, bottom: r.bottom, right: r.right })),
-          border: c.borderTopWidth,
-          background: c.backgroundColor,
-          padding: c.padding,
-          fontSize: c.fontSize,
-          color: c.color,
-          dotColor: d.backgroundColor,
-          radius: d.borderRadius,
-          transform: d.transform,
-          ariaHidden: dot.getAttribute('aria-hidden'),
           gap: getComputedStyle(rail).columnGap,
           fills: Array.from(rail.querySelectorAll('[data-node-ping-bucket-fill]'), fill => ({ ...rect(fill), transform: getComputedStyle(fill).transform })),
         }
@@ -54,25 +46,24 @@ function checkGeometry(value: Awaited<ReturnType<typeof labelGeometry>>, size = 
   expect(value.status.width).toBe(6)
   expect(value.status.height).toBe(6)
   expect(value.height).toBe(size === 'large' ? 61 : size === 'comfortable' ? 57 : 53)
-  expect(value.labels.map(l => l.text)).toEqual(['延迟', '丢包'])
+  const iconSize = size === 'mini' ? 12 : size === 'large' ? 16 : 14
+  const column = size === 'mini' ? 16 : size === 'large' ? 20 : 18
+  expect(value.labels.map(l => l.text)).toEqual(['', ''])
+  expect(value.labels.map(l => [l.role, l.name])).toEqual([['group', '延迟历史'], ['group', '丢包历史']])
+  expect(value.labels.map(l => [l.wave, l.bars])).toEqual([[1, 0], [0, 3]])
   expect(value.labels[0]!.rail.left).toBeCloseTo(value.labels[1]!.rail.left, 1)
   expect(value.labels[0]!.rail.right).toBeCloseTo(value.labels[1]!.rail.right, 1)
-  expect(value.labels[0]!.dotColor).not.toBe(value.labels[1]!.dotColor)
-  expect(value.labels[0]!.color).toBe(value.labels[1]!.color)
+  expect(value.labels[0]!.markerColor).not.toBe(value.labels[1]!.markerColor)
   for (const label of value.labels) {
-    expect(label.dot.width).toBe(value.status.width)
-    expect(label.dot.height).toBe(value.status.height)
-    expect(label.dot.top).toBeGreaterThanOrEqual(label.row.top)
-    expect(label.dot.bottom).toBeLessThanOrEqual(label.row.bottom)
-    expect(label.radius).toBe('50%')
-    expect(label.transform).toBe('none')
+    expect(label.interactiveMarker).toBe(false)
     expect(label.ariaHidden).toBe('true')
-    expect(label.border).toBe('0px')
-    expect(label.background).toBe('rgba(0, 0, 0, 0)')
-    expect(label.padding).toBe('0px')
-    expect(label.fontSize).toBe('10px')
-    expect(label.label.right).toBeLessThan(label.rail.left)
-    expect(label.bounds.every(r => r.right <= label.label.right + 0.1)).toBe(true)
+    expect(label.icon.width).toBe(iconSize)
+    expect(label.icon.height).toBe(iconSize)
+    expect(label.icon.top).toBeGreaterThanOrEqual(label.row.top)
+    expect(label.icon.bottom).toBeLessThanOrEqual(label.row.bottom)
+    expect(label.label.width).toBe(column)
+    expect(label.icon.left - label.label.left).toBeCloseTo((column - iconSize) / 2, 1)
+    expect(label.rail.left - label.label.right).toBeCloseTo(8, 1)
     expect(label.fills).toHaveLength(20)
     expect(label.gap).toBe(size === 'large' || size === 'comfortable' ? '3px' : '2px')
     expect(label.fills[0]!.left).toBeCloseTo(label.rail.left, 1)
@@ -94,7 +85,7 @@ test.describe('v2.8.3 localized labels and footer', () => {
     { name: 'comfortable', width: 390, size: 'comfortable', dark: false, three: true },
     { name: 'large', width: 390, size: 'large', dark: true, three: true },
   ] as const) {
-    test(`${variant.name}: equal metric dots preserve fixed rails`, async ({ page }, info) => {
+    test(`${variant.name}: wave and bar markers identify fixed rails`, async ({ page }, info) => {
       await page.setViewportSize({ width: variant.width, height: 900 })
       await installKomariFixture(page, {
         hideEarth: true,
@@ -124,7 +115,7 @@ test.describe('v2.8.3 localized labels and footer', () => {
     await expect(strip).toHaveAttribute('data-node-ping-status', 'pending')
     const pending = await labelGeometry(strip)
     checkGeometry(pending)
-    const colors = pending.labels.map(l => l.dotColor)
+    const colors = pending.labels.map(l => l.markerColor)
     resume()
     for (const sample of [{ task202Latency: 9, task202Loss: 0 }, { task202Latency: 999, task202Loss: 25 }, { task202Latency: null, task202Loss: 100 }]) {
       fixture.setNodeCardPingFixture({ metric: 'valid', legacy: 'valid', ...sample })
@@ -132,7 +123,7 @@ test.describe('v2.8.3 localized labels and footer', () => {
       await expect(strip).toHaveAttribute('data-node-ping-status', 'data')
       const current = await labelGeometry(strip)
       checkGeometry(current)
-      expect(current.labels.map(l => l.dotColor)).toEqual(colors)
+      expect(current.labels.map(l => l.markerColor)).toEqual(colors)
     }
     for (const state of ['selected-empty', 'error'] as const) {
       fixture.setNodeCardPingFixture({ metric: state, legacy: state })
@@ -140,11 +131,11 @@ test.describe('v2.8.3 localized labels and footer', () => {
       await expect(strip.locator(`[data-node-ping-state="${state === 'error' ? 'error' : 'confirmed-missing'}"]`)).not.toHaveCount(0)
       const current = await labelGeometry(strip)
       checkGeometry(current)
-      expect(current.labels.map(l => l.dotColor)).toEqual(colors)
+      expect(current.labels.map(l => l.markerColor)).toEqual(colors)
     }
   })
 
-  test('automatic and custom theme text uses the existing secondary color', async ({ page }) => {
+  test('automatic and custom themes preserve the latency identity token', async ({ page }) => {
     const fixture = await installKomariFixture(page, { hideEarth: true, nodeCount: 1, managedThemeMode: 'beijing', nodeCardPingDisplayConfigV3: config(false), nodeCardPingFixture: { metric: 'valid' } })
     await page.goto('/')
     const label = page.locator(stripSelector).locator('.node-card-ping-trend-label').first()
@@ -153,7 +144,7 @@ test.describe('v2.8.3 localized labels and footer', () => {
       fixture.setThemeSetting('themeMode', mode)
       await page.reload()
       // Custom color token inheritance, without modifying any theme algorithm.
-      await label.evaluate(e => (e as HTMLElement).style.setProperty('--color-muted-foreground', 'rgb(94, 123, 145)'))
+      await label.evaluate(e => (e as HTMLElement).style.setProperty('--color-info', 'rgb(94, 123, 145)'))
       await expect(label).toHaveCSS('color', 'rgb(94, 123, 145)')
     }
   })

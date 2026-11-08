@@ -66,7 +66,7 @@ function moveField(event: KeyboardEvent) {
 </script>
 
 <template>
-  <section id="palette-center" class="palette-panel" :data-mode="app.resolvedThemeMode" aria-labelledby="palette-heading" data-testid="palette-panel" @keydown.esc.stop.prevent="cancel">
+  <section id="palette-center" class="palette-panel gp-palette" :data-mode="app.resolvedThemeMode" aria-labelledby="palette-heading" data-testid="palette-panel" @keydown.esc.stop.prevent="cancel">
     <div class="palette-top">
       <div>
         <h2 id="palette-heading" ref="heading" tabindex="-1">
@@ -78,61 +78,76 @@ function moveField(event: KeyboardEvent) {
         <Icon icon="lucide:x" />
       </Button>
     </div>
-    <fieldset :disabled="busy || !ready" class="palette-editing">
-      <legend class="sr-only">
-        编辑配色草稿
-      </legend>
-      <label class="palette-select">配色方案
-        <select :value="selectedPreset" data-testid="palette-preset" @change="setPreset(($event.target as HTMLSelectElement).value as PaletteChoice)">
-          <option v-for="(label, preset) in PALETTE_PRESET_VALUES" :key="preset" :value="preset">{{ label }}</option>
-        </select>
-      </label>
-      <div class="palette-groups" role="group" aria-label="正在编辑的色组，不改变页面模式">
-        <Button variant="outline" :aria-pressed="group === 'light'" @click="group = 'light'">
-          编辑浅色
-        </Button>
-        <Button variant="outline" :aria-pressed="group === 'dark'" @click="group = 'dark'">
-          编辑深色
-        </Button>
-        <span>页面当前为{{ app.resolvedThemeMode === 'dark' ? '深色' : '浅色' }}；编辑色组不会切换模式。</span>
-      </div>
-      <div class="palette-fields" role="radiogroup" aria-label="配色项目" @keydown="moveField">
-        <Button v-for="item in fields" :key="item.key" type="button" variant="outline" role="radio" :aria-checked="field === item.key" :tabindex="field === item.key ? 0 : -1" :data-testid="`palette-field-${item.key}`" @click="field = item.key">
-          <span class="palette-swatch" aria-hidden="true" :style="{ backgroundColor: draft.colors[`${group}${item.key}`] }" />
-          {{ item.label }}
-        </Button>
-      </div>
-      <div class="palette-inputs">
-        <label>色盘<input type="color" :value="pickerColor" aria-label="色盘（保留透明度）" data-testid="palette-picker" @input="updateInput('hex', ($event.target as HTMLInputElement).value)"></label>
-        <label v-for="kind in inputKinds" :key="kind" :for="`palette-${kind}`">
-          {{ kind === 'alpha' ? '透明度 %' : kind.toUpperCase() }}
-          <Input :id="`palette-${kind}`" :model-value="selectedInput[kind]" :inputmode="kind === 'alpha' ? 'decimal' : 'text'" :aria-invalid="Boolean(selectedInput.errors[kind])" :aria-describedby="selectedInput.errors[kind] ? `palette-${kind}-error` : undefined" spellcheck="false" autocomplete="off" @update:model-value="updateInput(kind, String($event))" @blur="normalizeInput(kind)" />
-          <span v-if="selectedInput.errors[kind]" :id="`palette-${kind}-error`" class="palette-error" role="alert">{{ selectedInput.errors[kind] }}</span>
+    <div class="palette-workspace">
+      <fieldset :disabled="busy || !ready" class="palette-editing">
+        <legend class="sr-only">
+          编辑配色草稿
+        </legend>
+        <label class="palette-select">配色方案
+          <select :value="selectedPreset" data-testid="palette-preset" @change="setPreset(($event.target as HTMLSelectElement).value as PaletteChoice)">
+            <option v-for="(label, preset) in PALETTE_PRESET_VALUES" :key="preset" :value="preset">{{ label }}</option>
+          </select>
         </label>
-      </div>
-      <p class="palette-hint">
-        {{ selectedKey }}：{{ draft.colors[selectedKey] }}。六位 HEX／RGB／色盘保留透明度；八位 HEX 可直接指定透明度。
-      </p>
-      <details class="palette-advanced">
-        <summary>高级：十键 JSON 导入／导出</summary>
-        <label for="palette-json">仅处理配色，不包含后台设置。导入为原子操作，非法内容不会部分生效。导入后仅更新当前预览，点击保存后才会应用到全站。</label>
-        <textarea id="palette-json" :value="jsonText" rows="8" spellcheck="false" :aria-invalid="Boolean(jsonError)" @input="jsonText = ($event.target as HTMLTextAreaElement).value; jsonDirty = true; jsonError = ''" />
-        <p v-if="jsonError" class="palette-error" role="alert">
-          {{ jsonError }}
-        </p>
-        <p v-else-if="jsonDirty">
-          文本尚未导入；请导入或重新选择配色方案。
-        </p>
-        <div class="palette-actions">
-          <Button variant="outline" @click="importJson">
-            导入
+        <div class="palette-groups" role="group" aria-label="正在编辑的色组，不改变页面模式">
+          <Button variant="outline" :aria-pressed="group === 'light'" @click="group = 'light'">
+            编辑浅色
           </Button>
-          <Button variant="outline" :disabled="invalid" @click="copyJson">
-            复制当前十键配色
+          <Button variant="outline" :aria-pressed="group === 'dark'" @click="group = 'dark'">
+            编辑深色
+          </Button>
+          <span>页面当前为{{ app.resolvedThemeMode === 'dark' ? '深色' : '浅色' }}；编辑色组不会切换模式。</span>
+        </div>
+        <div class="palette-fields" role="radiogroup" aria-label="配色项目" @keydown="moveField">
+          <Button v-for="item in fields" :key="item.key" type="button" variant="outline" role="radio" :aria-checked="field === item.key" :tabindex="field === item.key ? 0 : -1" :data-testid="`palette-field-${item.key}`" @click="field = item.key">
+            <span class="palette-swatch" aria-hidden="true" :style="{ backgroundColor: draft.colors[`${group}${item.key}`] }" />
+            {{ item.label }}
           </Button>
         </div>
-      </details>
-    </fieldset>
+        <div class="palette-inputs">
+          <label>色盘<input type="color" :value="pickerColor" aria-label="色盘（保留透明度）" data-testid="palette-picker" @input="updateInput('hex', ($event.target as HTMLInputElement).value)"></label>
+          <label v-for="kind in inputKinds" :key="kind" :for="`palette-${kind}`">
+            {{ kind === 'alpha' ? '透明度 %' : kind.toUpperCase() }}
+            <Input :id="`palette-${kind}`" :model-value="selectedInput[kind]" :inputmode="kind === 'alpha' ? 'decimal' : 'text'" :aria-invalid="Boolean(selectedInput.errors[kind])" :aria-describedby="selectedInput.errors[kind] ? `palette-${kind}-error` : undefined" spellcheck="false" autocomplete="off" @update:model-value="updateInput(kind, String($event))" @blur="normalizeInput(kind)" />
+            <span v-if="selectedInput.errors[kind]" :id="`palette-${kind}-error`" class="palette-error" role="alert">{{ selectedInput.errors[kind] }}</span>
+          </label>
+        </div>
+        <p class="palette-hint">
+          {{ selectedKey }}：{{ draft.colors[selectedKey] }}。六位 HEX／RGB／色盘保留透明度；八位 HEX 可直接指定透明度。
+        </p>
+        <details class="palette-advanced">
+          <summary>高级：十键 JSON 导入／导出</summary>
+          <label for="palette-json">仅处理配色，不包含后台设置。导入为原子操作，非法内容不会部分生效。导入后仅更新当前预览，点击保存后才会应用到全站。</label>
+          <textarea id="palette-json" :value="jsonText" rows="8" spellcheck="false" :aria-invalid="Boolean(jsonError)" @input="jsonText = ($event.target as HTMLTextAreaElement).value; jsonDirty = true; jsonError = ''" />
+          <p v-if="jsonError" class="palette-error" role="alert">
+            {{ jsonError }}
+          </p>
+          <p v-else-if="jsonDirty">
+            文本尚未导入；请导入或重新选择配色方案。
+          </p>
+          <div class="palette-actions">
+            <Button variant="outline" @click="importJson">
+              导入
+            </Button>
+            <Button variant="outline" :disabled="invalid" @click="copyJson">
+              复制当前十键配色
+            </Button>
+          </div>
+        </details>
+      </fieldset>
+      <aside
+        class="palette-sample" aria-label="所编辑色组的实际配色预览" data-testid="palette-sample"
+        :style="{ '--sample-card': draft.colors[`${group}Card`], '--sample-control': draft.colors[`${group}Control`], '--sample-text': draft.colors[`${group}Text`], '--sample-muted': draft.colors[`${group}MutedText`], '--sample-border': draft.colors[`${group}Border`] }"
+      >
+        <span class="palette-sample-meta">{{ group === 'light' ? '浅色' : '深色' }}色组 · 草稿预览</span>
+        <strong>站点配色预览</strong>
+        <div class="palette-sample-control">
+          控制区表面
+        </div>
+        <p class="palette-sample-meta">
+          此处使用所编辑的五项颜色。编辑工具保持可读，方便取消或修正。
+        </p>
+      </aside>
+    </div>
     <p v-if="invalid" class="palette-error" role="alert">
       输入尚未完成。请修正、重新选择方案或取消，暂不能保存。
     </p>
@@ -153,180 +168,4 @@ function moveField(event: KeyboardEvent) {
   </section>
 </template>
 
-<style scoped>
-.palette-panel {
-  --editor-bg: #fafafa;
-  --editor-surface: #f4f4f5;
-  --editor-text: #18181b;
-  --editor-muted: #52525b;
-  --editor-border: #d4d4d8;
-  --editor-error: #a62936;
-  --editor-focus: #246bce;
-  position: relative;
-  z-index: 2;
-  margin: 12px 16px 20px;
-  padding: 16px;
-  border: 1px solid var(--editor-border);
-  border-radius: 12px;
-  background: var(--editor-bg);
-  color: var(--editor-text);
-  font-size: 14px;
-  line-height: 1.5;
-  color-scheme: light;
-}
-.palette-panel[data-mode='dark'] {
-  --editor-bg: #18181b;
-  --editor-surface: #27272a;
-  --editor-text: #fafafa;
-  --editor-muted: #a1a1aa;
-  --editor-border: #52525b;
-  --editor-error: #ffb3bb;
-  --editor-focus: #8bb8ff;
-  color-scheme: dark;
-}
-.palette-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-.palette-top > button {
-  align-self: flex-start;
-}
-.palette-top h2 {
-  color: var(--editor-text);
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0;
-}
-.palette-panel p {
-  margin: 8px 0;
-}
-.palette-top p,
-.palette-hint,
-.palette-groups span {
-  color: var(--editor-muted);
-}
-.palette-panel fieldset {
-  min-width: 0;
-  border: 0;
-  padding: 0;
-  margin: 14px 0;
-}
-.palette-actions,
-.palette-fields,
-.palette-groups {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-}
-.palette-panel :deep([data-slot='button']) {
-  background: var(--editor-surface) !important;
-  color: var(--editor-text) !important;
-  border: 1px solid transparent !important;
-  border-radius: 6px;
-  white-space: normal;
-  height: auto;
-  min-height: 36px;
-}
-.palette-panel :deep([aria-pressed='true']),
-.palette-panel :deep([aria-checked='true']),
-.palette-panel :deep([data-variant='default']) {
-  border-color: var(--editor-focus) !important;
-}
-.palette-fields :deep(button) {
-  white-space: nowrap;
-  gap: 6px;
-  padding: 5px 9px;
-}
-.palette-swatch {
-  flex: 0 0 14px;
-  width: 14px;
-  height: 14px;
-  border: 1px solid var(--editor-muted);
-  border-radius: 50%;
-}
-.palette-panel :deep(:focus-visible) {
-  outline: 2px solid var(--editor-focus);
-  outline-offset: 3px;
-}
-.palette-panel :deep(button:disabled) {
-  opacity: 1;
-  color: var(--editor-muted) !important;
-  border-style: dashed !important;
-}
-.palette-select {
-  display: grid;
-  gap: 6px;
-  max-width: 300px;
-  margin-top: 12px;
-}
-.palette-panel select,
-.palette-panel textarea,
-.palette-panel :deep([data-slot='input']) {
-  background: var(--editor-bg) !important;
-  color: var(--editor-text) !important;
-  border: 1px solid var(--editor-border) !important;
-  border-radius: 6px;
-  font-size: 16px;
-  padding: 8px;
-}
-.palette-panel select {
-  min-height: 38px;
-}
-.palette-inputs {
-  display: grid;
-  grid-template-columns: 70px minmax(140px, 1fr) minmax(170px, 1.3fr) minmax(100px, 0.6fr);
-  gap: 12px;
-  margin-top: 16px;
-}
-.palette-inputs label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-.palette-inputs input[type='color'] {
-  width: 64px;
-  height: 36px;
-  cursor: pointer;
-}
-.palette-error {
-  color: var(--editor-error) !important;
-}
-.palette-advanced {
-  margin-top: 16px;
-}
-.palette-advanced summary {
-  cursor: pointer;
-  margin-bottom: 10px;
-}
-.palette-advanced textarea {
-  display: block;
-  width: 100%;
-  margin-top: 8px;
-  font-family: monospace;
-}
-.palette-footer {
-  border-top: 1px solid var(--editor-border);
-  padding-top: 12px;
-}
-@media (max-width: 767px) {
-  .palette-inputs {
-    grid-template-columns: 1fr 1fr;
-  }
-  .palette-panel {
-    padding: 14px;
-  }
-}
-@media (max-width: 359px) {
-  .palette-inputs {
-    grid-template-columns: 1fr;
-  }
-  .palette-panel {
-    margin-inline: 10px;
-    padding: 12px;
-  }
-}
-</style>
+<style src="../styles/scheme2-palette.css"></style>

@@ -64,3 +64,47 @@ test('A2 compact geometry stays tied to the actual homepage grid and palette', a
   }
   expect(fixture.getThemeSaveCount()).toBe(0)
 })
+
+for (const globe of [false, true]) {
+  test(`home content edges include the real tab and each visible statistics row (globe ${globe ? 'on' : 'off'})`, async ({ page }) => {
+    await installKomariFixture(page, { nodeCount: 3, hideEarth: !globe, earthRenderer: 'cobe', dark: globe })
+    await page.goto('/')
+    const card = page.locator('.a2-node').first()
+    const listRow = page.getByRole('button', { name: /^查看节点 .+ 详情$/ }).first()
+    await expect(card).toBeVisible()
+    await expect(page.locator('[data-general-card-key]')).toHaveCount(6)
+    const canvas = page.locator('.a2-overview canvas')
+    if (globe)
+      await expect(canvas).toBeVisible()
+    const globeElement = globe ? await canvas.elementHandle() : null
+    for (const mode of ['card', 'list'] as const) {
+      await page.locator(`[data-view-segment="${mode}"]`).click()
+      const node = mode === 'card' ? card : listRow
+      await expect(node).toBeVisible()
+      for (const width of [320, 390, 640, 641, 767, 768, 1199, 1200, 1353, 1440, 1920]) {
+        await page.setViewportSize({ width, height: 920 })
+        await page.mouse.move(0, 0)
+        const edges = await node.evaluate((first) => {
+          const el = (s: string) => document.querySelector(s)!.getBoundingClientRect()
+          const stats = Array.from(document.querySelectorAll('[data-general-card-key]'), stat => stat.getBoundingClientRect())
+          const rowTops = [...new Set(stats.map(r => r.top))]
+          return {
+            left: first.getBoundingClientRect().left,
+            groupLeft: el('.a2-toolbar [role="tablist"]').left,
+            tabLeft: el('.a2-toolbar [role="tab"]').left,
+            statsLeft: rowTops.map(top => Math.min(...stats.filter(r => r.top === top).map(r => r.left))),
+            overflow: document.documentElement.scrollWidth - innerWidth,
+          }
+        })
+        expect(edges.statsLeft.length).toBeGreaterThanOrEqual(globe ? 2 : 1)
+        for (const edge of [edges.groupLeft, edges.tabLeft, ...edges.statsLeft])
+          expect(Math.abs(edge - edges.left), `${width}px ${mode}: ${JSON.stringify(edges)}`).toBeLessThanOrEqual(1)
+        expect(edges.overflow).toBeLessThanOrEqual(0)
+      }
+    }
+    if (globeElement)
+      expect(await globeElement.evaluate(el => el === document.querySelector('.a2-overview canvas'))).toBe(true)
+    else
+      await expect(canvas).toHaveCount(0)
+  })
+}

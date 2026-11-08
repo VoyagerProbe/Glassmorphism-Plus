@@ -1,11 +1,15 @@
 /* A2 timelines: the two metrics share one fractional grid. Hit height is
    independent of painted height, and neither depends on the sample's state. */
 .gmp-a2 {
+  --a2-marker-column: 18px;
+  --a2-marker-size: 14px;
   --a2-rail-fill: 8px;
   --a2-rail-gap: 2px;
   --a2-rail-hit: 14px;
 }
 .gmp-a2[data-density='mini'] {
+  --a2-marker-column: 16px;
+  --a2-marker-size: 12px;
   --a2-rail-fill: 6px;
 }
 .gmp-a2[data-density='comfortable'] {
@@ -14,6 +18,8 @@
   --a2-rail-hit: 16px;
 }
 .gmp-a2[data-density='large'] {
+  --a2-marker-column: 20px;
+  --a2-marker-size: 16px;
   --a2-rail-fill: 10px;
   --a2-rail-gap: 3px;
   --a2-rail-hit: 18px;
@@ -99,16 +105,28 @@ html .gmp-a2 .node-card .node-card-ping-task-strip {
   display: grid;
   height: var(--a2-rail-hit);
   min-width: 0;
-  grid-template-columns: 34px minmax(0, 1fr);
+  grid-template-columns: var(--a2-marker-column) minmax(0, 1fr);
   column-gap: 8px;
   align-items: center;
   direction: ltr;
 }
 .gmp-a2 .node-card-ping-trend-row .node-card-ping-trend-label {
+  width: 100%;
   height: var(--a2-rail-hit);
-  gap: 5px;
-  font-size: 10px;
-  line-height: 14px;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-info);
+}
+.gmp-a2 .node-card-ping-trend-label[data-node-ping-header='loss'] {
+  color: #8251c4;
+}
+.dark .gmp-a2 .node-card-ping-trend-label[data-node-ping-header='loss'] {
+  color: #c299f1;
+}
+.gmp-a2 .node-card-ping-trend-label svg {
+  display: block;
+  width: var(--a2-marker-size);
+  height: var(--a2-marker-size);
 }
 .gmp-a2 .node-card-ping-bucket-grid {
   display: grid;

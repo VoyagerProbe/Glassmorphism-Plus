@@ -707,16 +707,16 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="ping-center px-4 py-6 sm:px-6 sm:py-8" data-testid="ping-center" data-legacy-testid="node-ping-binding-manager">
+  <section class="ping-center gp-ping-center px-4 py-6 sm:px-6 sm:py-8" :data-palette="appStore.glassColorPreset" data-testid="ping-center" data-legacy-testid="node-ping-binding-manager">
     <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
         <div class="flex items-center gap-2">
           <Icon icon="tabler:activity-heartbeat" class="shrink-0 text-selection" width="24" height="24" />
-          <h1 class="text-2xl font-bold tracking-tight">
+          <h1 class="gp-title ping-page-title">
             延迟监测中心
           </h1>
         </div>
-        <p class="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+        <p class="mt-2 max-w-3xl text-[13px] leading-5 gp-muted">
           查看公开 Ping 任务与节点覆盖；管理员可配置首页卡片显示单项任务或三项三网任务。
         </p>
       </div>
@@ -725,47 +725,47 @@ onBeforeUnmount(() => {
       </Button>
     </div>
 
-    <div class="mb-5 flex w-fit max-w-full gap-1 overflow-x-auto rounded-lg border border-border/60 bg-background/55 p-1 backdrop-blur-sm" data-testid="ping-center-tabs">
-      <button type="button" class="rounded-md px-3 py-1.5 text-sm transition-colors" :class="activeTab === 'overview' ? 'bg-background text-selection shadow-sm' : 'text-muted-foreground hover:text-foreground'" data-testid="ping-center-tab-overview" @click="switchTab('overview')">
+    <div class="mb-5 flex w-fit max-w-full gap-1 overflow-x-auto gp-control ping-segments p-1" data-testid="ping-center-tabs">
+      <button type="button" :aria-pressed="activeTab === 'overview'" class="ping-segment" data-testid="ping-center-tab-overview" @click="switchTab('overview')">
         延迟任务概览
       </button>
-      <button v-if="appStore.isLoggedIn || activeTab === 'config'" type="button" class="rounded-md px-3 py-1.5 text-sm transition-colors" :class="activeTab === 'config' ? 'bg-background text-selection shadow-sm' : 'text-muted-foreground hover:text-foreground'" data-testid="ping-center-tab-settings" @click="switchTab('config')">
+      <button v-if="appStore.isLoggedIn || activeTab === 'config'" type="button" :aria-pressed="activeTab === 'config'" class="ping-segment" data-testid="ping-center-tab-settings" @click="switchTab('config')">
         延迟任务配置
       </button>
     </div>
 
     <div v-if="activeTab === 'overview'" data-testid="ping-center-overview">
-      <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div class="rounded-lg border border-border/60 bg-background/55 p-4">
-          <div class="text-xs text-muted-foreground">
+      <div class="ping-stat-grid mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div class="gp-surface p-4">
+          <div class="text-xs gp-muted">
             公开任务
-          </div><div class="mt-1 text-2xl font-semibold tabular-nums">
+          </div><div class="ping-stat-value mt-1 tabular-nums">
             {{ publicTasks.length }}
           </div>
         </div>
-        <div class="rounded-lg border border-border/60 bg-background/55 p-4">
-          <div class="text-xs text-muted-foreground">
+        <div class="gp-surface p-4">
+          <div class="text-xs gp-muted">
             公开节点
-          </div><div class="mt-1 text-2xl font-semibold tabular-nums">
+          </div><div class="ping-stat-value mt-1 tabular-nums">
             {{ visiblePublicNodes.length }}
           </div>
         </div>
-        <div class="rounded-lg border border-border/60 bg-background/55 p-4">
-          <div class="text-xs text-muted-foreground">
+        <div class="gp-surface p-4">
+          <div class="text-xs gp-muted">
             已有任务覆盖
-          </div><div class="mt-1 text-2xl font-semibold tabular-nums">
+          </div><div class="ping-stat-value mt-1 tabular-nums">
             {{ coveredPublicNodeCount }}
           </div>
         </div>
-        <div class="rounded-lg border border-border/60 bg-background/55 p-4">
-          <div class="text-xs text-muted-foreground">
+        <div class="gp-surface p-4">
+          <div class="text-xs gp-muted">
             在线节点
-          </div><div class="mt-1 text-2xl font-semibold tabular-nums">
+          </div><div class="ping-stat-value mt-1 tabular-nums">
             {{ nodesStore.onlineCount }}
           </div>
         </div>
       </div>
-      <div v-if="publicState === 'loading'" class="rounded-lg border border-border/60 bg-background/50" data-testid="ping-center-public-loading">
+      <div v-if="publicState === 'loading'" class="gp-surface" data-testid="ping-center-public-loading">
         <Empty description="正在加载公开 Ping 任务…" />
       </div>
       <div v-else-if="publicState === 'error'" class="rounded-lg border border-destructive/40 bg-destructive/5" data-testid="ping-center-public-error">
@@ -777,50 +777,50 @@ onBeforeUnmount(() => {
           </template>
         </Empty>
       </div>
-      <div v-else-if="publicTaskRows.length" class="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
-        <article v-for="row in publicTaskRows" :key="row.task.id" class="flex h-full flex-col rounded-lg border border-border/60 bg-background/55 p-4 shadow-xs backdrop-blur-sm" :data-testid="`ping-center-public-task-${row.task.id}`">
+      <div v-else-if="publicTaskRows.length" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <article v-for="row in publicTaskRows" :key="row.task.id" class="gp-surface flex h-full min-w-0 flex-col p-4 sm:p-[18px]" :data-testid="`ping-center-public-task-${row.task.id}`">
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
-              <h2 class="truncate font-medium">
+              <h2 class="gp-title ping-item-title truncate">
                 {{ row.task.name }}
-              </h2><p class="mt-1 text-xs text-muted-foreground">
+              </h2><p class="mt-1 text-xs gp-muted">
                 ID {{ row.task.id }} · {{ row.task.type || 'Ping' }} · {{ row.task.interval }} 秒
               </p>
             </div><Badge variant="outline">
               {{ row.assignedNodes.length }} 台
             </Badge>
           </div>
-          <div class="mt-4 rounded-md border border-border/45 bg-muted/25 p-3" :data-testid="`ping-center-covered-nodes-${row.task.id}`">
+          <div class="gp-control mt-4 min-w-0 p-3" :data-testid="`ping-center-covered-nodes-${row.task.id}`">
             <div class="mb-2 flex items-center justify-between gap-3 text-xs">
-              <span class="flex items-center gap-1.5 font-medium text-foreground">
+              <span class="flex items-center gap-1.5 font-medium gp-title">
                 <Icon icon="tabler:server-2" class="shrink-0 text-selection" width="14" height="14" />
                 覆盖节点
               </span>
-              <span class="shrink-0 text-muted-foreground">共 {{ row.assignedNodes.length }} 台</span>
+              <span class="shrink-0 gp-muted">共 {{ row.assignedNodes.length }} 台</span>
             </div>
-            <ul v-if="row.assignedNodes.length" class="flex max-h-20 flex-wrap gap-1.5 overflow-y-auto pr-1" :aria-label="`${row.task.name} 覆盖节点`">
+            <ul v-if="row.assignedNodes.length" class="flex max-h-20 flex-wrap gap-1.5 overflow-y-auto overscroll-contain pr-1" tabindex="0" :aria-label="`${row.task.name} 覆盖节点`">
               <li v-for="node in row.assignedNodes" :key="node.uuid" class="min-w-0 max-w-full">
-                <Badge variant="secondary" class="max-w-full bg-background/70 text-foreground shadow-none" :data-testid="`ping-center-covered-node-${row.task.id}`">
+                <Badge variant="secondary" class="gp-control ping-chip max-w-full" :data-testid="`ping-center-covered-node-${row.task.id}`">
                   <span class="truncate" :title="node.name">{{ node.name }}</span>
                 </Badge>
               </li>
             </ul>
-            <p v-else class="text-xs leading-5 text-muted-foreground">
+            <p v-else class="text-xs leading-5 gp-muted">
               当前公开节点中暂无覆盖。
             </p>
           </div>
         </article>
       </div>
-      <div v-else class="rounded-lg border border-border/60 bg-background/50">
+      <div v-else class="gp-surface">
         <Empty description="当前没有公开 Ping 任务。" />
       </div>
     </div>
 
     <div v-else data-testid="ping-center-settings">
-      <div v-if="adminState === 'loading'" class="rounded-lg border border-border/60 bg-background/50">
+      <div v-if="adminState === 'loading'" class="gp-surface">
         <Empty description="正在验证管理权限并加载 Ping 配置…" />
       </div>
-      <div v-else-if="adminState === 'unauthenticated'" class="rounded-lg border border-border/60 bg-background/50" data-testid="ping-center-settings-login-required">
+      <div v-else-if="adminState === 'unauthenticated'" class="gp-surface" data-testid="ping-center-settings-login-required">
         <Empty description="此配置仅允许已登录管理员读取和保存。访客不会触发任何管理接口。">
           <template #extra>
             <Button size="sm" @click="openLogin">
@@ -829,7 +829,7 @@ onBeforeUnmount(() => {
           </template>
         </Empty>
       </div>
-      <div v-else-if="adminState === 'forbidden'" class="rounded-lg border border-border/60 bg-background/50" data-testid="node-ping-binding-forbidden">
+      <div v-else-if="adminState === 'forbidden'" class="gp-surface" data-testid="node-ping-binding-forbidden">
         <Empty description="当前账户没有管理员权限，无法读取或保存 Ping 配置。" />
       </div>
       <div v-else-if="adminState === 'error'" class="rounded-lg border border-destructive/40 bg-destructive/5" data-testid="ping-center-settings-error">
@@ -843,23 +843,23 @@ onBeforeUnmount(() => {
       </div>
 
       <template v-else-if="adminState === 'ready' && appStore.isLoggedIn && draftConfig">
-        <div class="mb-4 grid gap-3 rounded-lg border border-border/60 bg-background/55 p-3 sm:grid-cols-3" data-testid="ping-center-current-state">
+        <div class="gp-surface ping-status mb-4 grid grid-cols-3 gap-2 p-3 sm:gap-4 sm:p-4" data-testid="ping-center-current-state">
           <div>
-            <div class="text-xs text-muted-foreground">
+            <div class="text-xs gp-muted">
               当前模式
             </div><div class="mt-1 font-medium">
               {{ threeNetworkEnabled ? '三网监控' : '单项监控' }}
             </div>
           </div>
           <div>
-            <div class="text-xs text-muted-foreground">
+            <div class="text-xs gp-muted">
               节点覆盖
             </div><div class="mt-1 font-medium">
               {{ coverageCounts.full }}/{{ rows.length }} 完整
             </div>
           </div>
           <div>
-            <div class="text-xs text-muted-foreground">
+            <div class="text-xs gp-muted">
               保存状态
             </div><div class="mt-1 font-medium" :class="draftDirty ? 'text-amber-500' : migrationPending ? 'text-sky-500' : 'text-emerald-500'">
               {{ draftDirty ? '有未保存修改' : migrationPending ? '等待写入新版配置' : '已保存' }}
@@ -871,7 +871,7 @@ onBeforeUnmount(() => {
           <div>
             <div class="font-medium text-destructive">
               已保存的新版 Ping 配置损坏
-            </div><p class="mt-1 text-xs leading-5 text-muted-foreground">
+            </div><p class="mt-1 text-xs leading-5 gp-muted">
               {{ loadedInspection.reason || '配置无法安全解析。' }} 当前仅使用可验证的旧配置，不读取损坏字段。
             </p>
           </div><Button size="sm" variant="outline" @click="openSavePreview">
@@ -879,7 +879,7 @@ onBeforeUnmount(() => {
           </Button>
         </div>
         <div v-else-if="migrationPending" class="mb-4 flex flex-col gap-3 rounded-lg border border-sky-500/30 bg-sky-500/5 p-4 sm:flex-row sm:items-center sm:justify-between" data-testid="ping-center-legacy-migration">
-          <p class="text-xs leading-5 text-muted-foreground">
+          <p class="text-xs leading-5 gp-muted">
             已无损载入旧版 Ping 配置。旧任务编号和旧配置键会完整保留；确认保存后仅新增新版配置。
           </p><Button size="sm" variant="outline" @click="openSavePreview">
             检查迁移结果
@@ -889,7 +889,7 @@ onBeforeUnmount(() => {
           <div class="min-w-0">
             <div class="font-medium text-amber-600 dark:text-amber-400">
               {{ orphanNodeUuids.length }} 个节点覆盖已失效
-            </div><p class="mt-1 break-all text-xs leading-5 text-muted-foreground">
+            </div><p class="mt-1 break-all text-xs leading-5 gp-muted">
               {{ orphanNodeUuids.join('、') }}
             </p>
           </div><Button size="sm" variant="outline" @click="clearOrphanOverrides">
@@ -897,40 +897,40 @@ onBeforeUnmount(() => {
           </Button>
         </div>
 
-        <div class="mb-4 rounded-lg border border-border/60 bg-background/55 p-4" data-testid="ping-center-global-config">
+        <div class="gp-surface mb-4 p-4 sm:p-5" data-testid="ping-center-global-config">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div class="min-w-0">
-              <h2 class="font-semibold">
+              <h2 class="ping-panel-title gp-title">
                 全局默认显示
-              </h2><p class="mt-1 text-xs leading-5 text-muted-foreground">
+              </h2><p class="mt-1 text-xs leading-5 gp-muted">
                 未单独配置的节点继承这里；关闭三网只隐藏任务 2、3，不会删除其编号。
               </p>
             </div>
-            <div class="flex shrink-0 items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/25 px-3 py-2 sm:justify-end" data-testid="ping-center-three-network-control">
+            <div class="flex shrink-0 items-center justify-between gap-3 gp-control px-3 py-2 sm:justify-end" data-testid="ping-center-three-network-control">
               <div class="text-right">
                 <label for="ping-center-three-network-switch" class="block cursor-pointer text-sm font-medium" data-testid="ping-center-three-network-label">三网监控</label>
-                <span class="block text-xs text-muted-foreground" data-testid="ping-center-three-network-state">{{ draftConfig.global.threeNetworkEnabled ? '已开启' : '已关闭' }}</span>
+                <span class="block text-xs gp-muted" data-testid="ping-center-three-network-state">{{ draftConfig.global.threeNetworkEnabled ? '已开启' : '已关闭' }}</span>
               </div>
               <Switch id="ping-center-three-network-switch" :model-value="draftConfig.global.threeNetworkEnabled" aria-label="三网监控" data-testid="ping-center-three-network-switch" @update:model-value="setThreeNetworkEnabled" />
             </div>
           </div>
           <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            <label v-for="index in displayCount" :key="index" class="min-w-0 text-xs text-muted-foreground">探测任务 {{ index }}<select :value="draftConfig.global.taskIds[index - 1] ?? ''" class="mt-1 block h-10 w-full truncate rounded-md border border-input bg-background px-3 text-sm text-foreground" :data-testid="`ping-center-global-slot-${index}`" @change="setGlobalTask(index - 1, $event)"><option value="">请选择探测任务</option><option v-for="task in adminTasks" :key="task.id" :value="task.id" :disabled="draftConfig.global.taskIds.some((id, slot) => id === task.id && slot !== index - 1)">{{ taskOptionLabel(task) }}</option></select></label>
+            <label v-for="index in displayCount" :key="index" class="min-w-0 text-xs gp-muted">探测任务 {{ index }}<select :value="draftConfig.global.taskIds[index - 1] ?? ''" class="gp-field mt-1 block w-full min-w-0 truncate px-3" :data-testid="`ping-center-global-slot-${index}`" @change="setGlobalTask(index - 1, $event)"><option value="">请选择探测任务</option><option v-for="task in adminTasks" :key="task.id" :value="task.id" :disabled="draftConfig.global.taskIds.some((id, slot) => id === task.id && slot !== index - 1)">{{ taskOptionLabel(task) }}</option></select></label>
           </div>
           <div class="mt-4 flex flex-wrap gap-2 text-xs" aria-label="按覆盖状态筛选">
-            <button v-for="coverage in (['full', 'partial', 'none', 'invalid'] as const)" :key="coverage" type="button" class="rounded-full border border-border/70 px-2.5 py-1 transition-colors" :class="[coverageClass(coverage), coverageFilter === coverage && 'bg-selection/15 ring-1 ring-selection']" :aria-pressed="coverageFilter === coverage" :data-testid="`ping-center-coverage-${coverage}`" @click="setCoverageFilter(coverage)">
+            <button v-for="coverage in (['full', 'partial', 'none', 'invalid'] as const)" :key="coverage" type="button" class="ping-coverage-badge px-2.5 py-1 transition-colors" :class="coverageClass(coverage)" :aria-pressed="coverageFilter === coverage" :data-testid="`ping-center-coverage-${coverage}`" @click="setCoverageFilter(coverage)">
               {{ coverageLabel(coverage) }} {{ coverageCounts[coverage] }}
             </button>
           </div>
         </div>
 
-        <div class="mb-4 rounded-lg border border-border/60 bg-background/55 p-3">
-          <div class="grid gap-2 xl:grid-cols-[minmax(15rem,1fr)_auto_auto] xl:items-center">
+        <div class="gp-surface mb-4 p-3">
+          <div class="grid gap-2 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-center">
             <div class="relative min-w-0">
-              <Icon icon="tabler:search" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" width="16" /><Input v-model="searchText" class="pl-9" placeholder="搜索名称 / 节点标识 / 地区 / 分组" data-testid="ping-center-settings-search" />
+              <Icon icon="tabler:search" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 gp-muted" width="16" /><Input v-model="searchText" class="gp-field pl-9" placeholder="搜索名称 / 节点标识 / 地区 / 分组" data-testid="ping-center-settings-search" />
             </div>
-            <div class="flex max-w-full gap-1 overflow-x-auto rounded-md border border-border/60 p-1" data-testid="ping-center-settings-filter">
-              <button v-for="filter in ([['all', '全部', rows.length], ['inherit', '继承全局', rows.filter(row => row.mode === 'inherit').length], ['custom', '单独配置', rows.filter(row => row.mode === 'custom').length], ['action', '需要处理', actionCount]] as const)" :key="filter[0]" type="button" class="whitespace-nowrap rounded px-2.5 py-1 text-sm" :class="mainFilter === filter[0] && !coverageFilter ? 'bg-selection/15 text-selection' : 'text-muted-foreground hover:text-foreground'" :aria-pressed="mainFilter === filter[0] && !coverageFilter" :data-filter="filter[0]" @click="setMainFilter(filter[0])">
+            <div class="gp-control ping-segments flex min-w-0 max-w-full gap-1 overflow-x-auto p-1" data-testid="ping-center-settings-filter">
+              <button v-for="filter in ([['all', '全部', rows.length], ['inherit', '继承全局', rows.filter(row => row.mode === 'inherit').length], ['custom', '单独配置', rows.filter(row => row.mode === 'custom').length], ['action', '需要处理', actionCount]] as const)" :key="filter[0]" type="button" class="ping-segment whitespace-nowrap" :aria-pressed="mainFilter === filter[0] && !coverageFilter" :data-filter="filter[0]" @click="setMainFilter(filter[0])">
                 {{ filter[1] }} {{ filter[2] }}
               </button>
             </div>
@@ -938,17 +938,17 @@ onBeforeUnmount(() => {
               <Icon :icon="allFilteredSelected ? 'tabler:square-minus' : 'tabler:checks'" />{{ allFilteredSelected ? '取消当前结果' : '全选当前结果' }}
             </Button>
           </div>
-          <div class="mt-2 text-xs text-muted-foreground">
+          <div class="mt-2 text-xs gp-muted">
             {{ filteredRows.length }} 条结果 · 已选 {{ selectedRows.length }} 台<span v-if="coverageFilter"> · 精确状态：{{ coverageLabel(coverageFilter) }}</span>
           </div>
         </div>
 
-        <div v-if="selectedRows.length" class="sticky top-2 z-10 mb-4 rounded-lg border border-selection/30 bg-card/95 p-3 shadow-lg backdrop-blur-xl" data-testid="ping-center-bulk-panel">
+        <div v-if="selectedRows.length" class="gp-surface ping-bulk-panel mb-4 p-3 sm:sticky sm:top-2 sm:z-10" data-testid="ping-center-bulk-panel">
           <div class="flex flex-wrap items-center gap-2">
             <div class="mr-auto">
               <div class="text-sm font-medium">
                 已选 {{ selectedRows.length }} 台 · 共同候选 {{ strictBulkTasks.length }} 个
-              </div><div class="mt-0.5 text-xs text-muted-foreground">
+              </div><div class="mt-0.5 text-xs gp-muted">
                 任一节点不兼容时，单独配置不会部分套用。
               </div>
             </div><Button size="sm" variant="outline" data-testid="ping-center-bulk-inherit" @click="applyBulkInherit">
@@ -958,11 +958,11 @@ onBeforeUnmount(() => {
             </Button>
           </div>
           <div class="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-[repeat(3,minmax(0,1fr))_auto] xl:items-end">
-            <label v-for="index in displayCount" :key="index" class="min-w-0 text-xs text-muted-foreground">探测任务 {{ index }}<select :value="bulkTaskIds[index - 1] ?? ''" class="mt-1 block h-9 w-full truncate rounded-md border border-input bg-background px-3 text-sm text-foreground" :data-testid="`ping-center-bulk-slot-${index}`" @change="setBulkTask(index - 1, $event)"><option value="">请选择共同任务</option><option v-for="task in strictBulkTasks" :key="task.id" :value="task.id" :disabled="bulkTaskIds.some((id, slot) => id === task.id && slot !== index - 1)">{{ taskOptionLabel(task) }}</option></select></label><Button size="sm" :disabled="!bulkPreview?.canApply" data-testid="ping-center-bulk-custom" @click="applyBulkCustom">
+            <label v-for="index in displayCount" :key="index" class="min-w-0 text-xs gp-muted">探测任务 {{ index }}<select :value="bulkTaskIds[index - 1] ?? ''" class="gp-field mt-1 block w-full min-w-0 truncate px-3" :data-testid="`ping-center-bulk-slot-${index}`" @change="setBulkTask(index - 1, $event)"><option value="">请选择共同任务</option><option v-for="task in strictBulkTasks" :key="task.id" :value="task.id" :disabled="bulkTaskIds.some((id, slot) => id === task.id && slot !== index - 1)">{{ taskOptionLabel(task) }}</option></select></label><Button size="sm" :disabled="!bulkPreview?.canApply" data-testid="ping-center-bulk-custom" @click="applyBulkCustom">
               批量单独配置
             </Button>
           </div>
-          <div v-if="bulkPreview" class="mt-3 rounded-md border border-border/60 px-3 py-2 text-xs" data-testid="ping-center-bulk-preview">
+          <div v-if="bulkPreview" class="gp-control mt-3 px-3 py-2 text-xs" data-testid="ping-center-bulk-preview">
             <div :class="bulkPreview.canApply ? 'text-emerald-500' : 'text-amber-500'">
               预览：适用 {{ bulkPreview.eligibleNodeUuids.length }}/{{ bulkPreview.selectedNodeUuids.length }} · 不兼容 {{ bulkPreview.excludedNodeUuids.length }} · 将变更 {{ bulkPreview.changedNodeUuids.length }} · 保持不变 {{ bulkPreview.unchangedNodeUuids.length }}
             </div><ul v-if="bulkFailureReasons.length" class="mt-1 list-disc space-y-1 pl-4 text-amber-500">
@@ -974,20 +974,20 @@ onBeforeUnmount(() => {
         </div>
 
         <div v-if="filteredRows.length" class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          <article v-for="row in filteredRows" :key="row.client.uuid" class="rounded-lg border border-border/60 bg-background/55 p-3" :data-testid="`node-binding-row-${row.client.uuid}`">
+          <article v-for="row in filteredRows" :key="row.client.uuid" class="gp-surface min-w-0 p-4" :data-testid="`node-binding-row-${row.client.uuid}`">
             <div class="flex items-start gap-3">
               <input :checked="selectedNodeUuids.has(row.client.uuid)" type="checkbox" class="mt-1 size-4 accent-primary" :aria-label="`选择 ${row.client.name}`" @change="setSelected(row.client.uuid, ($event.target as HTMLInputElement).checked)"><div class="min-w-0 flex-1">
                 <div class="flex min-w-0 flex-wrap items-center gap-1.5">
-                  <h3 class="min-w-0 flex-1 truncate font-medium" :title="row.client.name">
+                  <h3 class="ping-item-title gp-title min-w-0 flex-1 truncate" :title="row.client.name">
                     {{ row.client.name }}
                   </h3><Badge variant="outline">
                     {{ modeLabel(row.mode) }}
                   </Badge><Badge variant="outline" :class="coverageClass(row.coverage)">
                     {{ coverageLabel(row.coverage) }}
                   </Badge>
-                </div><p class="mt-1 truncate text-xs text-muted-foreground" :title="`${row.client.uuid} · ${row.client.region || '未设置地区'} · ${row.client.group || '未设置分组'}`">
+                </div><p class="mt-1 truncate text-xs gp-muted" :title="`${row.client.uuid} · ${row.client.region || '未设置地区'} · ${row.client.group || '未设置分组'}`">
                   {{ row.client.region || '未设置地区' }} · {{ row.client.group || '未设置分组' }} · 候选 {{ row.candidates.length }}
-                </p><p class="mt-2 truncate rounded-md bg-muted/35 px-2.5 py-1.5 text-xs text-muted-foreground" :title="displayTaskNames(row)">
+                </p><p class="gp-control ping-task-summary mt-2 truncate px-2.5 py-1.5 text-xs gp-muted" :title="displayTaskNames(row)">
                   {{ displayTaskNames(row) }}
                 </p>
               </div>
@@ -999,12 +999,12 @@ onBeforeUnmount(() => {
             </div>
           </article>
         </div>
-        <div v-else class="rounded-lg border border-border/60 bg-background/50">
+        <div v-else class="gp-surface">
           <Empty description="没有匹配的节点。" />
         </div>
 
-        <div class="sticky bottom-3 z-10 mt-5 flex flex-col gap-2 rounded-lg border border-border/70 bg-card/95 p-3 shadow-lg backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
-          <div class="text-xs text-muted-foreground">
+        <div class="gp-surface sticky bottom-3 z-10 mt-5 flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="text-xs gp-muted">
             <span v-if="draftDirty">待保存：{{ changedNodeCount }} 台节点{{ globalChanged ? ' + 全局设置' : '' }}</span><span v-else-if="migrationPending">旧配置已安全载入，等待写入新版配置</span><span v-else>当前没有未保存修改</span>
           </div><div class="flex gap-2">
             <Button v-if="draftDirty" size="sm" variant="outline" data-testid="ping-center-discard" @click="discardDraft">
@@ -1017,12 +1017,12 @@ onBeforeUnmount(() => {
       </template>
     </div>
 
-    <AppDialog :open="Boolean(activeRow)" :title="activeRow ? `${activeRow.client.name} · Ping 显示` : '单节点 Ping 显示'" :description="`任务数量由全局${threeNetworkEnabled ? '三网监控' : '单项监控'}模式决定；单独配置只能选择已分配给此节点的任务。`" content-class="max-w-4xl" @update:open="open => !open && closeNodeEditor()">
+    <AppDialog :open="Boolean(activeRow)" :title="activeRow ? `${activeRow.client.name} · Ping 显示` : '单节点 Ping 显示'" :description="`任务数量由全局${threeNetworkEnabled ? '三网监控' : '单项监控'}模式决定；单独配置只能选择已分配给此节点的任务。`" content-class="gp-ping-dialog gp-surface max-w-4xl" @update:open="open => !open && closeNodeEditor()">
       <div v-if="activeRow && activeEditorConfig" class="space-y-4" data-testid="ping-center-node-editor">
-        <div class="truncate rounded-md bg-muted/40 p-2 font-mono text-xs text-muted-foreground" :title="activeRow.client.uuid">
+        <div class="gp-control truncate p-2 font-mono text-xs gp-muted" :title="activeRow.client.uuid">
           {{ activeRow.client.uuid }}
         </div>
-        <div class="inline-flex max-w-full gap-1 rounded-lg border border-border/60 p-1">
+        <div class="gp-control ping-segments inline-flex max-w-full gap-1 p-1">
           <Button size="sm" :variant="activeMode === 'inherit' ? 'default' : 'ghost'" data-testid="ping-center-node-mode-inherit" @click="setActiveMode('inherit')">
             继承全局
           </Button><Button size="sm" :variant="activeMode === 'custom' ? 'default' : 'ghost'" data-testid="ping-center-node-mode-custom" @click="setActiveMode('custom')">
@@ -1031,7 +1031,7 @@ onBeforeUnmount(() => {
         </div>
         <template v-if="activeCustomConfig">
           <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            <label v-for="index in displayCount" :key="index" class="block min-w-0 text-xs text-muted-foreground">探测任务 {{ index }}<select :value="activeCustomConfig.taskIds[index - 1] ?? ''" class="mt-1 h-10 w-full truncate rounded-md border border-input bg-background px-3 text-sm text-foreground" :data-testid="`ping-center-node-slot-${index}`" @change="setActiveTask(index - 1, $event)"><option value="">请选择探测任务</option><option v-for="task in activeRow.candidates" :key="task.id" :value="task.id" :disabled="activeCustomConfig.taskIds.some((id, slot) => id === task.id && slot !== index - 1)">{{ taskOptionLabel(task) }}</option></select></label>
+            <label v-for="index in displayCount" :key="index" class="block min-w-0 text-xs gp-muted">探测任务 {{ index }}<select :value="activeCustomConfig.taskIds[index - 1] ?? ''" class="gp-field mt-1 block w-full min-w-0 truncate px-3" :data-testid="`ping-center-node-slot-${index}`" @change="setActiveTask(index - 1, $event)"><option value="">请选择探测任务</option><option v-for="task in activeRow.candidates" :key="task.id" :value="task.id" :disabled="activeCustomConfig.taskIds.some((id, slot) => id === task.id && slot !== index - 1)">{{ taskOptionLabel(task) }}</option></select></label>
           </div><div v-if="activeEditorIssues.length" class="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs leading-5 text-amber-500" data-testid="ping-center-node-invalid-reason">
             <div v-for="issue in activeEditorIssues" :key="issue">
               {{ issue }}
@@ -1048,39 +1048,39 @@ onBeforeUnmount(() => {
       </div>
     </AppDialog>
 
-    <AppDialog :open="savePreviewOpen" title="保存 Ping 显示配置" description="提交时会重新读取最新主题设置并合并；旧版配置键不会被覆盖。" content-class="max-w-3xl" @update:open="savePreviewOpen = $event">
+    <AppDialog :open="savePreviewOpen" title="保存 Ping 显示配置" description="提交时会重新读取最新主题设置并合并；旧版配置键不会被覆盖。" content-class="gp-ping-dialog gp-surface max-w-3xl" @update:open="savePreviewOpen = $event">
       <div class="space-y-4" data-testid="ping-center-save-dialog">
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div class="rounded-md bg-muted/40 p-3">
-            <div class="text-xs text-muted-foreground">
+          <div class="gp-control p-3">
+            <div class="text-xs gp-muted">
               节点变更
             </div><div class="mt-1 text-xl font-semibold">
               {{ changedNodeCount }}
             </div>
-          </div><div class="rounded-md bg-muted/40 p-3">
-            <div class="text-xs text-muted-foreground">
+          </div><div class="gp-control p-3">
+            <div class="text-xs gp-muted">
               完整覆盖
             </div><div class="mt-1 text-xl font-semibold text-emerald-500">
               {{ coverageCounts.full }}
             </div>
-          </div><div class="rounded-md bg-muted/40 p-3">
-            <div class="text-xs text-muted-foreground">
+          </div><div class="gp-control p-3">
+            <div class="text-xs gp-muted">
               部分覆盖
             </div><div class="mt-1 text-xl font-semibold text-amber-500">
               {{ coverageCounts.partial }}
             </div>
-          </div><div class="rounded-md bg-muted/40 p-3">
-            <div class="text-xs text-muted-foreground">
+          </div><div class="gp-control p-3">
+            <div class="text-xs gp-muted">
               需要处理
             </div><div class="mt-1 text-xl font-semibold text-destructive">
               {{ actionCount }}
             </div>
           </div>
         </div>
-        <div class="rounded-md border border-border/60 p-3 text-sm">
+        <div class="gp-control p-3 text-sm">
           <div class="font-medium">
             全局：{{ threeNetworkEnabled ? '三网监控，显示 3 项任务' : '单项监控，显示 1 项任务' }}
-          </div><div class="mt-1 text-xs text-muted-foreground">
+          </div><div class="mt-1 text-xs gp-muted">
             {{ getActiveNodeCardPingTaskIds(draftConfig!.global.taskIds, displayCount).map(id => adminTasks.find(task => task.id === id)?.name || `任务 ${id}`).join('、') || '尚未选择任务' }}
           </div>
         </div>
@@ -1106,7 +1106,7 @@ onBeforeUnmount(() => {
       </div>
     </AppDialog>
 
-    <AppDialog :open="leaveConfirmOpen" title="放弃未保存修改？" description="当前 Ping 配置尚未保存，离开后这些修改将丢失。" content-class="max-w-md" @update:open="open => !open && cancelPendingNavigation()">
+    <AppDialog :open="leaveConfirmOpen" title="放弃未保存修改？" description="当前 Ping 配置尚未保存，离开后这些修改将丢失。" content-class="gp-ping-dialog gp-surface max-w-md" @update:open="open => !open && cancelPendingNavigation()">
       <div class="flex justify-end gap-2" data-testid="ping-center-leave-confirm">
         <Button variant="outline" @click="cancelPendingNavigation">
           继续编辑
@@ -1118,3 +1118,5 @@ onBeforeUnmount(() => {
     </AppDialog>
   </section>
 </template>
+
+<style src="@/styles/scheme2-ping-center.css"></style>

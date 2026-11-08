@@ -27,23 +27,24 @@
 
 | 项目               | 当前状态                                                                                                               |
 | :----------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v3.0.1（预发布）**                                                                                               |
+| 当前 Plus 版本     | **v3.0.1（预发布）**                                                                                                   |
 | 当前稳定 Latest    | [v3.0.0](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)                                       |
 | 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7) |
 | 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                        |
 | 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                             |
 | 已验证 Komari 版本 | **1.6.0、1.5.1、1.5.0-fix1、1.5.0、1.4.3**（平台与范围见下文；不是全部设备保证）                                       |
 | 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                         |
-| 源码发布           | [v3.0.1 Pre-release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.1)；稳定版仍为 v3.0.0                                                            |
+| 源码发布           | [v3.0.1 Pre-release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.1)；稳定版仍为 v3.0.0        |
 | 本地安装包         | `3.0.1/Glassmorphism-Plus-release-3.0.1.zip`                                                                           |
 
 Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用自己的版本体系；上游 v3.3.7 仅代表当前同步基线，并非 Plus 的版本号。同步来源、选择性合并和署名详见 [UPSTREAM.md](UPSTREAM.md)。
 
 ### ✨ 最新版本 · v3.0.1（预发布）
 
-- 首页采用 A2 轻玻璃布局：节点标题、资源数值和单位分层显示，三组流量／费用信息共用一条面板；桌面 Header 使用图标与文字，窄屏保留原操作入口。
-- Ping 延迟与丢包沿用同一组 20 个三分钟区间，左旧右新；compact 下色块高 8px、间距 2px，命中行高 14px。保留原告警、缺样和迟到回填语义。
-- 沿用 v3.0.0 的原点阵地球、国旗、十键配色、权限、任务绑定与在线 Worker；不要求清理浏览器数据。
+- 首页采用 A2 轻玻璃卡片与带文字的桌面工具栏。总览、筛选与节点列表共用内容边界，保留原点阵地球与国旗。
+- Ping 历史用蓝色波形标记延迟、紫色柱形标记丢包，保留右上数值和详情入口。两条轨道各有 20 个三分钟区间，左旧右新；不改变采样、告警或缺样判断。
+- 延迟任务概览、三网配置和配色中心统一卡片、控件与移动端布局。浅深十项配色贯穿任务卡、输入框和配置弹窗；编辑器保留可读的取消、关闭与错误提示。
+- 配色仍是访客只读、管理员保存全站配置；保留任务绑定、继承和批量配置、在线 Worker 与既有设置，无需清除浏览器数据。
 
 ---
 

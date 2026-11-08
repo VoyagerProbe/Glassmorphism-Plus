@@ -807,12 +807,14 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div v-if="shouldRenderHeader" class="a2-overview" :class="wrapperClass" :data-overview-only="!showEarth || undefined">
-    <NodeEarthGlobe
-      v-if="showEarth"
-      :nodes="globeNodes"
-      :class="earthClass"
-    />
+  <div v-if="shouldRenderHeader" class="a2-overview" :class="wrapperClass" :data-overview-only="!showEarth || undefined" :data-tiled="isTiledEarth || undefined">
+    <!-- Only the stats adopt the dashboard gutter. Retain the globe's original centered grid. -->
+    <div v-if="showEarth" class="a2-earth-layout" :class="isTiledEarth ? 'row-start-2' : 'row-start-1'">
+      <NodeEarthGlobe
+        :nodes="globeNodes"
+        :class="earthClass"
+      />
+    </div>
 
     <div v-if="visibleCards.length > 0" class="a2-stats" :class="cardGridClass">
       <CardX

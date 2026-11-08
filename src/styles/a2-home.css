@@ -51,10 +51,23 @@ main > div:has(> .gmp-a2),
 .app-viewport:has(.gmp-a2) .a2-titlebar {
   max-width: 1360px;
 }
-.gmp-a2 .node-info,
-.gmp-a2 [data-overview-only],
 .app-viewport:has(.gmp-a2) .a2-titlebar {
   padding-inline: var(--a2-gutter);
+}
+/* Stats, tabs and the card/list grid use the same named content edges.
+ * The globe can span the outer tracks without using a card's gutter. */
+.gmp-a2 .a2-home-content {
+  display: grid;
+  grid-template-columns:
+    [outer-start] var(--a2-gutter) [content-start] minmax(0, 1fr) [content-end] var(--a2-gutter)
+    [outer-end];
+}
+.gmp-a2 .a2-home-content > * {
+  grid-column: outer-start / outer-end;
+}
+.gmp-a2 .a2-home-content > .node-info {
+  grid-column: content-start / content-end;
+  padding-inline: 0;
 }
 .gmp-a2 .a2-node-grid {
   display: grid;
@@ -238,11 +251,39 @@ html .gmp-a2 .a2-info-bar > .node-card-info-surface {
   }
 }
 
-/* The existing globe's projection host keeps its original max width. Only
- * statistics-only mode uses the expanded 1360px content shell. */
-.gmp-a2 .a2-overview:not([data-overview-only]) {
+.gmp-a2 .a2-overview {
+  grid-template-columns: subgrid;
+  column-gap: 0;
+  padding-inline: 0;
+}
+.gmp-a2 .a2-overview > .a2-stats {
+  grid-column: content-start / content-end;
+}
+@media (min-width: 768px) {
+  .gmp-a2 .a2-overview:not([data-overview-only], [data-tiled]) > .a2-stats {
+    width: calc((100% - 0.5rem) / 2);
+  }
+}
+/* Match the original renderer's 12-column host independently of the stats.
+ * No offsets, scaling, clipping or pointer overrides on the canvas. */
+.gmp-a2 .a2-earth-layout {
+  display: grid;
+  grid-column: outer-start / outer-end;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.5rem;
+  width: 100%;
   max-width: 1280px;
   margin-inline: auto;
+  padding-inline: 1rem;
+}
+.gmp-a2 [data-tiled] .a2-earth-layout {
+  grid-template-rows: 0 minmax(0, 1fr);
+  row-gap: 0;
+}
+@media (max-width: 639px) {
+  .gmp-a2 [data-tiled] .a2-earth-layout {
+    padding-inline: 0.75rem;
+  }
 }
 .gmp-a2 .a2-stats > [data-general-card-key] {
   border: 1px solid var(--a2-border);
@@ -465,6 +506,14 @@ html .gmp-a2 .a2-info-bar > .node-card-info-surface {
     width: 100% !important;
     background-color: var(--a2-card);
   }
+}
+.gmp-a2 .a2-toolbar [data-slot='tabs-list'] {
+  /* Align the actual first tab, not only its decorative group's box. */
+  padding-inline-start: 0;
+  border-inline-start-width: 0;
+  box-shadow:
+    inset 1px 0 var(--a2-border),
+    inset 0 1px var(--a2-highlight);
 }
 .gmp-a2 .a2-toolbar [role='tab'] {
   border-radius: 9px;

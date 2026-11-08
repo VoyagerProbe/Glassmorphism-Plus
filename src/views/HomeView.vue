@@ -469,7 +469,7 @@ const activeToolTitle = computed(() => {
       </button>
     </div>
     <NodePingBindingManager v-if="isPingCenterView" />
-    <template v-else>
+    <div v-else class="a2-home-content">
       <div v-if="appStore.alertEnabled && appStore.alertContent" class="alert px-4">
         <Alert class="border-none bg-background/60 backdrop-blur-xs rounded-md">
           <AlertTitle v-if="appStore.alertTitle">
@@ -649,7 +649,7 @@ const activeToolTitle = computed(() => {
         :node-name="pingDialogNode.name"
         @update:open="!$event && (pingDialogNode = null)"
       />
-    </template>
+    </div>
   </div>
 </template>
 

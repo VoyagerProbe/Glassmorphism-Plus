@@ -20,8 +20,8 @@ function close() {
 </script>
 
 <template>
-  <section id="palette-center" class="palette-readonly" :data-mode="app.resolvedThemeMode" data-access="readonly" data-testid="palette-panel" aria-labelledby="palette-heading" @keydown.esc.stop.prevent="close">
-    <div class="palette-readonly-top">
+  <section id="palette-center" class="palette-readonly gp-palette" :data-mode="app.resolvedThemeMode" data-access="readonly" data-testid="palette-panel" aria-labelledby="palette-heading" @keydown.esc.stop.prevent="close">
+    <div class="palette-top">
       <div>
         <h2 id="palette-heading" ref="heading" tabindex="-1">
           配色中心
@@ -58,85 +58,4 @@ function close() {
   </section>
 </template>
 
-<style scoped>
-.palette-readonly {
-  --readonly-bg: #fafafa;
-  --readonly-text: #18181b;
-  --readonly-muted: #52525b;
-  --readonly-border: #d4d4d8;
-  position: relative;
-  z-index: 2;
-  margin: 12px 16px 20px;
-  padding: 16px;
-  border: 1px solid var(--readonly-border);
-  border-radius: 12px;
-  background: var(--readonly-bg);
-  color: var(--readonly-text);
-  font-size: 14px;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-.palette-readonly[data-mode='dark'] {
-  --readonly-bg: #18181b;
-  --readonly-text: #fafafa;
-  --readonly-muted: #a1a1aa;
-  --readonly-border: #52525b;
-}
-.palette-readonly-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-.palette-readonly-top > button {
-  flex-shrink: 0;
-}
-.palette-readonly h2 {
-  font-size: 18px;
-  font-weight: 600;
-}
-.palette-readonly p {
-  margin: 8px 0;
-  color: var(--readonly-muted);
-}
-.palette-readonly-groups {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  margin: 16px 0;
-}
-.palette-readonly h3 {
-  font-weight: 600;
-}
-.palette-readonly-color,
-.palette-readonly-color dd {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.palette-readonly-color {
-  justify-content: space-between;
-  margin-top: 8px;
-}
-.palette-readonly-color dd {
-  flex-shrink: 0;
-}
-.palette-readonly-color code {
-  white-space: nowrap;
-}
-.palette-readonly-swatch {
-  flex: 0 0 14px;
-  height: 14px;
-  border: 1px solid var(--readonly-border);
-  border-radius: 50%;
-}
-.palette-readonly :deep(button) {
-  color: var(--readonly-text);
-  background: var(--readonly-bg);
-  border-color: var(--readonly-border);
-}
-@media (max-width: 767px) {
-  .palette-readonly-groups {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-</style>
+<style src="../styles/scheme2-palette.css"></style>

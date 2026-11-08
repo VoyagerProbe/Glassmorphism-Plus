@@ -618,8 +618,7 @@ header {
   grid-column: 1;
 }
 
-.node-card-ping-status-dot,
-.node-card-ping-trend-dot {
+.node-card-ping-status-dot {
   width: var(--ping-dot-size);
   height: var(--ping-dot-size);
   flex: none;
@@ -779,14 +778,6 @@ header {
 
 .node-card-ping-task-strip[data-node-ping-size='mini'] .node-card-ping-trend-label {
   font-size: 8px;
-}
-
-.node-card-ping-trend-label[data-node-ping-header='latency'] .node-card-ping-trend-dot {
-  background-color: color-mix(in srgb, var(--color-info) 82%, var(--color-foreground));
-}
-
-.node-card-ping-trend-label[data-node-ping-header='loss'] .node-card-ping-trend-dot {
-  background-color: color-mix(in srgb, #a855f7 70%, var(--color-foreground));
 }
 
 .node-card-ping-bucket-grid {

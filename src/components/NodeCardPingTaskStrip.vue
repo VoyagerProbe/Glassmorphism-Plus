@@ -2,6 +2,7 @@
 import type { NodeCardPingHistoryPoint, NodeCardPingPairSnapshot, NodeCardPingSample } from '@/types/node-card-ping'
 import { Icon } from '@iconify/vue'
 import { computed } from 'vue'
+import PingMetricMarker from '@/components/PingMetricMarker.vue'
 import { DataTooltip } from '@/components/ui/data-tooltip'
 import { CACHE_CONFIG } from '@/constants/cache'
 import { formatDateTime } from '@/utils/helper'
@@ -268,8 +269,8 @@ const displayBuckets = computed(() => history.value.map((point, index) => {
       </DataTooltip>
     </div>
     <div class="node-card-ping-trend-row" data-node-ping-panel="latency" data-node-ping-trend="latency">
-      <span class="node-card-ping-trend-label" data-node-ping-header="latency"><span class="node-card-ping-trend-dot" aria-hidden="true" />延迟</span>
-      <span class="node-card-ping-bucket-grid" data-node-ping-bars="latency" @pointerdown.capture="rejectRetargetedRailTap" @touchend.capture="rejectRetargetedRailTap" @click.capture="rejectRetargetedRailTap" @keydown="movePingRailFocus" @click.stop>
+      <PingMetricMarker metric="latency" />
+      <span class="node-card-ping-bucket-grid" role="group" aria-label="延迟历史" data-node-ping-bars="latency" @pointerdown.capture="rejectRetargetedRailTap" @touchend.capture="rejectRetargetedRailTap" @click.capture="rejectRetargetedRailTap" @keydown="movePingRailFocus" @click.stop>
         <template v-for="({ point, key, end, sample, details, label }, index) in displayBuckets" :key="`${nodeUuid}:${taskId}:latency:${key}`">
           <DataTooltip
             as="button"
@@ -308,8 +309,8 @@ const displayBuckets = computed(() => history.value.map((point, index) => {
       </span>
     </div>
     <div class="node-card-ping-trend-row" data-node-ping-panel="loss" data-node-ping-trend="loss">
-      <span class="node-card-ping-trend-label" data-node-ping-header="loss"><span class="node-card-ping-trend-dot" aria-hidden="true" />丢包</span>
-      <span class="node-card-ping-bucket-grid" data-node-ping-bars="loss" @pointerdown.capture="rejectRetargetedRailTap" @touchend.capture="rejectRetargetedRailTap" @click.capture="rejectRetargetedRailTap" @keydown="movePingRailFocus" @click.stop>
+      <PingMetricMarker metric="loss" />
+      <span class="node-card-ping-bucket-grid" role="group" aria-label="丢包历史" data-node-ping-bars="loss" @pointerdown.capture="rejectRetargetedRailTap" @touchend.capture="rejectRetargetedRailTap" @click.capture="rejectRetargetedRailTap" @keydown="movePingRailFocus" @click.stop>
         <template v-for="({ point, key, end, sample, details, label }, index) in displayBuckets" :key="`${nodeUuid}:${taskId}:loss:${key}`">
           <DataTooltip
             as="button"

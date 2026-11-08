@@ -3,6 +3,7 @@ import type { NodeData } from '@/stores/nodes'
 import { Icon } from '@iconify/vue'
 import { computed } from 'vue'
 import NodeCardPingGroup from '@/components/NodeCardPingGroup.vue'
+import PingMetricMarker from '@/components/PingMetricMarker.vue'
 import { Badge } from '@/components/ui/badge'
 import { CardX } from '@/components/ui/card-x'
 import { DataTooltip } from '@/components/ui/data-tooltip'
@@ -505,14 +506,9 @@ function hasRegion(region: string | null | undefined): boolean {
             class="node-card-ping-trend-row"
             :data-node-ping-panel="panel.metric"
           >
-            <button
-              type="button" class="node-card-ping-trend-label" :data-node-ping-header="panel.metric"
-              :aria-label="`${panel.label}历史`" @click.stop="emit('pingClick')"
-            >
-              <span class="node-card-ping-trend-dot" aria-hidden="true" />{{ panel.label }}
-            </button>
+            <PingMetricMarker :metric="panel.metric" @click.stop="emit('pingClick')" />
             <div
-              class="node-card-ping-bucket-grid" :data-node-ping-bars="panel.metric"
+              class="node-card-ping-bucket-grid" role="group" :aria-label="`${panel.label}历史`" :data-node-ping-bars="panel.metric"
               @pointerdown.capture="rejectRetargetedRailTap" @touchend.capture="rejectRetargetedRailTap" @click.capture="rejectRetargetedRailTap" @keydown="movePingRailFocus" @click.stop
             >
               <DataTooltip

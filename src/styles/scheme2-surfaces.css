@@ -1,0 +1,52 @@
+/* Provider writes the resolved ten colours to <html>. These aliases therefore
+ * follow drafts and mode changes in both the page and body-mounted dialogs. */
+:root {
+  --gp-card: var(--glass-light-card, var(--card));
+  --gp-control: var(--glass-light-control, var(--muted));
+  --gp-text: var(--glass-light-text, var(--foreground));
+  --gp-muted: var(--glass-light-muted-text, var(--muted-foreground));
+  --gp-border: var(--glass-light-border, var(--border));
+  --gp-highlight: rgb(255 255 255 / 68%);
+  --gp-shadow: 0 2px 5px rgb(30 46 68 / 4%), 0 12px 28px -20px rgb(25 40 70 / 28%);
+}
+:root.dark {
+  --gp-card: var(--glass-dark-card, var(--card));
+  --gp-control: var(--glass-dark-control, var(--muted));
+  --gp-text: var(--glass-dark-text, var(--foreground));
+  --gp-muted: var(--glass-dark-muted-text, var(--muted-foreground));
+  --gp-border: var(--glass-dark-border, var(--border));
+  --gp-highlight: rgb(255 255 255 / 8%);
+  --gp-shadow: 0 2px 5px rgb(0 0 0 / 12%), 0 12px 28px -20px rgb(0 0 0 / 45%);
+}
+:is(.gp-ping-center, .gp-ping-dialog) {
+  color: var(--gp-text);
+}
+:is(.gp-ping-center, .gp-ping-dialog) .gp-surface,
+.gp-ping-dialog.gp-surface {
+  background-color: var(--gp-card);
+  border: 1px solid var(--gp-border);
+  border-radius: 18px;
+  color: var(--gp-text);
+  box-shadow:
+    inset 0 1px var(--gp-highlight),
+    var(--gp-shadow);
+}
+:is(.gp-ping-center, .gp-ping-dialog) :is(.gp-control, .gp-field) {
+  background-color: var(--gp-control);
+  color: var(--gp-text);
+  border: 1px solid var(--gp-border);
+  border-radius: 10px;
+}
+:is(.gp-ping-center, .gp-ping-dialog) .gp-field {
+  min-width: 0;
+  min-height: 38px;
+  font-size: 13px;
+  line-height: 18px;
+}
+:is(.gp-ping-center, .gp-ping-dialog) .gp-title {
+  color: var(--gp-text);
+}
+:is(.gp-ping-center, .gp-ping-dialog) .gp-muted,
+:is(.gp-ping-center, .gp-ping-dialog) .gp-field::placeholder {
+  color: var(--gp-muted);
+}
