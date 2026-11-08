@@ -692,6 +692,8 @@ for (const width of [1440, 1280, 768, 390, 360, 320]) {
       for (const key of fields) {
         const button = page.getByTestId(`palette-field-${key}`)
         await expect(button).toBeVisible()
+        await expect(button.locator('.palette-swatch')).toHaveCSS('width', '14px')
+        await expect(button.locator('.palette-swatch')).toHaveCSS('height', '14px')
         const bounds = (await button.boundingBox())!
         expect(bounds.x).toBeGreaterThanOrEqual(0)
         expect(bounds.x + bounds.width).toBeLessThanOrEqual(width)
