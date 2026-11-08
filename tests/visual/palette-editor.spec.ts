@@ -701,6 +701,11 @@ for (const width of [1440, 1280, 768, 390, 360, 320]) {
       const screenshot = info.outputPath('palette-product.png')
       await page.screenshot({ path: screenshot, fullPage: true })
       await info.attach('palette-product', { path: screenshot, contentType: 'image/png' })
+      // The fixture's detail view looks up this reserved example address.
+      // Isolate that unrelated network call; keep all real page-error and navigation checks.
+      await page.route('https://api.ip.sb/geoip/192.0.2.10', route => route.fulfill({
+        json: { latitude: 34, longitude: -118, city: 'Fixture', country_code: 'US' },
+      }))
       await page.getByRole('button', { name: '取消', exact: true }).click()
       await page.getByRole('button', { name: '查看节点 主控-洛杉矶 详情', exact: true }).click()
       await expect(page).toHaveURL(new RegExp(`/instance/${PRIMARY_NODE_UUID}`))

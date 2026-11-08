@@ -260,10 +260,15 @@
   }
   .gp-palette .palette-fields button {
     min-width: 0;
-    padding: 5px 2px;
-    gap: 3px;
+    padding: 2px;
+    gap: 1px;
     flex-direction: column;
     font-size: 12px;
+    line-height: 16px;
+  }
+  .gp-palette .palette-fields .palette-swatch {
+    width: 12px;
+    height: 12px;
   }
   .gp-palette :is(select, textarea, [data-slot='input']) {
     font-size: 16px;
