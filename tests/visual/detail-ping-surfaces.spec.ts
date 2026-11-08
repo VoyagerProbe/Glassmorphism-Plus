@@ -53,36 +53,49 @@ async function paletteMatches(page: Page, mode: 'light' | 'dark', colors: typeof
   }, { samples, colors, mode })).toEqual([])
 }
 
+type Mode = 'light' | 'dark'
+
+async function openPaletteFixture(page: Page, mode: Mode) {
+  await page.setViewportSize({ width: mode === 'light' ? 1353 : 390, height: 844 })
+  const fixture = await installKomariFixture(page, { themeShort: 'glassmorphism-plus', dark: mode === 'dark', nodeCount: 3, hideEarth: true, adminAccess: 'admin', preserveStorageOnReload: true, nodeCardPingFixture: { metric: 'valid', thirdSharedTask: true } })
+  fixture.setThemeSetting('glassColorPreset', '自定义')
+  fixture.setThemeSetting('glassCustomColors', JSON.stringify(CUSTOM_COLORS))
+  await page.goto('/')
+  const card = page.locator(`[data-node-card-uuid="${PRIMARY_NODE_UUID}"]`)
+  async function importDraft() {
+    await page.getByTestId('palette-entry').click()
+    await expect(page.getByTestId('palette-status')).toContainText('已验证管理权限')
+    await page.locator('.palette-advanced summary').click()
+    await page.locator('#palette-json').fill(JSON.stringify(changed))
+    await page.getByRole('button', { name: '导入', exact: true }).click()
+  }
+  async function openAndClose(colors: typeof changed) {
+    await card.locator('[data-node-ping-header="latency"]').first().click()
+    const viewer = page.locator('.gp-ping-viewer')
+    await expect(viewer).toBeVisible()
+    expect(await viewer.evaluate(el => !el.closest('#app'))).toBe(true)
+    await paletteMatches(page, mode, colors, modal)
+    await page.keyboard.press('Escape')
+    await expect(viewer).toHaveCount(0)
+  }
+  return { card, fixture, importDraft, openAndClose }
+}
+
 for (const mode of ['light', 'dark'] as const) {
-  test(`detail and Ping viewer consume the ${mode} palette after draft, cancel and server readback`, async ({ page }, info) => {
-    await page.setViewportSize({ width: mode === 'light' ? 1353 : 390, height: 844 })
-    const fixture = await installKomariFixture(page, { themeShort: 'glassmorphism-plus', dark: mode === 'dark', nodeCount: 3, hideEarth: true, adminAccess: 'admin', preserveStorageOnReload: true, nodeCardPingFixture: { metric: 'valid', thirdSharedTask: true } })
-    fixture.setThemeSetting('glassColorPreset', '自定义')
-    fixture.setThemeSetting('glassCustomColors', JSON.stringify(CUSTOM_COLORS))
-    await page.goto('/')
-    const card = page.locator(`[data-node-card-uuid="${PRIMARY_NODE_UUID}"]`)
-    async function importDraft() {
-      await page.getByTestId('palette-entry').click()
-      await expect(page.getByTestId('palette-status')).toContainText('已验证管理权限')
-      await page.locator('.palette-advanced summary').click()
-      await page.locator('#palette-json').fill(JSON.stringify(changed))
-      await page.getByRole('button', { name: '导入', exact: true }).click()
-    }
-    async function openAndClose(colors: typeof changed) {
-      await card.locator('[data-node-ping-header="latency"]').first().click()
-      const viewer = page.locator('.gp-ping-viewer')
-      await expect(viewer).toBeVisible()
-      expect(await viewer.evaluate(el => !el.closest('#app'))).toBe(true)
-      await paletteMatches(page, mode, colors, modal)
-      await page.keyboard.press('Escape')
-      await expect(viewer).toHaveCount(0)
-    }
+  test(`Ping viewer previews and cancels the unsaved ${mode} palette`, async ({ page }, info) => {
+    const { fixture, importDraft, openAndClose } = await openPaletteFixture(page, mode)
     await importDraft()
-    // Opening the portalled viewer does not leave home or commit the preview.
+    // Opening this body-mounted viewer must not leave the editor or save the draft.
     await openAndClose(changed)
     await page.getByRole('button', { name: '取消', exact: true }).click()
     expect(fixture.getThemeSaveCount()).toBe(0)
     await openAndClose(CUSTOM_COLORS)
+    expect(fixture.getThemeSaveCount()).toBe(0)
+    await info.attach('palette-coverage', { body: JSON.stringify({ mode, modal }), contentType: 'application/json' })
+  })
+
+  test(`Ping viewer and both node detail pages read back the saved ${mode} palette`, async ({ page }, info) => {
+    const { card, fixture, importDraft, openAndClose } = await openPaletteFixture(page, mode)
     await importDraft()
     await page.getByTestId('palette-save-site').click()
     await expect(page.getByTestId('palette-notice')).toContainText('已保存')
