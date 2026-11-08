@@ -978,14 +978,25 @@ test.describe('multi-Ping node-card geometry and route persistence', () => {
             }
           }
 
-          const rows = new Map<number, typeof cards>()
-          for (const geometry of cards) {
-            const rowTop = Math.round(geometry.card.top)
-            rows.set(rowTop, [...(rows.get(rowTop) ?? []), geometry])
-          }
-          for (const row of rows.values()) {
-            const heights = row.map(item => Math.round(item.card.height))
-            expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1)
+          // The approved A2 grid top-aligns cards; optional badges and metadata
+          // may change their natural height. A new row clears the tallest card.
+          const gap = page.viewportSize()!.width <= 640 ? 16 : 20
+          let first = cards[0]!.card
+          let previous = first
+          let deepest = first.bottom
+          for (const { card: current } of cards.slice(1)) {
+            if (current.left > previous.left + 1) {
+              expect(Math.abs(current.top - first.top)).toBeLessThanOrEqual(1)
+              expect(Math.abs(current.left - previous.right - gap)).toBeLessThanOrEqual(1)
+              deepest = Math.max(deepest, current.bottom)
+            }
+            else {
+              expect(Math.abs(current.left - first.left)).toBeLessThanOrEqual(1)
+              expect(Math.abs(current.top - deepest - gap)).toBeLessThanOrEqual(1)
+              first = current
+              deepest = current.bottom
+            }
+            previous = current
           }
         }
 

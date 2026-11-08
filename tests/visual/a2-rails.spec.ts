@@ -4,6 +4,42 @@ import { installKomariFixture, PRIMARY_NODE_UUID } from './fixtures/komari'
 
 const triple = JSON.stringify({ schemaVersion: 3, global: { threeNetworkEnabled: true, taskIds: [101, 202, 303] }, nodes: {} })
 
+test('aligned pending buckets keep their real button identity through first samples and rollover', async ({ page }) => {
+  const fixture = await installKomariFixture(page, { nodeCount: 1, hideEarth: true, fakeTimers: true, nodeCardPingDisplayConfigV3: triple, nodeCardPingFixture: { metric: 'valid', thirdSharedTask: true } })
+  const release = fixture.pausePingResponses()
+  const strip = page.locator('[data-node-ping-task-id="202"]')
+  const cells = strip.locator('[data-node-ping-bar]')
+  const refs = await (async () => {
+    try {
+      await page.goto('/', { waitUntil: 'domcontentloaded' })
+      await expect(strip).toHaveAttribute('data-node-ping-status', 'pending')
+      await expect(strip).toHaveAttribute('data-node-ping-window-start', /T/)
+      await expect(cells).toHaveCount(40)
+      await expect.poll(async () => (await fixture.getPingRefreshDiagnostics()).pendingRpcRoutes).toBeGreaterThan(0)
+      expect(await cells.evaluateAll(list => list.every(el => !el.hasAttribute('data-node-ping-bucket-start') && el.getAttribute('data-node-ping-state') === 'pending'))).toBe(true)
+      return await strip.evaluateHandle(el => [...el.querySelectorAll('[data-node-ping-bar]')])
+    }
+    finally {
+      release()
+    }
+  })()
+  try {
+    await expect(strip).toHaveAttribute('data-node-ping-status', 'data')
+    const windowStart = Date.parse((await strip.getAttribute('data-node-ping-window-start'))!)
+    const iso = (index: number) => new Date(windowStart + index * 180_000).toISOString()
+    expect(await cells.evaluateAll((list, originals) => list.every((el, i) => el.isSameNode(originals[i]!)), refs)).toBe(true)
+    expect(await cells.evaluateAll(list => list.map(el => el.getAttribute('data-node-ping-bucket-start')))).toEqual(Array.from({ length: 40 }, (_, i) => iso(i % 20)))
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000))
+    await page.clock.fastForward(180_000)
+    await expect(cells.first()).toHaveAttribute('data-node-ping-bucket-start', iso(1))
+    expect(await cells.evaluateAll((list, originals) => list.every((el, i) => i % 20 === 19 ? !originals.includes(el) : el.isSameNode(originals[i + 1]!)), refs)).toBe(true)
+    await expect(cells.last()).toHaveAttribute('data-node-ping-bucket-start', iso(20))
+  }
+  finally {
+    await refs.dispose()
+  }
+})
+
 async function bounds(track: Locator) {
   return track.evaluate((el) => {
     const trackRect = el.getBoundingClientRect()

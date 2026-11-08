@@ -3,6 +3,7 @@ import type { NodeCardPingHistoryPoint, NodeCardPingPairSnapshot, NodeCardPingSa
 import { Icon } from '@iconify/vue'
 import { computed } from 'vue'
 import { DataTooltip } from '@/components/ui/data-tooltip'
+import { CACHE_CONFIG } from '@/constants/cache'
 import { formatDateTime } from '@/utils/helper'
 import {
   isConfirmedNodeCardPingUnreachable,
@@ -33,10 +34,11 @@ const placeholderPoint = {
   latencyState: 'pending',
   lossState: 'pending',
 } satisfies NodeCardPingHistoryPoint
-const placeholderHistory = Array.from({ length: 20 }).fill(placeholderPoint) as NodeCardPingHistoryPoint[]
+const { historyBucketCount, historyBucketAlignment } = CACHE_CONFIG.nodePingSummary
+const placeholderHistory = Array.from({ length: historyBucketCount }).fill(placeholderPoint) as NodeCardPingHistoryPoint[]
 
 const status = computed(() => props.snapshot?.status ?? 'pending')
-const history = computed(() => props.snapshot?.history.length === 20
+const history = computed(() => props.snapshot?.history.length === historyBucketCount
   ? props.snapshot.history
   : placeholderHistory)
 const latestSample = computed(() => props.snapshot?.samples.reduce<NodeCardPingSample | undefined>((latest, sample) => (
@@ -98,7 +100,7 @@ const latestSampleText = computed(() => props.snapshot?.latestSampleAt
 const sourceText = computed(() => props.snapshot?.source
   ? props.snapshot.source === 'metric' ? '指标存储' : '同任务兼容接口'
   : '-')
-function bucketTooltipDetails(point: NodeCardPingHistoryPoint): {
+function bucketTooltipDetails(point: NodeCardPingHistoryPoint, bucketEnd: string, sampleTime: string): {
   interval: string
   sampleTimestamp: string
   status: string
@@ -106,14 +108,9 @@ function bucketTooltipDetails(point: NodeCardPingHistoryPoint): {
   loss: string
   stale: boolean
 } {
-  const index = history.value.indexOf(point)
-  const bucketEnd = bucketEndTime(index)
   const interval = point.time && bucketEnd
     ? `${formatDateTime(point.time, 'HH:mm')}–${formatDateTime(bucketEnd, 'HH:mm')}`
     : ''
-  const sampleTime = [point.latencySampleTime, point.lossSampleTime]
-    .filter((value): value is string => Boolean(value))
-    .sort((left, right) => Date.parse(right) - Date.parse(left))[0]
   const sampleTimestamp = sampleTime ? formatDateTime(sampleTime, 'HH:mm:ss') : ''
   if (isConfirmedNodeCardPingUnreachable(point))
     return { interval, sampleTimestamp, status: '', latency: '不可达', loss: '100%', stale: false }
@@ -173,8 +170,7 @@ function bucketSampleTime(point: NodeCardPingHistoryPoint): string {
     .sort((left, right) => Date.parse(right) - Date.parse(left))[0] ?? ''
 }
 
-function barTooltip(point: NodeCardPingHistoryPoint): string {
-  const details = bucketTooltipDetails(point)
+function barTooltip(details: ReturnType<typeof bucketTooltipDetails>): string {
   const lines = details.interval ? [details.interval] : []
   if (details.status)
     lines.push(details.status)
@@ -186,6 +182,28 @@ function barTooltip(point: NodeCardPingHistoryPoint): string {
     lines.push('状态：更新失败（显示上次数据）')
   return lines.join('\n')
 }
+
+// A pending snapshot already owns its real aligned window. Using that window only
+// for Vue identity avoids remounting every tooltip when its first sample arrives.
+const pendingWindowStart = computed(() => {
+  const snapshot = props.snapshot
+  if (!snapshot || history.value !== placeholderHistory)
+    return null
+  const { windowStart, windowEnd } = snapshot
+  return Number.isFinite(new Date(windowStart).getTime()) && Number.isFinite(new Date(windowEnd).getTime())
+    && windowStart % historyBucketAlignment === 0 && windowEnd - windowStart === historyBucketCount * historyBucketAlignment
+    ? windowStart
+    : null
+})
+
+// Both rails describe the same bucket. Format its accessible and visible text once.
+const displayBuckets = computed(() => history.value.map((point, index) => {
+  const end = bucketEndTime(index)
+  const sample = bucketSampleTime(point)
+  const details = bucketTooltipDetails(point, end, sample)
+  const key = point.time || (pendingWindowStart.value === null ? `pending-${index}` : new Date(pendingWindowStart.value + index * historyBucketAlignment).toISOString())
+  return { point, key, end, sample, details, label: barTooltip(details) }
+}))
 </script>
 
 <template>
@@ -252,35 +270,35 @@ function barTooltip(point: NodeCardPingHistoryPoint): string {
     <div class="node-card-ping-trend-row" data-node-ping-panel="latency" data-node-ping-trend="latency">
       <span class="node-card-ping-trend-label" data-node-ping-header="latency"><span class="node-card-ping-trend-dot" aria-hidden="true" />延迟</span>
       <span class="node-card-ping-bucket-grid" data-node-ping-bars="latency" @pointerdown.capture="rejectRetargetedRailTap" @touchend.capture="rejectRetargetedRailTap" @click.capture="rejectRetargetedRailTap" @keydown="movePingRailFocus" @click.stop>
-        <template v-for="(point, index) in history" :key="`${nodeUuid}:${taskId}:latency:${point.time || index}`">
+        <template v-for="({ point, key, end, sample, details, label }, index) in displayBuckets" :key="`${nodeUuid}:${taskId}:latency:${key}`">
           <DataTooltip
             as="button"
             type="button"
             data-node-ping-bar
             :data-node-ping-bucket-time="point.time || undefined"
             :data-node-ping-bucket-start="point.time || undefined"
-            :data-node-ping-bucket-end="bucketEndTime(index) || undefined"
-            :data-node-ping-sample-time="bucketSampleTime(point) || undefined"
+            :data-node-ping-bucket-end="end || undefined"
+            :data-node-ping-sample-time="sample || undefined"
             :data-node-ping-state="latencyBucketState(point)"
             :data-node-ping-severity="latencyBucketSeverity(point, Boolean(snapshot?.error))"
             placement="top"
-            :content="barTooltip(point)"
+            :content="label"
             open-on-click
             content-class="node-card-ping-bucket-tooltip"
             class="node-card-ping-bucket-hitbox"
             :tabindex="index === 0 ? 0 : -1"
-            :aria-label="barTooltip(point)"
+            :aria-label="label"
             @click.stop
           >
             <span class="node-card-ping-bucket-fill" data-node-ping-bucket-fill />
             <template #content>
-              <div v-if="bucketTooltipDetails(point).interval" class="node-card-ping-tooltip-time">{{ bucketTooltipDetails(point).interval }}</div>
-              <div v-if="bucketTooltipDetails(point).status" class="node-card-ping-tooltip-status">{{ bucketTooltipDetails(point).status }}</div>
+              <div v-if="details.interval" class="node-card-ping-tooltip-time">{{ details.interval }}</div>
+              <div v-if="details.status" class="node-card-ping-tooltip-status">{{ details.status }}</div>
               <dl v-else class="node-card-ping-bucket-tooltip-grid">
-                <dt>延迟</dt><dd>{{ bucketTooltipDetails(point).latency }}</dd>
-                <dt>丢包</dt><dd>{{ bucketTooltipDetails(point).loss }}</dd>
-                <dt v-if="bucketTooltipDetails(point).sampleTimestamp">最新样本</dt><dd v-if="bucketTooltipDetails(point).sampleTimestamp">{{ bucketTooltipDetails(point).sampleTimestamp }}</dd>
-                <template v-if="bucketTooltipDetails(point).stale">
+                <dt>延迟</dt><dd>{{ details.latency }}</dd>
+                <dt>丢包</dt><dd>{{ details.loss }}</dd>
+                <dt v-if="details.sampleTimestamp">最新样本</dt><dd v-if="details.sampleTimestamp">{{ details.sampleTimestamp }}</dd>
+                <template v-if="details.stale">
                   <dt>状态</dt><dd class="node-card-ping-tooltip-wrap">更新失败（显示上次数据）</dd>
                 </template>
               </dl>
@@ -292,35 +310,35 @@ function barTooltip(point: NodeCardPingHistoryPoint): string {
     <div class="node-card-ping-trend-row" data-node-ping-panel="loss" data-node-ping-trend="loss">
       <span class="node-card-ping-trend-label" data-node-ping-header="loss"><span class="node-card-ping-trend-dot" aria-hidden="true" />丢包</span>
       <span class="node-card-ping-bucket-grid" data-node-ping-bars="loss" @pointerdown.capture="rejectRetargetedRailTap" @touchend.capture="rejectRetargetedRailTap" @click.capture="rejectRetargetedRailTap" @keydown="movePingRailFocus" @click.stop>
-        <template v-for="(point, index) in history" :key="`${nodeUuid}:${taskId}:loss:${point.time || index}`">
+        <template v-for="({ point, key, end, sample, details, label }, index) in displayBuckets" :key="`${nodeUuid}:${taskId}:loss:${key}`">
           <DataTooltip
             as="button"
             type="button"
             data-node-ping-bar
             :data-node-ping-bucket-time="point.time || undefined"
             :data-node-ping-bucket-start="point.time || undefined"
-            :data-node-ping-bucket-end="bucketEndTime(index) || undefined"
-            :data-node-ping-sample-time="bucketSampleTime(point) || undefined"
+            :data-node-ping-bucket-end="end || undefined"
+            :data-node-ping-sample-time="sample || undefined"
             :data-node-ping-state="lossBucketState(point)"
             :data-node-ping-severity="lossBucketSeverity(point, Boolean(snapshot?.error))"
             placement="top"
-            :content="barTooltip(point)"
+            :content="label"
             open-on-click
             content-class="node-card-ping-bucket-tooltip"
             class="node-card-ping-bucket-hitbox"
             :tabindex="index === 0 ? 0 : -1"
-            :aria-label="barTooltip(point)"
+            :aria-label="label"
             @click.stop
           >
             <span class="node-card-ping-bucket-fill" data-node-ping-bucket-fill />
             <template #content>
-              <div v-if="bucketTooltipDetails(point).interval" class="node-card-ping-tooltip-time">{{ bucketTooltipDetails(point).interval }}</div>
-              <div v-if="bucketTooltipDetails(point).status" class="node-card-ping-tooltip-status">{{ bucketTooltipDetails(point).status }}</div>
+              <div v-if="details.interval" class="node-card-ping-tooltip-time">{{ details.interval }}</div>
+              <div v-if="details.status" class="node-card-ping-tooltip-status">{{ details.status }}</div>
               <dl v-else class="node-card-ping-bucket-tooltip-grid">
-                <dt>延迟</dt><dd>{{ bucketTooltipDetails(point).latency }}</dd>
-                <dt>丢包</dt><dd>{{ bucketTooltipDetails(point).loss }}</dd>
-                <dt v-if="bucketTooltipDetails(point).sampleTimestamp">最新样本</dt><dd v-if="bucketTooltipDetails(point).sampleTimestamp">{{ bucketTooltipDetails(point).sampleTimestamp }}</dd>
-                <template v-if="bucketTooltipDetails(point).stale">
+                <dt>延迟</dt><dd>{{ details.latency }}</dd>
+                <dt>丢包</dt><dd>{{ details.loss }}</dd>
+                <dt v-if="details.sampleTimestamp">最新样本</dt><dd v-if="details.sampleTimestamp">{{ details.sampleTimestamp }}</dd>
+                <template v-if="details.stale">
                   <dt>状态</dt><dd class="node-card-ping-tooltip-wrap">更新失败（显示上次数据）</dd>
                 </template>
               </dl>

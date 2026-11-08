@@ -825,7 +825,7 @@ onMounted(async () => {
         :role="card.action ? 'button' : undefined"
         :tabindex="card.action ? 0 : undefined"
         :aria-label="card.action ? `查看${card.label}明细` : undefined"
-        @click="activateCard(card)"
+        @click.capture="activateCard(card)"
         @keydown="handleCardKeydown($event, card)"
       >
         <div class="flex h-full flex-col justify-between gap-1">
