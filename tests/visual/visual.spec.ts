@@ -3936,25 +3936,49 @@ test.describe('node-card per-node ping task bindings', () => {
     await openStablePage(page)
     await expectNodeCardPing(page, '200 ms', '25.0%')
 
-    await page.evaluate((prefix) => {
-      const key = Object.keys(localStorage)
-        .find(value => value.startsWith(prefix) && !value.endsWith(':index'))
-      if (!key)
-        throw new Error('selected Ping snapshot was not persisted')
-      const value = JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, unknown>
-      localStorage.setItem(key, JSON.stringify({ ...value, version: 999 }))
-    }, MULTI_PING_CACHE_PREFIX)
+    const strip = primaryNodeCard(page).locator('[data-node-ping-task-id="202"]')
+    const start = Date.parse((await strip.getAttribute('data-node-ping-window-start'))!)
+    const end = Date.parse((await strip.getAttribute('data-node-ping-window-end'))!)
+    const target = await page.evaluate(({ prefix, uuid, start, end }) => {
+      const matches = Object.keys(localStorage).filter(k => k.startsWith(prefix) && !k.endsWith(':index')).flatMap((key) => {
+        const { version, cacheKey, snapshot, expiresAt } = JSON.parse(localStorage.getItem(key)!)
+        return key === prefix + encodeURIComponent(cacheKey) && snapshot.nodeUuid === uuid && snapshot.taskId === '202'
+          && snapshot.windowStart === start && snapshot.windowEnd === end && snapshot.status === 'data'
+          && expiresAt > Date.now() && version === 1
+          ? [{ key, cacheKey, version, uuid, start, end }]
+          : []
+      })
+      if (matches.length !== 1)
+        throw new Error('Expected one current, unexpired primary/task 202 envelope for the displayed window')
+      return matches[0]!
+    }, { prefix: MULTI_PING_CACHE_PREFIX, uuid: PRIMARY_NODE_UUID, start, end })
 
+    // A genuine late refresh in the old document can write a valid snapshot
+    // after a test-side corruption there. Corrupt before the NEW app boot,
+    // when that old document can no longer race this write.
+    await page.addInitScript((t) => {
+      if (window !== window.top)
+        return
+      const value = JSON.parse(localStorage.getItem(t.key) ?? 'null')
+      if (value?.version !== t.version || value.cacheKey !== t.cacheKey || value.snapshot?.nodeUuid !== t.uuid
+        || value.snapshot.taskId !== '202' || value.snapshot.windowStart !== t.start || value.snapshot.windowEnd !== t.end) {
+        throw new Error('The exact valid envelope to corrupt was missing at cold boot')
+      }
+      localStorage.setItem(t.key, JSON.stringify({ ...value, version: 999 }))
+      Object.defineProperty(window, '__invalidPairAtBoot', { value: JSON.parse(localStorage.getItem(t.key)!).version })
+    }, target)
     const resumePingResponses = fixture.pausePingResponses()
     await page.reload({ waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('heading', { name: 'Komari Visual Lab' })).toBeVisible()
-    const strip = primaryNodeCard(page).locator('[data-node-ping-task-id="202"]')
+    expect(await page.evaluate(() => Reflect.get(window, '__invalidPairAtBoot'))).toBe(999)
     await expect(strip).toContainText('等待采样')
     await expect(strip).not.toContainText('200 ms')
     await expect(strip.locator('[data-node-ping-bars="latency"] [data-node-ping-bar]').first()).toHaveAttribute('data-node-ping-state', 'pending')
     await expectNodeCardPingInfoStatus(page, '等待采样')
+    expect(await page.evaluate(k => localStorage.getItem(k), target.key)).toBeNull()
     resumePingResponses()
     await expectNodeCardPing(page, '200 ms', '25.0%')
+    await expect.poll(() => page.evaluate(k => JSON.parse(localStorage.getItem(k) ?? 'null')?.version, target.key)).toBe(target.version)
   })
 
   test('keeps one selected-task list subscriber and releases it when all card consumers unmount', async ({ page }) => {

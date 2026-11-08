@@ -177,12 +177,13 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  webkit-palette:
+  webkit-palette-project:
     runs-on: ubuntu-latest
-    # 122 cases across both WebKit projects include the eight-cycle, 30-node stress
-    # case and save-feedback lifecycle coverage. Allow setup/reporting headroom;
-    # per-test deadlines, assertions and zero retries remain unchanged.
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [webkit-desktop, webkit-iphone]
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
@@ -196,19 +197,55 @@ jobs:
         run: bunx playwright install --with-deps webkit
       - name: Build palette test artifact
         run: KOMARI_SKIP_PACKAGE=1 bun run build-only
-      - name: Verify palette and material on desktop and mobile WebKit
+      - name: Verify all palette and material cases for this project
         env:
-          PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/webkit-palette-summary.json
-        run: >-
-          node node_modules/@playwright/test/cli.js test
-          tests/visual/palette-colors.spec.ts tests/visual/palette-editor.spec.ts tests/visual/palette-material.spec.ts
-          --config playwright.webkit.config.ts --retries=0 --reporter=line,json
-          --output=test-results/webkit-palette
-      - name: Retain palette evidence
+          PROJECT: ${{ matrix.project }}
+        run: |
+          set -eu
+          cases=(tests/visual/palette-colors.spec.ts tests/visual/palette-editor.spec.ts tests/visual/palette-material.spec.ts)
+          mkdir -p palette-reports
+          cli=node_modules/@playwright/test/cli.js
+          PLAYWRIGHT_JSON_OUTPUT_FILE=palette-reports/list.json node "$cli" test "${cases[@]}" --config playwright.webkit.config.ts --project "$PROJECT" --list --reporter=json
+          PLAYWRIGHT_JSON_OUTPUT_FILE=palette-reports/results.json node "$cli" test "${cases[@]}" --config playwright.webkit.config.ts --project "$PROJECT" --retries=0 --reporter=line,json --output=test-results/webkit-palette
+      - name: Retain unmodified project reports
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v6
         with:
-          name: webkit-palette-results
+          name: webkit-palette-lane-${{ matrix.project }}
+          path: palette-reports/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Retain project failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: webkit-palette-diffs-${{ matrix.project }}
           path: test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  # Keep the existing check and artifact name. A failed, cancelled or missing
+  # project must never turn a two-project gate into a green one-project gate.
+  webkit-palette:
+    needs: webkit-palette-project
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Require both project jobs to pass
+        env:
+          RESULT: ${{ needs.webkit-palette-project.result }}
+        run: test "$RESULT" = success
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: webkit-palette-lane-*
+          path: palette-reports
+      - name: Verify every discovered project/test pair ran once
+        run: node tests/ci/verify-palette-projects.mjs palette-reports
+      - uses: actions/upload-artifact@v6
+        with:
+          name: webkit-palette-results
+          path: palette-reports/
           if-no-files-found: error
           retention-days: 14
