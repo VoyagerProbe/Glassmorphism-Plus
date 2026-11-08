@@ -4501,7 +4501,9 @@ test.describe('node-card per-node ping task bindings', () => {
     const originalSettings = fixture.getSavedThemeSettings()
     await openStablePage(page, '/?view=pingsettings')
 
-    await expect(page.getByRole('heading', { name: '延迟监测中心', exact: true })).toHaveClass(/text-2xl/)
+    const title = page.getByRole('heading', { name: '延迟监测中心', exact: true })
+    await expect(title).toHaveCSS('font-size', '28px')
+    await expect(title).toHaveCSS('line-height', '32px')
     await expect(page.getByTestId('ping-center')).not.toContainText('09 · 延迟任务绑定')
 
     const primaryRow = page.getByTestId(`node-binding-row-${PRIMARY_NODE_UUID}`)
