@@ -4,7 +4,7 @@
 
 面向 Komari Monitor 的增强玻璃拟态主题，重点强化每节点 Ping 任务绑定、长时间历史、性能、移动端体验和日常运维能力。
 
-![Version](https://img.shields.io/github/v/release/VoyagerProbe/Glassmorphism-Plus?style=for-the-badge&label=release&color=10b981)
+![Version](https://img.shields.io/github/v/release/VoyagerProbe/Glassmorphism-Plus?include_prereleases&style=for-the-badge&label=release&color=10b981)
 ![Vue](https://img.shields.io/badge/Vue-3-42b883?style=for-the-badge&logo=vue.js)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff?style=for-the-badge&logo=vite)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4-38bdf8?style=for-the-badge&logo=tailwindcss)
@@ -27,19 +27,19 @@
 
 | 项目               | 当前状态                                                                                                               |
 | :----------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v3.0.1（预发布准备）**                                                                                               |
+| 当前 Plus 版本     | **v3.0.1（预发布）**                                                                                               |
 | 当前稳定 Latest    | [v3.0.0](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)                                       |
 | 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7) |
 | 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                        |
 | 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                             |
 | 已验证 Komari 版本 | **1.6.0、1.5.1、1.5.0-fix1、1.5.0、1.4.3**（平台与范围见下文；不是全部设备保证）                                       |
 | 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                         |
-| 源码发布           | GitHub `main`；v3.0.1 正在准备预发布，现有正式版仍为 v3.0.0                                                            |
+| 源码发布           | [v3.0.1 Pre-release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.1)；稳定版仍为 v3.0.0                                                            |
 | 本地安装包         | `3.0.1/Glassmorphism-Plus-release-3.0.1.zip`                                                                           |
 
 Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用自己的版本体系；上游 v3.3.7 仅代表当前同步基线，并非 Plus 的版本号。同步来源、选择性合并和署名详见 [UPSTREAM.md](UPSTREAM.md)。
 
-### ✨ 最新版本 · v3.0.1
+### ✨ 最新版本 · v3.0.1（预发布）
 
 - 首页采用 A2 轻玻璃布局：节点标题、资源数值和单位分层显示，三组流量／费用信息共用一条面板；桌面 Header 使用图标与文字，窄屏保留原操作入口。
 - Ping 延迟与丢包沿用同一组 20 个三分钟区间，左旧右新；compact 下色块高 8px、间距 2px，命中行高 14px。保留原告警、缺样和迟到回填语义。
@@ -94,7 +94,7 @@ _历史数据的实际可查看范围取决于后端保留时间及已有采样�
 
 ### 重要说明
 
-- **[v3.0.1 预发布入口](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.1)**：发布完成后下载 `Glassmorphism-Plus-release-3.0.1.zip`，先在测试环境导入。
+- **[v3.0.1 预发布下载](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.1)**：下载 `Glassmorphism-Plus-release-3.0.1.zip`，先在测试环境导入。
 - 当前 Stable／Latest 为 [v3.0.0](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)。
 - GitHub 自动生成的 **Source code (zip)** 是源码快照，**不是** Komari 可安装主题包。
 - Komari 的远程仓库导入流程应使用正式 Release 中的 installer asset；仍不要用 GitHub 自动生成的源码压缩包代替。

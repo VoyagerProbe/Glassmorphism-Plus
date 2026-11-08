@@ -2,7 +2,7 @@
 
 本文件只记录 **Glassmorphism Plus** 自己的发行版本。原始 Glassmorphism 的版本历史请查看[上游仓库](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases)；Plus 的选择性同步记录见 [UPSTREAM.md](UPSTREAM.md)。
 
-## [3.0.1] - 2026-11-09（预发布准备）
+## [3.0.1] - 2026-11-09（预发布）
 
 - 首页采用 A2 轻玻璃布局：节点标题、资源数值和单位分层显示，三组流量／费用信息共用一条面板；桌面 Header 使用图标与文字，窄屏保留原操作入口。
 - Ping 延迟与丢包沿用同一组 20 个三分钟区间，左旧右新；compact 下色块高 8px、间距 2px，命中行高 14px。保留原告警、缺样和迟到回填语义。
