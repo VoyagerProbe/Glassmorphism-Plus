@@ -12,6 +12,7 @@ const cases = new Map()
 
 function collect(report, project, executed) {
   const ids = new Set()
+  let stressCases = 0
   function visit(suite) {
     for (const spec of suite.specs ?? []) {
       for (const test of spec.tests) {
@@ -27,6 +28,11 @@ function collect(report, project, executed) {
           if (spec.title.startsWith('thirty-node palette editing')) {
             const evidence = test.results[0].attachments.find(a => a.name === 'palette-30-node-budget')
             const stress = JSON.parse(Buffer.from(evidence.body, 'base64').toString('utf8'))
+            stressCases++
+            assert.equal(stress.coldStartLimitMs, 45_000)
+            assert.equal(stress.editAndPollLimitMs, 90_000)
+            assert(stress.coldStartMs > 0 && stress.coldStartMs <= stress.coldStartLimitMs)
+            assert(stress.editAndPollMs > 0 && stress.editAndPollMs <= stress.editAndPollLimitMs)
             assert.equal(stress.cycles, 8)
             assert.equal(stress.colorInputs, 24)
             assert.equal(stress.additionalMonitoringRequestsDuringEditing, 0)
@@ -39,6 +45,8 @@ function collect(report, project, executed) {
     for (const child of suite.suites ?? []) visit(child)
   }
   visit(report)
+  if (executed)
+    assert.equal(stressCases, 1, 'Each project must complete the timed cold start and eight-cycle stress case')
   return ids
 }
 

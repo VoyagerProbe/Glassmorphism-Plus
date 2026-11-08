@@ -210,20 +210,34 @@ test('original standard and accessible Ping semantics remain distinct in legacy 
   await expect(page.getByRole('heading', { name: 'Komari Visual Lab', exact: true })).toHaveCSS('color', 'rgb(250, 250, 250)')
 })
 
-test('thirty-node palette editing adds no monitoring request or interval and retains full density', async ({ page }, info) => {
-  // This is a composite request/lifecycle guard, not a 60-second UI latency SLA.
-  // Linux WebKit trace snapshots of 3,600 buckets took ~60s across all eight
-  // cycles, exhausting the test before its final assertions. Keep every cycle,
-  // input and invariant; allow bounded runner overhead and report elapsed time.
-  test.setTimeout(90_000)
-  const fixture = await originalTheme(page, { nodeCount: 30, fakeTimers: true })
-  await fixture.waitForPingRefreshSettled()
-  // clock.install alone still advances with wall time. Slow traced WebKit runs
-  // crossed the ordinary 60-second polling deadline and counted its refresh as
-  // palette traffic. Pause after loading and drain due work to isolate editing;
-  // verify the normal polling path separately after the zero-traffic assertion.
-  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 60_000))
-  await fixture.waitForPingRefreshSettled()
+// A separately timed test-scoped fixture measures cold rendering and data readiness.
+// Its use() hands this exact page and controller to the fully traced interaction
+// test; neither phase is skipped, retried, or allowed to borrow the other's time.
+const coldStartLimitMs = 45_000
+const editAndPollLimitMs = 90_000
+const paletteStress = test.extend<{
+  readyThirty: { fixture: Awaited<ReturnType<typeof originalTheme>>, coldStartMs: number }
+}>({
+  readyThirty: [async ({ page }, use) => {
+    const start = performance.now()
+    const fixture = await originalTheme(page, { nodeCount: 30, fakeTimers: true })
+    await fixture.waitForPingRefreshSettled()
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 60_000))
+    await fixture.waitForPingRefreshSettled()
+    const { pendingRpcRoutes, state } = await fixture.getPingRefreshDiagnostics()
+    expect(pendingRpcRoutes).toBe(0)
+    expect(state.renderedStrips).toBe(90)
+    expect(state.snapshots).toHaveLength(90)
+    expect(state.snapshots.every(snapshot => !snapshot.refreshing && snapshot.fetchedAt > 0)).toBe(true)
+    await expect(page.locator('[data-node-ping-status="data"]')).toHaveCount(90)
+    await use({ fixture, coldStartMs: Math.round(performance.now() - start) })
+  }, { timeout: coldStartLimitMs }],
+})
+
+paletteStress('thirty-node palette editing adds no monitoring request or interval and retains full density', async ({ page, readyThirty }, info) => {
+  paletteStress.setTimeout(editAndPollLimitMs)
+  const start = performance.now()
+  const { fixture, coldStartMs } = readyThirty
   const calls = fixture.timeline.length
   await page.evaluate(() => {
     const host = window as any
@@ -234,7 +248,6 @@ test('thirty-node palette editing adds no monitoring request or interval and ret
       return original(...args)
     }) as typeof window.setInterval
   })
-  const start = Date.now()
   for (let cycle = 0; cycle < 8; cycle++) {
     await page.getByTestId('palette-entry').click()
     await expect(page.getByTestId('palette-status')).toContainText('已验证管理权限')
@@ -248,5 +261,9 @@ test('thirty-node palette editing adds no monitoring request or interval and ret
   await page.clock.fastForward(60_000)
   await fixture.waitForPingRefreshSettled()
   expect(fixture.timeline.length).toBeGreaterThan(calls)
-  await info.attach('palette-30-node-budget', { body: JSON.stringify({ elapsedMs: Date.now() - start, cycles: 8, colorInputs: 24, additionalMonitoringRequestsDuringEditing: 0, additionalIntervals: 0, existingPollContinuesAfterClockAdvance: true }), contentType: 'application/json' })
+  const editAndPollMs = Math.round(performance.now() - start)
+  await info.attach('palette-30-node-budget', {
+    body: JSON.stringify({ coldStartMs, coldStartLimitMs, editAndPollMs, editAndPollLimitMs, elapsedMs: editAndPollMs, cycles: 8, colorInputs: 24, additionalMonitoringRequestsDuringEditing: 0, additionalIntervals: 0, existingPollContinuesAfterClockAdvance: true }),
+    contentType: 'application/json',
+  })
 })
