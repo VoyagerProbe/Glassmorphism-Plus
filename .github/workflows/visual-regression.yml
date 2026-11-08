@@ -159,6 +159,15 @@ jobs:
           --retries=0 --reporter=line,json
           --output=test-results/webkit-ping-axis
 
+      - name: Verify compact density, detail surfaces and typography on mobile WebKit
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/webkit-presentation-summary.json
+        run: >-
+          node node_modules/@playwright/test/cli.js test
+          tests/visual/compact-density.spec.ts tests/visual/detail-ping-surfaces.spec.ts tests/visual/system-typography.spec.ts
+          --config playwright.webkit.config.ts --project webkit-iphone --retries=0 --reporter=line,json
+          --output=test-results/webkit-presentation
+
       - name: Upload WebKit Ping axis results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v6

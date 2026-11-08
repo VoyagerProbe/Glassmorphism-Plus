@@ -163,8 +163,7 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --font-sans: var(--gp-font-ui);
-  --font-mono: var(--gp-font-code);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -214,15 +213,13 @@
 .app-viewport,
 .app-viewport .toaster[data-sonner-toaster],
 [data-app-dialog-content],
-[data-slot='data-tooltip-content'],
-[data-slot='tooltip-content'] {
+[data-gp-tooltip] {
   font-family: var(--gp-font-ui);
 }
 :where(.app-viewport, [data-app-dialog-content]) :where(button, input, select, textarea, option, optgroup) {
   font-family: inherit;
 }
-:where(.app-viewport, [data-app-dialog-content], [data-slot='data-tooltip-content'], [data-slot='tooltip-content'])
-  :is(code, pre, kbd, samp, .font-mono) {
+:where(.app-viewport, [data-app-dialog-content], [data-gp-tooltip]) :is(code, pre, kbd, samp, .font-mono) {
   font-family: var(--gp-font-code);
 }
 

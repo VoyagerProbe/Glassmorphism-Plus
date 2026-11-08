@@ -59,13 +59,47 @@ async function charts(owners: Locator, showTip = false) {
   }, showTip)
 }
 
-test('native UI and code fonts: document language reaches form, portal, canvas and real HTML hover without changing Ping data', async ({ page }) => {
-  const fixture = await installKomariFixture(page, { nodeCount: 2, hideEarth: true, themeShort: 'glassmorphism-plus', adminAccess: 'admin', fakeTimers: true, nodeCardPingDisplayConfigV3: config, nodeCardPingFixture: { thirdSharedTask: true } })
+test('native UI and code fonts: document language reaches form, portal, canvas and real HTML hover without changing Ping data', async ({ page, browserName }, info) => {
+  const fixture = await installKomariFixture(page, { nodeCount: 2, hideEarth: true, themeShort: 'glassmorphism-plus', adminAccess: 'admin', nodeNames: ['臺灣边缘 Edge-01 · 27 ms · 0.0%'], fakeTimers: true, nodeCardPingDisplayConfigV3: config, nodeCardPingFixture: { thirdSharedTask: true } })
   await page.goto('/')
   const title = page.locator('.a2-node-title').first()
   await expect(title).toBeVisible()
   const family = normalize(await title.evaluate(el => getComputedStyle(el).fontFamily))
   expect(family).toContain('pingfangsc')
+  if (browserName === 'chromium') {
+    // Actual glyph fallback on this host (not evidence for another OS).
+    const cdp = await page.context().newCDPSession(page)
+    try {
+      await cdp.send('DOM.enable')
+      await cdp.send('CSS.enable')
+      const { root } = await cdp.send('DOM.getDocument')
+      const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector: '.a2-node-title' })
+      const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId })
+      expect(fonts.some(font => font.glyphCount > 0)).toBe(true)
+      expect(fonts.every(font => !font.isCustomFont)).toBe(true)
+      await info.attach('mixed-node-platform-fonts', { body: JSON.stringify(fonts), contentType: 'application/json' })
+    }
+    finally {
+      await cdp.detach()
+    }
+  }
+  // Outside the theme and its named portals, Tailwind preflight must not
+  // promote our font token to the HTML/body default (including controls).
+  const unrelated = await page.evaluate(() => {
+    const host = document.createElement('div')
+    const control = document.createElement('input')
+    // Other libraries also use this generic slot name on teleported tooltips.
+    host.dataset.slot = 'tooltip-content'
+    host.append(control)
+    document.body.append(host)
+    const families = [host, control].map(el => getComputedStyle(el).fontFamily)
+    host.remove()
+    return families
+  })
+  for (const other of unrelated) {
+    expect(normalize(other)).not.toBe(family)
+    expect(other).not.toContain('PingFang SC')
+  }
   await page.getByTestId('palette-entry').click()
   await expect(page.getByTestId('palette-status')).toContainText('已验证管理权限')
   await page.locator('.palette-advanced summary').click()

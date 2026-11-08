@@ -48,6 +48,10 @@
 :is(.gp-detail, .gp-ping-viewer) .gp-control > [role='tab']:not([data-state='active']) {
   color: var(--gp-muted);
 }
+.ping-chart-host.gp-surface {
+  /* Keep the original 1rem inset (and thus Canvas size) including the hairline. */
+  padding: calc(1rem - 1px);
+}
 .gp-ping-viewer [data-app-dialog-header] {
   border-color: var(--gp-border);
 }
@@ -71,6 +75,14 @@
 .gp-ping-viewer [data-app-dialog-body] {
   /* The existing body is the only vertical scroll owner. */
   min-width: 0;
+}
+/* The statistics grid is a reading surface, not a translucent task card.
+ * Keep its arrow, figures, and labels paired on an opaque system surface,
+ * even when the administrator chooses a transparent or low-contrast palette. */
+.gp-ping-tip.ping-task-statistics {
+  --gp-card: var(--card);
+  --gp-text: var(--primary);
+  --gp-muted: color-mix(in srgb, var(--primary) 82%, var(--card));
 }
 .gp-ping-tip[data-slot='tooltip-content'] {
   z-index: 102; /* above the Ping dialog (101), including Reka's Portal wrapper */

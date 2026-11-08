@@ -120,6 +120,7 @@ function handleOpenChange(value: boolean): void {
         <TooltipContent
           role="tooltip"
           data-slot="data-tooltip-content"
+          data-gp-tooltip
           :side="placement"
           :side-offset="8"
           :collision-padding="8"
