@@ -25,26 +25,25 @@
 
 ## 🚦 项目状态
 
-| 项目               | 当前状态                                                                                                                      |
-| :----------------- | :---------------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v3.0.0（正式发布）**                                                                                                        |
-| 当前稳定 Latest    | [v3.0.0](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)                                              |
-| 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7)        |
-| 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                               |
-| 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                                    |
-| 已验证 Komari 版本 | **1.6.0、1.5.1、1.5.0-fix1、1.5.0、1.4.3**（平台与范围见下文；不是全部设备保证）                                              |
-| 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                                |
-| 源码发布           | GitHub `main` 与 [v3.0.0 Release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)；唯一客户安装包     |
-| 本地安装包         | `3.0.0/Glassmorphism-Plus-release-3.0.0.zip`                                                                                  |
+| 项目               | 当前状态                                                                                                               |
+| :----------------- | :--------------------------------------------------------------------------------------------------------------------- |
+| 当前 Plus 版本     | **v3.0.1（预发布准备）**                                                                                               |
+| 当前稳定 Latest    | [v3.0.0](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)                                       |
+| 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7) |
+| 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                        |
+| 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                             |
+| 已验证 Komari 版本 | **1.6.0、1.5.1、1.5.0-fix1、1.5.0、1.4.3**（平台与范围见下文；不是全部设备保证）                                       |
+| 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                         |
+| 源码发布           | GitHub `main`；v3.0.1 正在准备预发布，现有正式版仍为 v3.0.0                                                            |
+| 本地安装包         | `3.0.1/Glassmorphism-Plus-release-3.0.1.zip`                                                                           |
 
 Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用自己的版本体系；上游 v3.3.7 仅代表当前同步基线，并非 Plus 的版本号。同步来源、选择性合并和署名详见 [UPSTREAM.md](UPSTREAM.md)。
 
-### ✨ 最新版本 · v3.0.0
+### ✨ 最新版本 · v3.0.1
 
-- 维持 v2.8.4 的卡片材质、深浅配色、阴影与标准图表颜色，保留六项总览、四档卡片密度及三任务六排历史。
-- 首页配色中心入口对所有访客可见，位于延迟监测中心与后台管理之间；未获管理权限时只读查看站点配色，管理员验证后可通过五个色点按钮、RGB／HEX、精确透明度及十键 JSON 编辑全站配色。
-- 配色统一为全站默认，取消个人覆盖与范围切换；“导入”只更新草稿预览，移除手动重新读取按钮。点击保存直接验证管理权限、完整合并并读回核对，保护 Ping 绑定和未知设置；成功提示 5 秒后自动关闭，也可手动关闭。旧个人配色记录原样保留但不再生效。
-- 保留原方案、自定义颜色、背景、三段模式、监控数据逻辑与 `/sw.js` 在线兼容层；完成固定 Komari 1.6.0 兼容检查，范围见[兼容记录](docs/compatibility/komari-1.6.0.md)。
+- 首页采用 A2 轻玻璃布局：节点标题、资源数值和单位分层显示，三组流量／费用信息共用一条面板；桌面 Header 使用图标与文字，窄屏保留原操作入口。
+- Ping 延迟与丢包沿用同一组 20 个三分钟区间，左旧右新；compact 下色块高 8px、间距 2px，命中行高 14px。保留原告警、缺样和迟到回填语义。
+- 沿用 v3.0.0 的原点阵地球、国旗、十键配色、权限、任务绑定与在线 Worker；不要求清理浏览器数据。
 
 ---
 
@@ -95,8 +94,8 @@ _历史数据的实际可查看范围取决于后端保留时间及已有采样�
 
 ### 重要说明
 
-- **[v3.0.0 正式版](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)只附加一个客户安装包：** `Glassmorphism-Plus-release-3.0.0.zip`。
-- 当前 Stable／Latest 为 [v3.0.0](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)。本次转正沿用当前已验证的安装包，已安装该包无需重复导入。
+- **[v3.0.1 预发布入口](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.1)**：发布完成后下载 `Glassmorphism-Plus-release-3.0.1.zip`，先在测试环境导入。
+- 当前 Stable／Latest 为 [v3.0.0](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)。
 - GitHub 自动生成的 **Source code (zip)** 是源码快照，**不是** Komari 可安装主题包。
 - Komari 的远程仓库导入流程应使用正式 Release 中的 installer asset；仍不要用 GitHub 自动生成的源码压缩包代替。
 
@@ -150,15 +149,15 @@ v2.8.3 安装包原样附带既有 LICENSE，并校验内容一致性；已发�
 
 ## 🧩 兼容性
 
-| Komari 版本     | 状态                     | 说明                                                                                                                                                                 |
-| :-------------- | :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Komari 版本     | 状态                     | 说明                                                                                                                                                               |
+| :-------------- | :----------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **1.6.0**       | **Verified with limits** | 官方 Linux／Windows 同包新安装、v2.8.4 升级、配色／Ping 保存、HTTP／WebSocket 重连与静态资源通过；平台与设备覆盖范围见[记录](docs/compatibility/komari-1.6.0.md)。 |
-| **1.5.1**       | **Verified with limits** | 官方 Linux／Windows 同包实装、升级、两入口 Ping、HTTP／WebSocket、后台与 `/admin` 转址通过；沿用当前在线 Worker 合同。                                               |
-| **1.5.0-fix1**  | **Verified with limits** | 普通浏览与图表／配置通过；WebKit 手机仿真通过。同 origin 从 1.5.0 升级仍复现旧 Worker 导航限制。                                                                     |
-| **1.5.0**       | **Verified with limits** | 普通浏览与图表／配置通过；已有官方 PWA Worker 的普通刷新可能仍返回默认主题。                                                                                         |
-| **1.4.3**       | **Verified**             | 官方二进制隔离实装；公开数据、Metric／Legacy、配置、HTTP／WebSocket 保护回归通过。                                                                                   |
-| **1.2.6–1.4.2** | **Best effort**          | 保留能力检测与 Legacy fallback，但没有对每个中间版本执行完整回归矩阵。                                                                                               |
-| **1.2.5**       | **Not tested**           | 保留旧 records／Ping fallback；该版本缺少当前主要 `queryMetrics` 能力，不作完整兼容承诺。                                                                            |
+| **1.5.1**       | **Verified with limits** | 官方 Linux／Windows 同包实装、升级、两入口 Ping、HTTP／WebSocket、后台与 `/admin` 转址通过；沿用当前在线 Worker 合同。                                             |
+| **1.5.0-fix1**  | **Verified with limits** | 普通浏览与图表／配置通过；WebKit 手机仿真通过。同 origin 从 1.5.0 升级仍复现旧 Worker 导航限制。                                                                   |
+| **1.5.0**       | **Verified with limits** | 普通浏览与图表／配置通过；已有官方 PWA Worker 的普通刷新可能仍返回默认主题。                                                                                       |
+| **1.4.3**       | **Verified**             | 官方二进制隔离实装；公开数据、Metric／Legacy、配置、HTTP／WebSocket 保护回归通过。                                                                                 |
+| **1.2.6–1.4.2** | **Best effort**          | 保留能力检测与 Legacy fallback，但没有对每个中间版本执行完整回归矩阵。                                                                                             |
+| **1.2.5**       | **Not tested**           | 保留旧 records／Ping fallback；该版本缺少当前主要 `queryMetrics` 能力，不作完整兼容承诺。                                                                          |
 
 兼容状态只描述已取得的测试证据，不是整个后端系列、所有数据库、反代或实体设备的保证。[v3.0.0 验证及旧后台未知字段边界](docs/compatibility/komari-1.6.0.md)与 [v2.8.4 历史同包验证](docs/compatibility/komari-1.5.1.md)分开记录；测试使用隔离 SQLite 与合成节点。1.6.0 已移除旧访客审计等能力，Plus 不恢复这些接口。上述官方 PWA 限制为[最初适配记录](docs/compatibility/komari-1.5.md)；当前同地址 Worker 兼容层及离线能力影响见[启动兼容说明](docs/compatibility/service-worker.md)，不清空浏览器数据。部署前建议在测试环境检查首页、节点详情、Ping、配色和后台；自动化结果不等于所有实体设备均已验证。
 
@@ -188,12 +187,19 @@ bun run release:prepare
 
 ## 📝 版本历史
 
-当前版本更新见上方「最新版本 · v3.0.0」。
+当前版本更新见上方「最新版本 · v3.0.1」。
 
 <details>
 <summary><strong>📚 查看历史版本更新</strong></summary>
 
 <br>
+
+### v3.0.0
+
+- 维持 v2.8.4 的卡片材质、深浅配色、阴影与标准图表颜色，保留六项总览、四档卡片密度及三任务六排历史。
+- 首页配色中心入口对所有访客可见，位于延迟监测中心与后台管理之间；未获管理权限时只读查看站点配色，管理员验证后可通过五个色点按钮、RGB／HEX、精确透明度及十键 JSON 编辑全站配色。
+- 配色统一为全站默认，取消个人覆盖与范围切换；“导入”只更新草稿预览，移除手动重新读取按钮。点击保存直接验证管理权限、完整合并并读回核对，保护 Ping 绑定和未知设置；成功提示 5 秒后自动关闭，也可手动关闭。旧个人配色记录原样保留但不再生效。
+- 保留原方案、自定义颜色、背景、三段模式、监控数据逻辑与 `/sw.js` 在线兼容层；完成固定 Komari 1.6.0 兼容检查，范围见[兼容记录](docs/compatibility/komari-1.6.0.md)。
 
 ### v2.8.4
 

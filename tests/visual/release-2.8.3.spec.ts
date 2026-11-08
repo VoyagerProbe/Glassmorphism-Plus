@@ -53,7 +53,7 @@ async function labelGeometry(strip: Locator) {
 function checkGeometry(value: Awaited<ReturnType<typeof labelGeometry>>, size = 'compact') {
   expect(value.status.width).toBe(6)
   expect(value.status.height).toBe(6)
-  expect(value.height).toBe(size === 'mini' ? 40 : size === 'compact' ? 52 : 58)
+  expect(value.height).toBe(size === 'large' ? 61 : size === 'comfortable' ? 57 : 53)
   expect(value.labels.map(l => l.text)).toEqual(['延迟', '丢包'])
   expect(value.labels[0]!.rail.left).toBeCloseTo(value.labels[1]!.rail.left, 1)
   expect(value.labels[0]!.rail.right).toBeCloseTo(value.labels[1]!.rail.right, 1)
@@ -70,15 +70,15 @@ function checkGeometry(value: Awaited<ReturnType<typeof labelGeometry>>, size = 
     expect(label.border).toBe('0px')
     expect(label.background).toBe('rgba(0, 0, 0, 0)')
     expect(label.padding).toBe('0px')
-    expect(label.fontSize).toBe(size === 'mini' ? '8px' : '9px')
+    expect(label.fontSize).toBe('10px')
     expect(label.label.right).toBeLessThan(label.rail.left)
     expect(label.bounds.every(r => r.right <= label.label.right + 0.1)).toBe(true)
     expect(label.fills).toHaveLength(20)
-    expect(label.gap).toBe(size === 'mini' ? '1px' : '2px')
+    expect(label.gap).toBe(size === 'large' || size === 'comfortable' ? '3px' : '2px')
     expect(label.fills[0]!.left).toBeCloseTo(label.rail.left, 1)
     expect(label.fills[19]!.right).toBeCloseTo(label.rail.right, 1)
     for (const fill of label.fills) {
-      expect(fill.height).toBe(size === 'mini' ? 3 : size === 'compact' ? 4 : 5)
+      expect(fill.height).toBe(size === 'mini' ? 6 : size === 'compact' ? 8 : size === 'comfortable' ? 9 : 10)
       expect(fill.transform).toBe('none')
     }
   }
@@ -193,7 +193,7 @@ test.describe('v2.8.3 localized labels and footer', () => {
   })
 
   test('manifest identity and build provenance contracts stay explicit', () => {
-    expect(manifest.version).toBe('3.0.0')
+    expect(manifest.version).toBe('3.0.1')
     expect(manifest.description).toBe(description)
     expect(manifest.short).toBe('glassmorphism-plus')
     expect(manifest.configuration.type).toBe('managed')

@@ -105,6 +105,7 @@ function handleUnavailableSlotClick(): void {
       <template v-for="slot in displaySlots" :key="`${slot.slotIndex}-${slot.taskId ?? 'empty'}`">
         <NodeCardPingTaskStrip
           v-if="slot.task"
+          :node-uuid="nodeUuid"
           :task-id="Number(slot.task.id)"
           :task-name="slot.task.name || `Ping ${slot.task.id}`"
           :snapshot="snapshotsByTaskId.get(String(slot.task.id))"

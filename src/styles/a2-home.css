@@ -1,0 +1,528 @@
+/* A2 presentation contract. Keep persisted colours, monitor state, and the
+ * original globe renderer in their respective owners. Header is a sibling of
+ * the routed home, so only its home instance receives the same visual tokens. */
+.gmp-a2,
+.app-viewport:has(.gmp-a2) .a2-titlebar {
+  --a2-card: var(--glass-light-card);
+  --a2-control: var(--glass-light-control);
+  --a2-text: var(--glass-light-text);
+  --a2-muted: var(--glass-light-muted-text);
+  --a2-border: var(--glass-light-border);
+  --a2-highlight: rgb(255 255 255 / 85%);
+  --a2-separator: rgb(65 86 118 / 13%);
+  --a2-sheen: linear-gradient(155deg, rgb(255 255 255 / 48%), rgb(255 255 255 / 8%) 46%, rgb(223 234 255 / 8%));
+  --a2-inner-sheen: linear-gradient(rgb(255 255 255 / 40%), rgb(255 255 255 / 6%));
+  --a2-shadow: 0 3px 7px rgb(35 55 90 / 3.5%), 0 16px 34px -20px rgb(35 55 90 / 25%);
+  --a2-pad: 18px;
+  --a2-title: 16px;
+  --a2-gutter: 32px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'PingFang TC', 'Microsoft YaHei UI',
+    'Noto Sans CJK SC', sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.dark .gmp-a2,
+.dark .app-viewport:has(.gmp-a2) .a2-titlebar {
+  --a2-card: var(--glass-dark-card);
+  --a2-control: var(--glass-dark-control);
+  --a2-text: var(--glass-dark-text);
+  --a2-muted: var(--glass-dark-muted-text);
+  --a2-border: var(--glass-dark-border);
+  --a2-highlight: rgb(255 255 255 / 9%);
+  --a2-separator: rgb(255 255 255 / 9%);
+  --a2-sheen: linear-gradient(155deg, rgb(255 255 255 / 6.5%), rgb(255 255 255 / 1.2%) 48%, transparent);
+  --a2-inner-sheen: linear-gradient(rgb(255 255 255 / 6.5%), rgb(255 255 255 / 1.5%));
+  --a2-shadow: 0 2px 4px #0002, 0 18px 34px -22px #000b;
+}
+.gmp-a2[data-density='mini'] {
+  --a2-pad: 14px;
+  --a2-title: 14px;
+}
+.gmp-a2[data-density='comfortable'] {
+  --a2-pad: 20px;
+  --a2-title: 17px;
+}
+.gmp-a2[data-density='large'] {
+  --a2-pad: 22px;
+  --a2-title: 18px;
+}
+
+main > div:has(> .gmp-a2),
+.app-viewport:has(.gmp-a2) .a2-titlebar {
+  max-width: 1360px;
+}
+.gmp-a2 .node-info,
+.gmp-a2 [data-overview-only],
+.app-viewport:has(.gmp-a2) .a2-titlebar {
+  padding-inline: var(--a2-gutter);
+}
+.gmp-a2 .a2-node-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+.gmp-a2[data-density='mini'] .a2-node-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 1fr));
+}
+.gmp-a2[data-density='large'] .a2-node-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(423px, 100%), 1fr));
+}
+@media (max-width: 1199px) {
+  .gmp-a2:not([data-density='mini'], [data-density='large']) .a2-node-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 767px) {
+  .gmp-a2,
+  .app-viewport:has(.gmp-a2) .a2-titlebar {
+    --a2-gutter: 18px;
+  }
+}
+@media (max-width: 640px) {
+  .gmp-a2[data-density],
+  .app-viewport:has(.gmp-a2) .a2-titlebar {
+    --a2-gutter: 14px;
+    --a2-pad: 16px;
+  }
+  .gmp-a2[data-density] .a2-node-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+}
+
+.gmp-a2 .a2-node {
+  min-width: 0;
+  padding: var(--a2-pad);
+  border-radius: 20px;
+}
+/* Existing universal .bg-card uses important for its shadow and blur. Local
+ * replacements avoid stacking blur filters over a live globe. */
+.gmp-a2 .a2-node:not([class*='shadow-destructive']):not(:focus-within),
+.gmp-a2 .a2-stats > [data-general-card-key]:not(:focus-visible) {
+  box-shadow:
+    inset 0 1px var(--a2-highlight),
+    var(--a2-shadow) !important;
+}
+.gmp-a2 :is(.a2-node, .a2-stats > [data-general-card-key]) {
+  backdrop-filter: none !important;
+}
+.gmp-a2 .a2-node-head,
+.gmp-a2 .a2-content {
+  padding: 0;
+  min-width: 0;
+}
+.gmp-a2 .a2-node-head {
+  min-height: 24px;
+}
+.gmp-a2 .a2-node-title {
+  font-size: var(--a2-title);
+  line-height: 22px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+.gmp-a2 .a2-node-actions {
+  gap: 8px;
+}
+.gmp-a2 .a2-sections {
+  gap: 0;
+}
+.gmp-a2 .a2-badges {
+  min-height: 20px;
+  margin-top: 9px;
+  gap: 6px;
+}
+.gmp-a2 .a2-badges > span {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background-color: var(--a2-control);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+}
+.gmp-a2 .a2-resources {
+  position: relative;
+  gap: 15px 20px;
+  margin-top: 17px;
+}
+.gmp-a2 .a2-resources::after {
+  position: absolute;
+  top: 3px;
+  bottom: 2px;
+  left: 50%;
+  width: 1px;
+  background: var(--a2-separator);
+  content: '';
+  pointer-events: none;
+}
+.gmp-a2 .a2-resources > div {
+  min-width: 0;
+  gap: 6px;
+}
+.gmp-a2 .a2-resources-mini {
+  margin-top: 12px;
+}
+.gmp-a2 :is(.a2-resources, .a2-resources-mini) .justify-between {
+  align-items: center;
+  font-size: 12px;
+  line-height: 18px;
+}
+.gmp-a2 :is(.a2-resources, .a2-resources-mini) .justify-between > .tabular-nums {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 650;
+}
+.gmp-a2 .a2-resources [data-node-metric-icon] {
+  width: 15px;
+  height: 15px;
+}
+.gmp-a2 .a2-resources > div > .truncate {
+  font-size: 11.5px;
+  line-height: 17px;
+}
+.gmp-a2 .a2-info-bar {
+  min-height: 54px;
+  align-items: center;
+  margin-top: 16px;
+  gap: 0;
+  padding-block: 8px;
+  background-color: var(--a2-control);
+  border: 1px solid var(--a2-border);
+  border-radius: 12px;
+  box-shadow: inset 0 1px var(--a2-highlight);
+}
+html .gmp-a2 .a2-info-bar > .node-card-info-surface {
+  background-color: transparent !important;
+}
+.gmp-a2 .a2-info-bar > .node-card-info-surface {
+  min-width: 0;
+  align-self: center;
+  gap: 3px;
+  padding: 0 10px;
+  border-radius: 0;
+  box-shadow: none;
+}
+.gmp-a2 .a2-info-bar > .node-card-info-surface + .node-card-info-surface {
+  border-inline-start: 1px solid var(--a2-separator);
+}
+.gmp-a2 .a2-info-bar > div > div {
+  font-size: 11.5px;
+  line-height: 17px;
+}
+.gmp-a2 .a2-info-bar svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+.gmp-a2 .a2-info-bar .truncate,
+.gmp-a2 .a2-info-bar .tabular-nums {
+  font-weight: 600;
+}
+.gmp-a2 .a2-sections > :last-child:not(:is(.a2-badges, .a2-info-bar, [data-node-ping-mode])) {
+  margin-top: 10px;
+}
+@media (max-width: 640px) {
+  .gmp-a2 .a2-info-bar > .node-card-info-surface {
+    padding-inline: 8px;
+  }
+  .gmp-a2 .a2-info-bar > div > div {
+    font-size: 11px;
+  }
+}
+@media (max-width: 359px) {
+  .gmp-a2 .a2-info-bar > .node-card-info-surface {
+    padding-inline: 6px;
+  }
+  .gmp-a2 .a2-info-bar > div > div {
+    font-size: 10.5px;
+  }
+}
+
+/* The existing globe's projection host keeps its original max width. Only
+ * statistics-only mode uses the expanded 1360px content shell. */
+.gmp-a2 .a2-overview:not([data-overview-only]) {
+  max-width: 1280px;
+  margin-inline: auto;
+}
+.gmp-a2 .a2-stats > [data-general-card-key] {
+  border: 1px solid var(--a2-border);
+  border-radius: 16px;
+  background-color: var(--a2-card);
+}
+.gmp-a2 [data-overview-only] .a2-stats {
+  gap: 12px;
+}
+.gmp-a2 [data-overview-only] [data-general-card-key] {
+  min-height: 0;
+}
+.gmp-a2 .a2-stat-content {
+  padding: 16px;
+}
+.gmp-a2 .a2-stat-label {
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 550;
+}
+.gmp-a2 .a2-stat-label + svg {
+  width: 17px;
+  height: 17px;
+  color: var(--a2-muted);
+  opacity: 0.7;
+}
+.gmp-a2 .a2-stat-reading {
+  margin-top: 12px;
+}
+.gmp-a2 .a2-stat-reading .font-bold {
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+.gmp-a2 .a2-stat-unit {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 15px;
+}
+@media (min-width: 641px) and (max-width: 1199px) {
+  .gmp-a2 [data-overview-only] .a2-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .gmp-a2 [data-overview-only] .a2-stats {
+    gap: 8px;
+  }
+  .gmp-a2 .a2-stat-content {
+    padding: 12px;
+  }
+  .gmp-a2 .a2-stat-reading {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 3px;
+  }
+  .gmp-a2 .a2-stat-reading .font-bold {
+    max-width: 100%;
+    font-size: 22px;
+    line-height: 27px;
+  }
+  .gmp-a2 .a2-stat-unit {
+    max-width: 100%;
+    flex-basis: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: 10px;
+  }
+  .gmp-a2 :not([data-overview-only]) > .a2-stats .a2-stat-content {
+    padding: 7px 10px;
+  }
+  .gmp-a2 :not([data-overview-only]) > .a2-stats .a2-stat-reading {
+    margin-top: 2px;
+  }
+}
+@media (max-width: 359px) {
+  .gmp-a2 [data-overview-only] .a2-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .gmp-a2 .a2-stat-reading .font-bold {
+    font-size: 20px;
+  }
+}
+
+@media (forced-colors: none) and (prefers-contrast: no-preference) {
+  html .gmp-a2:not([data-palette='contrast']) :is(.a2-node, [data-general-card-key]) {
+    background-image: var(--a2-sheen);
+    border-color: var(--a2-border) !important;
+  }
+  .gmp-a2:not([data-palette='contrast']) .a2-info-bar {
+    background-image: var(--a2-inner-sheen);
+  }
+}
+/* Only theme-owned default backing. Uploaded images/videos are never recoloured. */
+#app:has(.gmp-a2) .background-container > .default-background {
+  /* The v3.0.0 photo had a darkening filter. The A2 canvas is already dark. */
+  filter: none;
+  transform: none;
+  background:
+    radial-gradient(ellipse at 2% 0, rgb(156 211 255 / 20%), transparent 48%),
+    radial-gradient(ellipse at 98% 10%, rgb(180 163 255 / 16%), transparent 48%), #f1f4fa;
+}
+.dark #app:has(.gmp-a2) .background-container > .default-background {
+  background: radial-gradient(ellipse at 15% 0, #ffffff03, transparent 50%), #101114;
+}
+.a2-action-group {
+  display: contents;
+}
+.a2-action-label,
+.a2-mode-label {
+  display: none;
+}
+.app-viewport:has(.gmp-a2) .a2-titlebar {
+  height: auto;
+  min-height: 76px;
+}
+.app-viewport:has(.gmp-a2) .a2-action-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-inline-start: 1px solid var(--a2-separator);
+  padding-inline-start: 8px;
+}
+.app-viewport:has(.gmp-a2) .a2-action-group button {
+  width: auto;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  gap: 7px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 550;
+}
+.app-viewport:has(.gmp-a2) .a2-mode-group,
+.gmp-a2 .a2-toolbar [data-slot='tabs-list'] {
+  padding: 3px;
+  gap: 2px;
+  height: auto;
+  border-radius: 13px;
+  border: 1px solid var(--a2-border);
+  background: var(--a2-control);
+  box-shadow: inset 0 1px var(--a2-highlight);
+}
+.app-viewport:has(.gmp-a2) .a2-mode-group button {
+  height: 28px;
+  width: auto;
+  min-width: 32px;
+  padding: 0 9px;
+  border-radius: 9px;
+}
+.app-viewport:has(.gmp-a2) .a2-mode-label {
+  display: inline;
+}
+.app-viewport:has(.gmp-a2) [data-testid='theme-mode-beijing'] > svg {
+  display: none;
+}
+@media (min-width: 768px) {
+  .app-viewport:has(.gmp-a2) .a2-action-label {
+    display: inline;
+  }
+}
+@media (max-width: 767px) {
+  .app-viewport:has(.gmp-a2) .a2-titlebar {
+    flex-wrap: wrap;
+    padding-block: 11px;
+    row-gap: 8px;
+  }
+  .app-viewport:has(.gmp-a2) .a2-titlebar [data-testid='header-actions'] {
+    width: 100%;
+    justify-content: space-between;
+    margin: 0;
+  }
+  .app-viewport:has(.gmp-a2) .a2-action-group {
+    flex: 1;
+    justify-content: space-around;
+  }
+  .app-viewport:has(.gmp-a2) .a2-action-group button {
+    width: 34px;
+    height: 34px;
+    min-width: 32px;
+    padding: 0;
+  }
+}
+.gmp-a2 .a2-toolbar {
+  gap: 8px;
+  min-width: 0;
+}
+@media (max-width: 767px) {
+  .gmp-a2 .a2-toolbar {
+    position: relative;
+    flex-flow: row wrap;
+    align-items: center;
+  }
+  .gmp-a2 .a2-toolbar .home-controls-scroll {
+    flex: 1 1 0;
+  }
+  .gmp-a2 .a2-toolbar:has(.a2-advanced-tools) .home-controls-scroll {
+    flex-basis: 100%;
+  }
+  .gmp-a2 .a2-toolbar .search {
+    flex: 0 0 auto;
+    max-width: 100%;
+    gap: 6px;
+  }
+  .gmp-a2 .a2-searchbox {
+    width: 32px;
+    order: -1;
+  }
+  .gmp-a2 .a2-searchbox:is(:focus-within, :has(input:not(:placeholder-shown))) {
+    position: static;
+  }
+  .gmp-a2 .a2-searchbox:is(:focus-within, :has(input:not(:placeholder-shown))) > div {
+    top: calc(100% + 4px);
+    right: 0;
+    width: min(240px, 100%);
+    z-index: 2;
+  }
+  .gmp-a2 .a2-searchbox:is(:focus-within, :has(input:not(:placeholder-shown))) input {
+    width: 100% !important;
+    background-color: var(--a2-card);
+  }
+}
+.gmp-a2 .a2-toolbar [role='tab'] {
+  border-radius: 9px;
+}
+.gmp-a2 .a2-filters {
+  background: transparent;
+  backdrop-filter: none;
+  border-inline-start: 1px solid var(--a2-separator);
+}
+.gmp-a2 .a2-filters button {
+  color: var(--a2-muted);
+  font-weight: 550;
+}
+.gmp-a2 .a2-searchbox input {
+  border-radius: 18px;
+}
+.gmp-a2 [data-view-segment] {
+  background-color: var(--a2-control);
+}
+.gmp-a2 [data-view-segment='card'] {
+  border-radius: 10px 0 0 10px;
+}
+.gmp-a2 [data-view-segment='list'] {
+  border-radius: 0 10px 10px 0;
+  margin-inline-start: -8px;
+}
+@media (min-width: 1280px) {
+  .gmp-a2:has([data-overview-only]) .a2-searchbox {
+    order: -1;
+    width: 162px;
+  }
+  .gmp-a2:has([data-overview-only]) .a2-searchbox input {
+    width: 100%;
+    padding-inline-start: 32px;
+  }
+  .gmp-a2:has([data-overview-only]) .a2-searchbox input::placeholder {
+    color: var(--a2-muted);
+  }
+}
+@media (forced-colors: none) and (prefers-contrast: no-preference) {
+  html:not(.color-vision-friendly)
+    .app-viewport:has(.gmp-a2:not([data-palette='contrast']))
+    .a2-mode-group
+    [aria-pressed='true'],
+  html:not(.color-vision-friendly)
+    .gmp-a2:not([data-palette='contrast'])
+    .a2-toolbar
+    :is([role='tab'][data-state='active'], [aria-pressed='true']) {
+    color: #fff;
+    background: linear-gradient(#20a3ff, #087dff);
+    box-shadow:
+      inset 0 1px #fff5,
+      0 2px 7px #0084ff35;
+  }
+}
+@media (forced-colors: active) {
+  .gmp-a2 :is(.a2-node, .a2-info-bar, [data-general-card-key]) {
+    box-shadow: none !important;
+    border-color: CanvasText !important;
+  }
+}

@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { NodeData } from '@/stores/nodes'
 import { Icon } from '@iconify/vue'
-import { useElementSize } from '@vueuse/core'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import NodeCardPingGroup from '@/components/NodeCardPingGroup.vue'
 import { Badge } from '@/components/ui/badge'
 import { CardX } from '@/components/ui/card-x'
@@ -14,6 +13,7 @@ import { formatBytesPerSecondWithConfig, formatBytesWithConfig, formatDateTime, 
 import { getNodeCardPingTaskId } from '@/utils/nodeCardPingBindings'
 import { getDiskPercentage, getMemoryPercentage, getTrafficUsed, getTrafficUsedPercentage, hasTrafficLimit } from '@/utils/nodeMetricsHelper'
 import { getOSImage, getOSName } from '@/utils/osImageHelper'
+import { movePingRailFocus, rejectRetargetedRailTap } from '@/utils/pingRailFocus'
 import { getRegionCode, getRegionDisplayName } from '@/utils/regionHelper'
 import { formatCurrencyValue, formatPriceWithCycle, getDaysUntilExpired, getExpireStatus, getRemainingValue, isFreePrice, parseTags } from '@/utils/tagHelper'
 
@@ -68,22 +68,7 @@ const nodeCardMetricGridClass = 'grid-cols-3'
 const nodeCardMetricBoxClass = computed(() => isMiniNodeCard.value
   ? 'px-1 py-1'
   : appStore.nodeCardSize === 'compact' ? 'px-1.5 py-1.5' : 'px-2 py-1.5')
-const nodeCardPanelClass = computed(() => appStore.nodeCardSize === 'large' ? 'h-14' : appStore.nodeCardSize === 'comfortable' ? 'h-12' : isMiniNodeCard.value ? 'h-7' : 'h-11')
-const nodeCardPingPanelClass = computed(() => isMiniNodeCard.value ? 'gap-1 p-1' : 'gap-1.5 p-2')
-const latencyPingBarsRef = ref<HTMLDivElement>()
-const lossPingBarsRef = ref<HTMLDivElement>()
-const { width: latencyPingBarsWidth } = useElementSize(latencyPingBarsRef)
-const { width: lossPingBarsWidth } = useElementSize(lossPingBarsRef)
-
 type PingPanelMetric = 'latency' | 'loss'
-
-function setLatencyPingBarsRef(element: unknown): void {
-  latencyPingBarsRef.value = element instanceof HTMLDivElement ? element : undefined
-}
-
-function setLossPingBarsRef(element: unknown): void {
-  lossPingBarsRef.value = element instanceof HTMLDivElement ? element : undefined
-}
 
 const formatBytes = (bytes: number) => formatBytesWithConfig(bytes, appStore.byteDecimals)
 const formatBytesPerSecond = (bytes: number) => formatBytesPerSecondWithConfig(bytes, appStore.byteDecimals)
@@ -113,27 +98,6 @@ const {
   selectedTaskId: legacySelectedTaskId,
 })
 
-function getPingBarGridStyle(width: number, barCount: number): Record<string, string> {
-  if (!barCount)
-    return {}
-
-  const availableWidth = Math.floor(width)
-  const gapCount = Math.max(0, barCount - 1)
-  const barWidth = Math.floor((availableWidth - gapCount) / barCount)
-  if (barWidth < 1) {
-    return {
-      gridTemplateColumns: `repeat(${barCount}, minmax(0, 1fr))`,
-    }
-  }
-
-  return {
-    gridTemplateColumns: `repeat(${barCount}, ${barWidth}px)`,
-    justifyContent: 'center',
-  }
-}
-
-const latencyPingBarGridStyle = computed(() => getPingBarGridStyle(latencyPingBarsWidth.value, latencyRenderBars.value.length))
-const lossPingBarGridStyle = computed(() => getPingBarGridStyle(lossPingBarsWidth.value, lossRenderBars.value.length))
 const nodeCardPingPanels = computed(() => [
   {
     metric: 'latency' as const satisfies PingPanelMetric,
@@ -141,8 +105,6 @@ const nodeCardPingPanels = computed(() => [
     display: latencyDisplay.value,
     tooltip: latencyPanelTooltip.value,
     bars: latencyRenderBars.value,
-    barGridStyle: latencyPingBarGridStyle.value,
-    setBarsRef: setLatencyPingBarsRef,
   },
   {
     metric: 'loss' as const satisfies PingPanelMetric,
@@ -150,8 +112,6 @@ const nodeCardPingPanels = computed(() => [
     display: lossDisplay.value,
     tooltip: lossPanelTooltip.value,
     bars: lossRenderBars.value,
-    barGridStyle: lossPingBarGridStyle.value,
-    setBarsRef: setLossPingBarsRef,
   },
 ])
 
@@ -265,8 +225,9 @@ function hasRegion(region: string | null | undefined): boolean {
   <CardX
     hoverable
     :size="nodeCardXSize"
-    :content-class="nodeCardContentPaddingClass"
-    class="node-card w-full cursor-pointer border-none shadow-[0_0_0_3px] shadow-transparent transition-all duration-200 rounded-xl"
+    :content-class="['a2-content', nodeCardContentPaddingClass]"
+    header-class="a2-node-head"
+    class="node-card a2-node w-full cursor-pointer border-none shadow-[0_0_0_3px] shadow-transparent transition-all duration-200 rounded-xl"
     :class="[!props.node.online && '!shadow-destructive/30']"
     :data-node-card-uuid="props.node.uuid"
     @click="emit('click')"
@@ -287,7 +248,7 @@ function hasRegion(region: string | null | undefined): boolean {
         </div>
         <button
           type="button"
-          class="min-w-0 flex-1 truncate rounded-sm text-left text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-selection"
+          class="a2-node-title min-w-0 flex-1 truncate rounded-sm text-left text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-selection"
           :aria-label="`查看节点 ${props.node.name} 详情`"
           @click.stop="emit('click')"
           @keydown.stop
@@ -309,7 +270,7 @@ function hasRegion(region: string | null | undefined): boolean {
 
     <!-- 头部右侧：OS + 国旗 -->
     <template #header-extra>
-      <div class="flex gap-1.5 items-center shrink-0">
+      <div class="a2-node-actions flex gap-1.5 items-center shrink-0">
         <button
           type="button"
           class="inline-flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-slate-500/10 hover:text-amber-500"
@@ -332,9 +293,9 @@ function hasRegion(region: string | null | undefined): boolean {
     </template>
 
     <template #default>
-      <div class="flex flex-col relative" :class="nodeCardContentClass">
+      <div class="a2-sections flex flex-col relative" :class="nodeCardContentClass">
         <!-- 在线天数固定展示，价格独立展示，避免不同主机卡片高度不一致 -->
-        <div class="relative z-20 flex min-w-0 items-center gap-1.5 -mt-1 h-[19px] overflow-hidden">
+        <div class="a2-badges relative z-20 flex min-w-0 items-center gap-1.5 overflow-hidden">
           <span class="shrink-0 text-[11px] px-2 py-0.5 rounded-full bg-slate-500/10 text-muted-foreground leading-tight">
             {{ uptimeDaysText }}
           </span>
@@ -354,7 +315,7 @@ function hasRegion(region: string | null | undefined): boolean {
         </div>
 
         <!-- 四项进度条 -->
-        <div v-if="isMiniNodeCard" class="grid grid-cols-[3fr_2fr] gap-x-4 gap-y-2">
+        <div v-if="isMiniNodeCard" class="a2-resources-mini grid grid-cols-[3fr_2fr] gap-x-4 gap-y-2">
           <div class="grid grid-cols-2 gap-x-3 gap-y-1">
             <div class="flex flex-col gap-1">
               <div class="flex justify-between text-xs">
@@ -404,7 +365,7 @@ function hasRegion(region: string | null | undefined): boolean {
           </div>
         </div>
 
-        <div v-else class="grid grid-cols-2 gap-x-4 gap-y-2.5">
+        <div v-else class="a2-resources grid grid-cols-2 gap-x-4 gap-y-2.5">
           <!-- CPU -->
           <div class="flex flex-col gap-1">
             <div class="flex justify-between text-xs">
@@ -475,7 +436,7 @@ function hasRegion(region: string | null | undefined): boolean {
         </div>
 
         <!-- 三列：网速 / 总流量 / 剩余天数+价格或负载 -->
-        <div class="grid gap-1.5" :class="nodeCardMetricGridClass">
+        <div class="a2-info-bar grid gap-1.5" :class="nodeCardMetricGridClass">
           <!-- 实时网速 -->
           <div class="node-card-info-surface flex flex-col gap-0.5 rounded-lg bg-slate-500/5 min-w-0 overflow-hidden" :class="nodeCardMetricBoxClass">
             <div class="text-[11px] text-success flex items-center gap-1">
@@ -528,43 +489,47 @@ function hasRegion(region: string | null | undefined): boolean {
           </div>
         </div>
 
-        <!-- 延迟 + 丢包：无显式任务时保留旧双面板；v3 使用固定一行或三行任务条。 -->
-        <div v-if="usesLegacyPingDisplay" class="grid grid-cols-2 gap-1.5" data-node-ping-mode="legacy">
-          <button
-            v-for="panel in nodeCardPingPanels"
-            :key="panel.metric"
-            type="button"
-            class="node-card-info-surface group/panel relative flex flex-col rounded-lg bg-slate-500/5"
-            :class="[nodeCardPingPanelClass, nodeCardPanelClass, !props.node.online ? 'blur-xs opacity-50' : '']"
+        <!-- No explicit task: keep legacy data and both monitoring actions. -->
+        <div v-if="usesLegacyPingDisplay" class="a2-legacy-ping" data-node-ping-mode="legacy">
+          <div class="a2-legacy-summary">
+            <button
+              v-for="panel in nodeCardPingPanels" :key="panel.metric"
+              type="button" :data-node-ping-summary="panel.metric" :title="panel.tooltip" :aria-label="`${props.node.name} ${panel.label}监测`"
+              @click.stop="emit('pingClick')"
+            >
+              {{ panel.label }} <strong>{{ panel.display }}</strong>
+            </button>
+          </div>
+          <div
+            v-for="panel in nodeCardPingPanels" :key="panel.metric"
+            class="node-card-ping-trend-row"
             :data-node-ping-panel="panel.metric"
-            :title="panel.tooltip"
-            :aria-label="`${props.node.name} ${panel.label}监测`"
-            @click.stop="emit('pingClick')"
           >
-            <div :data-node-ping-header="panel.metric" class="flex items-center justify-between text-[11px] leading-none">
-              <span class="text-muted-foreground">{{ panel.label }}</span>
-              <span class="font-medium">{{ panel.display }}</span>
-            </div>
+            <button
+              type="button" class="node-card-ping-trend-label" :data-node-ping-header="panel.metric"
+              :aria-label="`${panel.label}历史`" @click.stop="emit('pingClick')"
+            >
+              <span class="node-card-ping-trend-dot" aria-hidden="true" />{{ panel.label }}
+            </button>
             <div
-              :ref="panel.setBarsRef"
-              :data-node-ping-bars="panel.metric"
-              class="grid min-h-0 min-w-0 w-full flex-1 items-end gap-[1px] opacity-80 group-hover/panel:opacity-100"
-              :style="panel.barGridStyle"
+              class="node-card-ping-bucket-grid" :data-node-ping-bars="panel.metric"
+              @pointerdown.capture="rejectRetargetedRailTap" @touchend.capture="rejectRetargetedRailTap" @click.capture="rejectRetargetedRailTap" @keydown="movePingRailFocus" @click.stop
             >
               <DataTooltip
-                v-for="bar in panel.bars" :key="bar.key"
-                data-node-ping-bar
+                v-for="(bar, index) in panel.bars" :key="`${props.node.uuid}:${legacySelectedTaskId ?? 'legacy'}:${panel.metric}:${bar.time || bar.key}`"
+                as="button" type="button" data-node-ping-bar
                 :data-node-ping-bucket-time="bar.time || undefined"
+                :data-node-ping-bucket-start="bar.time || undefined"
+                :data-node-ping-bucket-end="bar.time ? panel.bars[index + 1]?.time || new Date(Date.parse(bar.time) + 180_000).toISOString() : undefined"
                 :data-node-ping-state="bar.state"
-                placement="top" :content="bar.tooltip" class="h-full min-w-0 w-full"
+                placement="top" :content="bar.tooltip" :aria-label="bar.tooltip || panel.label"
+                class="node-card-ping-bucket-hitbox" open-on-click :tabindex="index === 0 ? 0 : -1"
+                @click.stop
               >
-                <span
-                  class="block h-full w-full rounded-[1px] transition-[filter,opacity] duration-150 group-hover/data-tooltip:brightness-125 group-hover/panel:opacity-60 group-hover/data-tooltip:!opacity-100"
-                  :class="bar.className"
-                />
+                <span class="node-card-ping-bucket-fill" data-node-ping-bucket-fill :class="bar.className" />
               </DataTooltip>
             </div>
-          </button>
+          </div>
         </div>
         <NodeCardPingGroup
           v-else

@@ -179,7 +179,7 @@ function primaryNodeCard(page: Page) {
 
 function nodeCardPingPanel(page: Page, metric: 'latency' | 'loss') {
   const card = primaryNodeCard(page)
-  return card.locator('[data-node-ping-task-id]').first().or(card.locator(`[data-node-ping-bars="${metric}"]`).locator('..')).first()
+  return card.locator('[data-node-ping-task-id]').first().or(card.locator(`.a2-legacy-summary [data-node-ping-summary="${metric}"]`)).first()
 }
 
 async function expectNodeCardPing(page: Page, latency: string, loss: string): Promise<void> {
@@ -195,7 +195,7 @@ async function expectNodeCardPing(page: Page, latency: string, loss: string): Pr
 }
 
 async function openPrimaryPingDialog(page: Page): Promise<Locator> {
-  await nodeCardPingPanel(page, 'latency').click()
+  await primaryNodeCard(page).locator('.node-card-ping-task-name, .a2-legacy-summary button').first().click()
   const dialog = page.getByRole('dialog')
   await expect(dialog).toBeVisible()
   await expect(dialog.locator('[data-ping-chart]')).toBeVisible()
@@ -367,57 +367,24 @@ async function expectUniformNodeCardPingBars(card: Locator): Promise<void> {
 
     const geometry = await readNodeCardPingBarGeometry(card, metric)
     expect(geometry.bars).toHaveLength(20)
-    expect(geometry.bars[0]!.left).toBeGreaterThanOrEqual(geometry.left - 0.01)
-    expect(geometry.bars.at(-1)!.right).toBeLessThanOrEqual(geometry.right + 0.01)
+    expect(geometry.bars[0]!.left).toBeCloseTo(geometry.left, 1)
+    expect(geometry.bars.at(-1)!.right).toBeCloseTo(geometry.right, 1)
   }
-}
-
-async function readNodeCardPingPanelVerticalGeometry(card: Locator, metric: 'latency' | 'loss') {
-  return card.locator(`[data-node-ping-panel="${metric}"]`).evaluate((element, panelMetric) => {
-    const header = element.querySelector<HTMLElement>(`[data-node-ping-header="${panelMetric}"]`)
-    const bars = element.querySelector<HTMLElement>(`[data-node-ping-bars="${panelMetric}"]`)
-    if (!header || !bars)
-      return null
-
-    const panelRect = element.getBoundingClientRect()
-    const headerRect = header.getBoundingClientRect()
-    const barsRect = bars.getBoundingClientRect()
-    return {
-      panel: { top: panelRect.top, bottom: panelRect.bottom },
-      header: { top: headerRect.top, bottom: headerRect.bottom },
-      bars: { top: barsRect.top, bottom: barsRect.bottom },
-    }
-  }, metric)
 }
 
 async function expectMatchingNodeCardPingPanelVerticalGeometry(card: Locator): Promise<void> {
-  if (await card.locator('[data-node-ping-task-id], [data-node-ping-task-placeholder]').count()) {
-    await expect.poll(async () => {
-      const widths = await Promise.all((['latency', 'loss'] as const).map(metric => card
-        .locator(`[data-node-ping-bars="${metric}"]`)
-        .first()
-        .evaluate(element => element.getBoundingClientRect().width)))
-      return Math.abs(widths[0] - widths[1])
-    }).toBeLessThanOrEqual(0.01)
-    return
-  }
-
+  const metrics = ['latency', 'loss'] as const
   await expect.poll(async () => {
-    const [latency, loss] = await Promise.all([
-      readNodeCardPingPanelVerticalGeometry(card, 'latency'),
-      readNodeCardPingPanelVerticalGeometry(card, 'loss'),
-    ])
-    if (!latency || !loss)
+    const [upper, lower] = await Promise.all(metrics.map(metric => card
+      .locator(`[data-node-ping-bars="${metric}"]`)
+      .first()
+      .boundingBox()))
+    if (!upper || !lower)
       return false
-
-    return [
-      [latency.panel.top, loss.panel.top],
-      [latency.panel.bottom, loss.panel.bottom],
-      [latency.header.top, loss.header.top],
-      [latency.header.bottom, loss.header.bottom],
-      [latency.bars.top, loss.bars.top],
-      [latency.bars.bottom, loss.bars.bottom],
-    ].every(([latencyY, lossY]) => Math.abs(latencyY! - lossY!) <= 0.01)
+    return Math.abs(upper.x - lower.x) < 0.01
+      && Math.abs(upper.width - lower.width) < 0.01
+      && upper.height === lower.height
+      && Math.abs(upper.y + upper.height - lower.y) < 0.1
   }).toBe(true)
 }
 
@@ -1635,7 +1602,7 @@ test('v2.7.1 theme and visitor tools remain visible, ordered, and non-overlappin
       return {
         contained: actions.scrollWidth <= actions.clientWidth + 1,
         headerContained: header ? header.scrollWidth <= header.clientWidth + 1 : false,
-        separated: siteBox ? siteBox.right <= actionBox.left + 1 : false,
+        separated: siteBox ? siteBox.right <= actionBox.left + 1 || siteBox.bottom <= actionBox.top + 1 : false,
         buttonsInsideViewport: buttonBoxes.every(box => box.left >= 0 && box.right <= window.innerWidth),
         buttonWidths: buttonBoxes.map(box => box.width),
       }
@@ -1712,6 +1679,7 @@ for (const background of [
         expectedFill,
         cardBorderWidth: getComputedStyle(element).borderWidth,
         cardBorderColor: getComputedStyle(element).borderColor,
+        bandFill: getComputedStyle(element.querySelector('.a2-info-bar')!).backgroundColor,
         infoShadows: Array.from(element.querySelectorAll('.node-card-info-surface'), item => getComputedStyle(item).boxShadow),
         stripShadows: Array.from(element.querySelectorAll('.node-card-ping-task-strip'), item => getComputedStyle(item).boxShadow),
         fills: Array.from(element.querySelectorAll('.node-card-info-surface,.node-card-ping-task-strip'), item => getComputedStyle(item).backgroundColor),
@@ -1726,7 +1694,8 @@ for (const background of [
     expect(styles.stripShadows.every(shadow => shadow === 'none')).toBe(true)
     expect(styles.fills).toHaveLength(6)
     expect(styles.expectedFill).not.toBe('rgba(0, 0, 0, 0)')
-    expect(styles.fills.every(fill => fill === styles.expectedFill)).toBe(true)
+    expect(styles.bandFill).toBe(styles.expectedFill)
+    expect(styles.fills.every(fill => fill === 'rgba(0, 0, 0, 0)')).toBe(true)
     expect(styles.contained).toBe(true)
 
     await expect(page.locator('.background-container')).toBeVisible()
@@ -3231,7 +3200,7 @@ test.describe('node-card per-node ping task bindings', () => {
 
       const surfaceStyles = await card.evaluate((element) => {
         const probe = document.createElement('span')
-        probe.style.backgroundColor = document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,.05)' : 'var(--glass-light-control)'
+        probe.style.backgroundColor = document.documentElement.classList.contains('dark') ? 'var(--glass-dark-control)' : 'var(--glass-light-control)'
         element.append(probe)
         const expectedFill = getComputedStyle(probe).backgroundColor
         probe.remove()
@@ -3247,6 +3216,7 @@ test.describe('node-card per-node ping task bindings', () => {
         return {
           expectedFill,
           card: styleFor(element),
+          band: styleFor(element.querySelector('.a2-info-bar')!),
           info: Array.from(element.querySelectorAll('.node-card-info-surface'), styleFor),
           strips: Array.from(element.querySelectorAll('.node-card-ping-task-strip'), styleFor),
           contained: element.scrollWidth <= element.clientWidth + 1,
@@ -3257,11 +3227,11 @@ test.describe('node-card per-node ping task bindings', () => {
       expect(surfaceStyles.info).toHaveLength(3)
       expect(surfaceStyles.strips).toHaveLength(threeNetworkEnabled ? 3 : 1)
       expect(surfaceStyles.contained).toBe(true)
-      // Original presets keep their light fill and white/5 dark inner surface.
-      // Custom Control correctness is verified separately in palette tests.
+      // One configured surface beneath three transparent groups.
+      expect(surfaceStyles.band.backgroundColor).toBe(surfaceStyles.expectedFill)
       expect(surfaceStyles.expectedFill).not.toBe('rgba(0, 0, 0, 0)')
-      expect(surfaceStyles.info.every(style => style.boxShadow === 'none' && style.backgroundColor === surfaceStyles.expectedFill)).toBe(true)
-      expect(surfaceStyles.strips.every(style => style.boxShadow === 'none' && style.backgroundColor === surfaceStyles.expectedFill)).toBe(true)
+      expect(surfaceStyles.info.every(style => style.boxShadow === 'none' && style.backgroundColor === 'rgba(0, 0, 0, 0)')).toBe(true)
+      expect(surfaceStyles.strips.every(style => style.boxShadow === 'none' && style.backgroundColor === 'rgba(0, 0, 0, 0)')).toBe(true)
 
       const layouts = await strips.evaluateAll(elements => elements.map((element) => {
         const query = (selector: string) => element.querySelector<HTMLElement>(selector)!.getBoundingClientRect()

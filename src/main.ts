@@ -6,6 +6,8 @@ import App from './App.vue'
 import router from './router'
 
 import './styles/main.css'
+import './styles/a2-home.css'
+import './styles/a2-rails.css'
 
 window.$message = message
 

@@ -304,14 +304,15 @@ const reduceDenseNodeEffects = computed(() => appStore.nodeViewMode === 'card' &
 const deferNodeCards = computed(() => appStore.nodeViewMode === 'card' && nodeList.value.length > UI_CONFIG.virtualList.nodeThreshold)
 function getDeferredNodeCardHeight(_nodeUuid: string): number {
   const size = appStore.nodeCardSize
-  const legacyBaseHeight = { mini: 220, compact: 270, comfortable: 310, large: 350 }[size]
+  // Deferred initial estimates follow the same density and 1/3-task geometry as the rendered A2 cards.
+  const legacyBaseHeight = { mini: 254, compact: 358, comfortable: 367, large: 376 }[size]
   if (!usesNodeCardTaskCatalog.value)
     return legacyBaseHeight
 
   const runtime = appStore.nodeCardMultiPingRuntimeConfig
   const displayCount = runtime.config.global.threeNetworkEnabled ? 3 : 1
-  const singleHeight = { mini: 244, compact: 290, comfortable: 334, large: 366 }[size]
-  const extraRowHeight = { mini: 42, compact: 54, comfortable: 62, large: 62 }[size]
+  const singleHeight = { mini: 260, compact: 365, comfortable: 374, large: 383 }[size]
+  const extraRowHeight = { mini: 65, compact: 65, comfortable: 69, large: 73 }[size]
   return singleHeight + Math.max(0, displayCount - 1) * extraRowHeight
 }
 
@@ -453,20 +454,10 @@ const activeToolTitle = computed(() => {
     return ''
   return homeTools.value.find(tool => tool.key === activeHomeTool.value)?.description ?? ''
 })
-
-const nodeCardGridClass = computed(() => {
-  const sizeClass: Record<typeof appStore.nodeCardSize, string> = {
-    mini: 'gap-3 sm:grid-cols-[repeat(auto-fill,minmax(270px,1fr))]',
-    compact: 'gap-3 sm:grid-cols-[repeat(auto-fill,minmax(300px,1fr))]',
-    comfortable: 'gap-4 sm:grid-cols-[repeat(auto-fill,minmax(360px,1fr))]',
-    large: 'gap-5 sm:grid-cols-[repeat(auto-fill,minmax(420px,1fr))]',
-  }
-  return ['grid grid-cols-1', sizeClass[appStore.nodeCardSize]]
-})
 </script>
 
 <template>
-  <div class="home-view" :class="!appStore.disablePageAnimation && 'home-view--motion'">
+  <div class="home-view gmp-a2" :data-density="appStore.nodeCardSize" :data-palette="appStore.glassColorPreset" :class="!appStore.disablePageAnimation && 'home-view--motion'">
     <template v-if="appStore.paletteOpen">
       <PalettePanel v-if="appStore.paletteAdminAllowed" />
       <PaletteReadOnlyPanel v-else />
@@ -500,7 +491,7 @@ const nodeCardGridClass = computed(() => {
       <div class="node-info p-4 pt-0 flex flex-col gap-4 relative z-1 pointer-events-none" :class="!!appStore.hideGeneralCard && 'pt-4'">
         <div class="nodes min-w-0">
           <Tabs v-model="appStore.nodeSelectedGroup" class="w-full flex-col gap-4">
-            <div class="flex flex-col gap-2 xl:flex-row xl:items-center">
+            <div class="a2-toolbar flex flex-col gap-2 xl:flex-row xl:items-center">
               <div class="home-controls-scroll min-w-0 overflow-x-auto overscroll-x-contain rounded-sm pointer-events-auto touch-pan-x">
                 <div class="flex w-max gap-2">
                   <TabsList class="w-max h-8 bg-background/50 backdrop-blur-xl rounded-md pointer-events-auto">
@@ -514,7 +505,7 @@ const nodeCardGridClass = computed(() => {
 
                   <div
                     v-if="showQuickControls && activeHomeTool === 'nodes'"
-                    class="flex h-8 w-max items-center gap-1 rounded-md bg-background/50 px-1 backdrop-blur-xl pointer-events-auto"
+                    class="a2-filters flex h-8 w-max items-center gap-1 rounded-md bg-background/50 px-1 backdrop-blur-xl pointer-events-auto"
                   >
                     <button
                       v-for="control in quickControls" :key="control.key"
@@ -535,7 +526,7 @@ const nodeCardGridClass = computed(() => {
                 </div>
               </div>
               <div class="search flex min-w-0 flex-wrap gap-2 items-center justify-end pointer-events-auto max-sm:justify-start xl:ml-auto">
-                <div v-if="homeTools.length && appStore.homeAdvancedToolsVisible" class="flex h-8 items-center gap-1 rounded-md bg-background/50 p-0.5 backdrop-blur-xs">
+                <div v-if="homeTools.length && appStore.homeAdvancedToolsVisible" class="a2-advanced-tools flex h-8 items-center gap-1 rounded-md bg-background/50 p-0.5 backdrop-blur-xs">
                   <Button
                     v-for="tool in homeTools" :key="tool.key"
                     variant="ghost" size="icon"
@@ -552,21 +543,25 @@ const nodeCardGridClass = computed(() => {
 
                 <Button
                   variant="outline" size="icon" aria-label="卡片视图"
+                  data-view-segment="card"
+                  :aria-pressed="appStore.nodeViewMode === 'card'"
                   class="w-8 h-8 border-none bg-background/50 backdrop-blur-xs shadow-none hover:bg-background/60 rounded-md"
-                  :class="[appStore.nodeViewMode === 'card' ? '!text-selection !bg-background' : '']"
+                  :class="[appStore.nodeViewMode === 'card' ? 'text-selection bg-background' : '']"
                   @click="setNodeViewMode('card')"
                 >
                   <Icon icon="tabler:layout-grid" :width="14" :height="14" />
                 </Button>
                 <Button
                   variant="outline" size="icon" aria-label="列表视图"
+                  data-view-segment="list"
+                  :aria-pressed="appStore.nodeViewMode === 'list'"
                   class="w-8 h-8 border-none bg-background/50 backdrop-blur-xs shadow-none hover:bg-background/60 rounded-md"
-                  :class="[appStore.nodeViewMode === 'list' ? '!text-selection !bg-background' : '']"
+                  :class="[appStore.nodeViewMode === 'list' ? 'text-selection bg-background' : '']"
                   @click="setNodeViewMode('list')"
                 >
                   <Icon icon="tabler:table" :width="14" :height="14" />
                 </Button>
-                <div class="relative z-1 h-8" :class="searchText ? 'w-full sm:w-60' : 'w-8'">
+                <div class="a2-searchbox relative z-1 h-8" :class="searchText ? 'w-full sm:w-60' : 'w-8'">
                   <div class="absolute top-0 right-0 w-full">
                     <Input
                       v-model="searchText" placeholder="搜索名称、地区、IP、CPU"
@@ -608,7 +603,7 @@ const nodeCardGridClass = computed(() => {
                 :css="enableNodeCardTransition"
                 name="node-card-switch"
                 tag="div"
-                :class="nodeCardGridClass"
+                class="a2-node-grid"
               >
                 <div
                   v-for="(node, index) in nodeList"

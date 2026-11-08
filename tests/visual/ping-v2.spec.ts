@@ -1076,7 +1076,7 @@ test.describe('v2 multi-Ping visual baselines', () => {
       .toEqual(['data', 'data', 'data'])
     // Keep density assertions independent of any reviewed visual baseline.
     expect(await strips.evaluateAll(elements => elements.map(element => element.getBoundingClientRect().height)))
-      .toEqual([40, 40, 40])
+      .toEqual([53, 53, 53])
     const rails = primaryCard(page).locator('[data-node-ping-bars]')
     await expect(rails).toHaveCount(6)
     expect(await rails.evaluateAll(elements => elements.map(element => element.children.length)))

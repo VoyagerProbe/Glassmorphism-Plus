@@ -1,0 +1,161 @@
+/* A2 timelines: the two metrics share one fractional grid. Hit height is
+   independent of painted height, and neither depends on the sample's state. */
+.gmp-a2 {
+  --a2-rail-fill: 8px;
+  --a2-rail-gap: 2px;
+  --a2-rail-hit: 14px;
+}
+.gmp-a2[data-density='mini'] {
+  --a2-rail-fill: 6px;
+}
+.gmp-a2[data-density='comfortable'] {
+  --a2-rail-fill: 9px;
+  --a2-rail-gap: 3px;
+  --a2-rail-hit: 16px;
+}
+.gmp-a2[data-density='large'] {
+  --a2-rail-fill: 10px;
+  --a2-rail-gap: 3px;
+  --a2-rail-hit: 18px;
+}
+.gmp-a2 :is(.node-card-ping-group, .a2-legacy-ping) {
+  margin-block-start: 16px;
+}
+.gmp-a2 .node-card-ping-group {
+  container: ping-group / inline-size;
+}
+.gmp-a2 .node-card-ping-group > .grid {
+  gap: 12px;
+}
+html .gmp-a2 .node-card .node-card-ping-task-strip {
+  --ping-bucket-height: var(--a2-rail-fill);
+  --ping-bucket-gap: var(--a2-rail-gap);
+  --ping-trend-row-height: var(--a2-rail-hit);
+  --ping-row-gap: 0px;
+  display: grid;
+  height: auto;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 25px repeat(2, var(--a2-rail-hit));
+  justify-content: stretch;
+  gap: 0;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none;
+}
+.gmp-a2 .node-card-ping-task-header {
+  min-height: 21px;
+  /* Reserve the original info button's 4px expanded pointer target. */
+  margin: 0 4px 4px 0;
+  align-items: center;
+  column-gap: 5px;
+}
+.gmp-a2 .node-card-ping-task-name,
+.gmp-a2 .node-card-ping-summary > strong {
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 650;
+}
+.gmp-a2 .node-card-ping-summary {
+  column-gap: 3px;
+}
+.gmp-a2 .node-card-ping-summary > span {
+  font-size: 10px;
+  line-height: 20px;
+  opacity: 1;
+}
+.gmp-a2 .node-card-ping-summary > strong {
+  color: var(--a2-text, var(--color-foreground));
+}
+/* The tiny metric keys belong to the label, never to the state or its value. */
+@container ping-group (min-width: 320px) {
+  .gmp-a2
+    .node-card-ping-task-strip:not([data-node-ping-size='mini'])
+    .node-card-ping-summary:not(.node-card-ping-summary-outage)
+    > span::before {
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    margin-inline-end: 3px;
+    border-radius: 50%;
+    background-color: var(--color-info);
+    vertical-align: 0.15em;
+    content: '';
+  }
+  .gmp-a2
+    .node-card-ping-task-strip:not([data-node-ping-size='mini'])
+    [data-node-ping-summary='loss']:not(.node-card-ping-summary-outage)
+    > span::before {
+    background-color: #9761e8;
+  }
+}
+.gmp-a2 .node-card-ping-summary-outage > strong {
+  color: var(--ping-outage);
+}
+.gmp-a2 .node-card-ping-trend-row {
+  box-sizing: border-box;
+  display: grid;
+  height: var(--a2-rail-hit);
+  min-width: 0;
+  grid-template-columns: 34px minmax(0, 1fr);
+  column-gap: 8px;
+  align-items: center;
+  direction: ltr;
+}
+.gmp-a2 .node-card-ping-trend-row .node-card-ping-trend-label {
+  height: var(--a2-rail-hit);
+  gap: 5px;
+  font-size: 10px;
+  line-height: 14px;
+}
+.gmp-a2 .node-card-ping-bucket-grid {
+  display: grid;
+  height: var(--a2-rail-hit);
+  min-width: 0;
+  grid-template-columns: repeat(20, minmax(0, 1fr));
+  column-gap: var(--a2-rail-gap);
+  direction: ltr;
+}
+.gmp-a2 .node-card-ping-bucket-hitbox {
+  display: flex;
+  height: var(--a2-rail-hit);
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  appearance: none;
+}
+.gmp-a2 .node-card-ping-bucket-fill {
+  height: var(--a2-rail-fill);
+  border-radius: 2px;
+  pointer-events: none;
+}
+.gmp-a2 .a2-legacy-ping {
+  --ping-dot-size: 6px;
+  min-width: 0;
+}
+.gmp-a2 .a2-legacy-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-height: 21px;
+  margin-bottom: 4px;
+  font-size: 10px;
+  line-height: 20px;
+}
+.gmp-a2 .a2-legacy-summary strong {
+  font-size: 13px;
+  font-weight: 650;
+}
+@media (max-width: 640px) {
+  .gmp-a2 .node-card-ping-task-name {
+    font-size: 12.5px;
+  }
+}
+@media (max-width: 359px) {
+  .gmp-a2 .node-card-ping-summary > strong {
+    font-size: 12px;
+  }
+}

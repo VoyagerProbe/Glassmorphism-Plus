@@ -107,7 +107,7 @@ const sitename = computed(() => appStore.siteName)
     class="transition-all duration-200 top-0 sticky z-10 border-b border-transparent"
     :class="isScrolled ? '!border-slate-500/10 backdrop-blur-lg' : 'bg-transparent'"
   >
-    <div class="px-2 sm:px-4 flex-between h-14 max-w-[1280px] mx-auto gap-1 sm:gap-2">
+    <div class="a2-titlebar px-2 sm:px-4 flex-between h-14 max-w-[1280px] mx-auto gap-1 sm:gap-2">
       <div class="flex min-w-0 items-center gap-2 sm:gap-3 cursor-pointer" @click="router.push('/')">
         <Avatar class="size-8 shrink-0">
           <AvatarImage :src="siteFavicon" :alt="sitename" />
@@ -120,7 +120,7 @@ const sitename = computed(() => appStore.siteName)
       <TooltipProvider :delay-duration="200">
         <div class="ml-1 flex shrink-0 items-center gap-0.5 sm:gap-2" data-testid="header-actions">
           <div
-            class="inline-flex shrink-0 items-center rounded-lg bg-background/35 p-0.5 ring-1 ring-border/40"
+            class="a2-mode-group inline-flex shrink-0 items-center rounded-lg bg-background/35 p-0.5 ring-1 ring-border/40"
             role="group"
             aria-label="主题模式"
             data-testid="header-theme-group"
@@ -138,6 +138,7 @@ const sitename = computed(() => appStore.siteName)
                   @click="selectThemeMode(button.mode)"
                 >
                   <Icon :icon="button.icon" :width="18" :height="18" />
+                  <span v-if="button.mode === 'beijing'" class="a2-mode-label" aria-hidden="true">自动</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" :side-offset="6" :collision-padding="8" data-header-tooltip>
@@ -145,26 +146,31 @@ const sitename = computed(() => appStore.siteName)
               </TooltipContent>
             </Tooltip>
           </div>
-          <Tooltip v-for="button in actionButtons" :key="`action-${button.action}`">
-            <TooltipTrigger as-child>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                :aria-label="button.title"
-                :data-testid="button.action === 'openPingCenter' ? 'ping-center-entry' : button.action === 'togglePalette' ? 'palette-entry' : undefined"
-                :aria-expanded="button.action === 'togglePalette' ? appStore.paletteOpen : undefined"
-                :aria-controls="button.action === 'togglePalette' ? 'palette-center' : undefined"
-                :aria-pressed="button.pressed"
-                :class="[button.pressed && 'bg-background/70 text-selection', button.action === 'togglePalette' && 'palette-entry-safe']"
-                @click="handleButtonClick(button.action)"
-              >
-                <Icon :icon="button.icon" :width="18" :height="18" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" :side-offset="6" :collision-padding="8" data-header-tooltip>
-              {{ button.title }}
-            </TooltipContent>
-          </Tooltip>
+          <div class="a2-action-group" role="group" aria-label="功能工具">
+            <Tooltip v-for="button in actionButtons" :key="`action-${button.action}`">
+              <TooltipTrigger as-child>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  :aria-label="button.title"
+                  :data-testid="button.action === 'openPingCenter' ? 'ping-center-entry' : button.action === 'togglePalette' ? 'palette-entry' : undefined"
+                  :aria-expanded="button.action === 'togglePalette' ? appStore.paletteOpen : undefined"
+                  :aria-controls="button.action === 'togglePalette' ? 'palette-center' : undefined"
+                  :aria-pressed="button.pressed"
+                  :class="[button.pressed && 'bg-background/70 text-selection', button.action === 'togglePalette' && 'palette-entry-safe']"
+                  @click="handleButtonClick(button.action)"
+                >
+                  <Icon :icon="button.icon" :width="18" :height="18" />
+                  <span class="a2-action-label" aria-hidden="true">
+                    {{ button.action === 'toggleHomeTools' ? '工具' : button.action === 'openPingCenter' ? '延迟监测' : button.action === 'togglePalette' ? '配色' : '管理' }}
+                  </span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" :side-offset="6" :collision-padding="8" data-header-tooltip>
+                {{ button.title }}
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </TooltipProvider>
     </div>

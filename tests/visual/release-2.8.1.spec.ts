@@ -5,7 +5,7 @@ import { installKomariFixture, PRIMARY_NODE_UUID } from './fixtures/komari'
 const config = JSON.stringify({ schemaVersion: 3, global: { threeNetworkEnabled: true, taskIds: [101, 202, 303] }, nodes: {} })
 const remarkSelector = '[data-node-public-remark]'
 const privateNote = 'PRIVATE_NOTE_DO_NOT_RENDER'
-const summarySelector = '[class*="h-[19px]"]'
+const summarySelector = '.a2-badges'
 
 // Exercise the existing metadata updater without adding a production test hook.
 // The polling test below separately verifies the public RPC -> store route.
@@ -26,7 +26,7 @@ async function geometry(card: Locator) {
       const b = e.getBoundingClientRect()
       return [b.x - root.x, b.y - root.y, b.width, b.height]
     }
-    return { card: [root.width, root.height], summary: bounds(element.querySelector('[class*="h-[19px]"]')!), panels: Array.from(element.querySelectorAll('.node-card-info-surface,.node-card-ping-task-strip'), bounds), bars: Array.from(element.querySelectorAll('[data-node-ping-bucket-fill]'), bounds) }
+    return { card: [root.width, root.height], summary: bounds(element.querySelector('.a2-badges')!), panels: Array.from(element.querySelectorAll('.node-card-info-surface,.node-card-ping-task-strip'), bounds), bars: Array.from(element.querySelectorAll('[data-node-ping-bucket-fill]'), bounds) }
   })
 }
 
@@ -145,14 +145,15 @@ test('all card sizes preserve rows and rails; long remarks truncate and pills sh
         expect(surfaces.every(s => s.edge === 'none' && s.opacity === '1')).toBe(true)
         const expected = await card.evaluate((e) => {
           const sample = document.createElement('span')
-          // Original preset surfaces: configured light fill, fixed white/5 dark.
-          sample.style.backgroundColor = document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,.05)' : 'var(--glass-light-control)'
+          // The continuous information band now carries the configured alpha.
+          sample.style.backgroundColor = document.documentElement.classList.contains('dark') ? 'var(--glass-dark-control)' : 'var(--glass-light-control)'
           e.appendChild(sample)
           const color = getComputedStyle(sample).backgroundColor
           sample.remove()
           return color
         })
-        expect(surfaces[0]!.fill).toBe(expected)
+        expect(surfaces.every(s => s.fill === 'rgba(0, 0, 0, 0)')).toBe(true)
+        await expect(card.locator('.a2-info-bar')).toHaveCSS('background-color', expected)
       }
       if (size === 'compact')
         await card.screenshot({ path: testInfo.outputPath(`remark-${theme}.png`) })
@@ -176,13 +177,13 @@ test('360px boundary, custom transparent control colors and automatic light/dark
   const card = page.locator('.node-card').first()
   await expect(card.locator(remarkSelector)).toBeVisible()
   await expect(page.locator('html')).not.toHaveClass(/dark/)
-  await expect(card.locator('.node-card-info-surface').first()).toHaveCSS('background-color', 'rgba(170, 187, 204, 0.25)')
+  await expect(card.locator('.a2-info-bar')).toHaveCSS('background-color', 'rgba(170, 187, 204, 0.25)')
   await expect(card).toHaveCSS('background-color', 'rgba(221, 238, 255, 0.5)')
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false)
   await page.getByRole('button', { name: '深色模式', exact: true }).dispatchEvent('click')
   // v3 intentionally fixes the old fixed white/5 dark fill. Partial custom JSON
   // must retain its original per-key darkControl fallback (#101624CC).
-  await expect(card.locator('.node-card-info-surface').first()).toHaveCSS('background-color', 'rgba(16, 22, 36, 0.8)')
+  await expect(card.locator('.a2-info-bar')).toHaveCSS('background-color', 'rgba(16, 22, 36, 0.8)')
 })
 
 test('guest/admin visibility keeps private notes hidden and honors hidden-node and price rules', async ({ page }) => {

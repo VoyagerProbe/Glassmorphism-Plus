@@ -9,8 +9,10 @@ import {
   latencyBucketSeverity,
   lossBucketSeverity,
 } from '@/utils/nodeCardPingPresentation'
+import { movePingRailFocus, rejectRetargetedRailTap } from '@/utils/pingRailFocus'
 
 const props = defineProps<{
+  nodeUuid: string
   taskId: number
   taskName: string
   snapshot?: NodeCardPingPairSnapshot
@@ -249,10 +251,11 @@ function barTooltip(point: NodeCardPingHistoryPoint): string {
     </div>
     <div class="node-card-ping-trend-row" data-node-ping-panel="latency" data-node-ping-trend="latency">
       <span class="node-card-ping-trend-label" data-node-ping-header="latency"><span class="node-card-ping-trend-dot" aria-hidden="true" />延迟</span>
-      <span class="node-card-ping-bucket-grid" data-node-ping-bars="latency">
-        <template v-for="(point, index) in history" :key="`latency-${index}`">
+      <span class="node-card-ping-bucket-grid" data-node-ping-bars="latency" @pointerdown.capture="rejectRetargetedRailTap" @touchend.capture="rejectRetargetedRailTap" @click.capture="rejectRetargetedRailTap" @keydown="movePingRailFocus" @click.stop>
+        <template v-for="(point, index) in history" :key="`${nodeUuid}:${taskId}:latency:${point.time || index}`">
           <DataTooltip
-            as="span"
+            as="button"
+            type="button"
             data-node-ping-bar
             :data-node-ping-bucket-time="point.time || undefined"
             :data-node-ping-bucket-start="point.time || undefined"
@@ -265,7 +268,7 @@ function barTooltip(point: NodeCardPingHistoryPoint): string {
             open-on-click
             content-class="node-card-ping-bucket-tooltip"
             class="node-card-ping-bucket-hitbox"
-            tabindex="-1"
+            :tabindex="index === 0 ? 0 : -1"
             :aria-label="barTooltip(point)"
             @click.stop
           >
@@ -288,10 +291,11 @@ function barTooltip(point: NodeCardPingHistoryPoint): string {
     </div>
     <div class="node-card-ping-trend-row" data-node-ping-panel="loss" data-node-ping-trend="loss">
       <span class="node-card-ping-trend-label" data-node-ping-header="loss"><span class="node-card-ping-trend-dot" aria-hidden="true" />丢包</span>
-      <span class="node-card-ping-bucket-grid" data-node-ping-bars="loss">
-        <template v-for="(point, index) in history" :key="`loss-${index}`">
+      <span class="node-card-ping-bucket-grid" data-node-ping-bars="loss" @pointerdown.capture="rejectRetargetedRailTap" @touchend.capture="rejectRetargetedRailTap" @click.capture="rejectRetargetedRailTap" @keydown="movePingRailFocus" @click.stop>
+        <template v-for="(point, index) in history" :key="`${nodeUuid}:${taskId}:loss:${point.time || index}`">
           <DataTooltip
-            as="span"
+            as="button"
+            type="button"
             data-node-ping-bar
             :data-node-ping-bucket-time="point.time || undefined"
             :data-node-ping-bucket-start="point.time || undefined"
@@ -304,7 +308,7 @@ function barTooltip(point: NodeCardPingHistoryPoint): string {
             open-on-click
             content-class="node-card-ping-bucket-tooltip"
             class="node-card-ping-bucket-hitbox"
-            tabindex="-1"
+            :tabindex="index === 0 ? 0 : -1"
             :aria-label="barTooltip(point)"
             @click.stop
           >
