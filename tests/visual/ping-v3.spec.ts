@@ -54,7 +54,7 @@ async function readTaskStripGeometry(strip: Locator) {
       const railRect = rail.getBoundingClientRect()
       const wrappers = Array.from(rail.querySelectorAll<HTMLElement>(':scope > [data-node-ping-bar]'))
       return {
-        rect: { left: railRect.left, right: railRect.right, top: railRect.top, bottom: railRect.bottom, width: railRect.width, height: railRect.height },
+        rect: { top: railRect.top, bottom: railRect.bottom, width: railRect.width, height: railRect.height },
         gap: Number.parseFloat(getComputedStyle(rail).columnGap) || 0,
         buckets: wrappers.map((wrapper) => {
           const fill = wrapper.querySelector<HTMLElement>('[data-node-ping-bucket-fill]')
@@ -64,9 +64,8 @@ async function readTaskStripGeometry(strip: Locator) {
           const fillRect = fill.getBoundingClientRect()
           const style = getComputedStyle(fill)
           return {
-            wrapper: { top: wrapperRect.top, left: wrapperRect.left, right: wrapperRect.right, width: wrapperRect.width, height: wrapperRect.height },
-            fill: { top: fillRect.top, left: fillRect.left, right: fillRect.right, width: fillRect.width, height: fillRect.height },
-            radius: style.borderTopLeftRadius,
+            wrapper: { left: wrapperRect.left, right: wrapperRect.right, width: wrapperRect.width, height: wrapperRect.height },
+            fill: { left: fillRect.left, right: fillRect.right, width: fillRect.width, height: fillRect.height },
             transform: style.transform,
             margin: [style.marginTop, style.marginRight, style.marginBottom, style.marginLeft],
             padding: [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft],
@@ -91,30 +90,25 @@ async function readTaskStripGeometry(strip: Locator) {
 function expectFixedRailGeometry(
   geometry: Awaited<ReturnType<typeof readTaskStripGeometry>>,
   expectedThickness: number,
-  expectedHitHeight: number,
+  expectedRowGap: number,
   expectedBucketGap: number,
 ): void {
   expect(geometry.latency.buckets).toHaveLength(20)
   expect(geometry.loss.buckets).toHaveLength(20)
   expect(geometry.cssThickness).toBe(expectedThickness)
-  expect(geometry.latency.rect.height).toBeCloseTo(expectedHitHeight, 1)
-  expect(geometry.loss.rect.height).toBeCloseTo(expectedHitHeight, 1)
+  expect(geometry.latency.rect.height).toBeCloseTo(expectedThickness, 1)
+  expect(geometry.loss.rect.height).toBeCloseTo(expectedThickness, 1)
   expect(geometry.latency.rect.width).toBeCloseTo(geometry.loss.rect.width, 1)
-  expect(geometry.rowGap).toBe(0)
-  expect(geometry.cssRowGap).toBe(0)
-  expect(geometry.rowGap).toBeCloseTo(geometry.trendRowHeight - expectedHitHeight, 1)
+  expect(geometry.rowGap).toBeCloseTo(expectedRowGap, 1)
+  expect(geometry.rowGap).toBeCloseTo(geometry.trendRowHeight + geometry.cssRowGap - expectedThickness, 1)
   for (const rail of [geometry.latency, geometry.loss]) {
     expect(rail.gap).toBeCloseTo(expectedBucketGap, 1)
-    expect(rail.buckets[0]!.wrapper.left).toBeCloseTo(rail.rect.left, 1)
-    expect(rail.buckets[19]!.wrapper.right).toBeCloseTo(rail.rect.right, 1)
     const widths = rail.buckets.map(bucket => bucket.wrapper.width)
     expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(1.01)
     for (const [index, bucket] of rail.buckets.entries()) {
-      expect(bucket.wrapper.height).toBeCloseTo(expectedHitHeight, 1)
+      expect(bucket.wrapper.height).toBeCloseTo(expectedThickness, 1)
       expect(bucket.fill.width).toBeCloseTo(bucket.wrapper.width, 1)
-      expect(bucket.fill.height).toBeCloseTo(expectedThickness, 1)
-      expect(bucket.fill.top - bucket.wrapper.top).toBeCloseTo((expectedHitHeight - expectedThickness) / 2, 1)
-      expect(bucket.radius).toBe('2px')
+      expect(bucket.fill.height).toBeCloseTo(bucket.wrapper.height, 1)
       expect(bucket.transform).toBe('none')
       expect(bucket.margin).toEqual(['0px', '0px', '0px', '0px'])
       expect(bucket.padding).toEqual(['0px', '0px', '0px', '0px'])
@@ -126,11 +120,17 @@ function expectFixedRailGeometry(
 }
 
 const NODE_CARD_PING_GEOMETRY = [
-  { size: 'mini', viewportWidth: 390, thickness: 6, hitHeight: 14, bucketGap: 2 },
-  { size: 'compact', viewportWidth: 768, thickness: 8, hitHeight: 14, bucketGap: 2 },
-  { size: 'comfortable', viewportWidth: 1024, thickness: 9, hitHeight: 16, bucketGap: 3 },
-  { size: 'large', viewportWidth: 1440, thickness: 10, hitHeight: 18, bucketGap: 3 },
+  { size: 'mini', viewportWidth: 390, thickness: 4, rowGap: 7, bucketGap: 1 },
+  { size: 'compact', viewportWidth: 768, thickness: 5, rowGap: 8, bucketGap: 2 },
+  { size: 'comfortable', viewportWidth: 1024, thickness: 6, rowGap: 9, bucketGap: 2 },
+  { size: 'large', viewportWidth: 1440, thickness: 6, rowGap: 9, bucketGap: 2 },
 ] as const
+
+// All compact strip states use the exact same density contract as the measured data strips.
+function expectCompactRailGeometry(geometry: Awaited<ReturnType<typeof readTaskStripGeometry>>): void {
+  const { thickness, rowGap, bucketGap } = NODE_CARD_PING_GEOMETRY[1]
+  expectFixedRailGeometry(geometry, thickness, rowGap, bucketGap)
+}
 
 function historyPoint(value: Partial<NodeCardPingHistoryPoint> = {}): NodeCardPingHistoryPoint {
   return {
@@ -507,8 +507,8 @@ test.describe('Ping v3 Chinese configuration and task-strip behavior', () => {
       await expect(highValueStrip).toHaveAttribute('data-node-ping-status', 'data')
       const lowValueGeometry = await readTaskStripGeometry(lowValueStrip)
       const highValueGeometry = await readTaskStripGeometry(highValueStrip)
-      expectFixedRailGeometry(lowValueGeometry, geometryCase.thickness, geometryCase.hitHeight, geometryCase.bucketGap)
-      expectFixedRailGeometry(highValueGeometry, geometryCase.thickness, geometryCase.hitHeight, geometryCase.bucketGap)
+      expectFixedRailGeometry(lowValueGeometry, geometryCase.thickness, geometryCase.rowGap, geometryCase.bucketGap)
+      expectFixedRailGeometry(highValueGeometry, geometryCase.thickness, geometryCase.rowGap, geometryCase.bucketGap)
       expect(highValueGeometry.latency.buckets[0]!.wrapper.width).toBeCloseTo(lowValueGeometry.latency.buckets[0]!.wrapper.width, 1)
       const highValueDataBuckets = highValueStrip.locator('[data-node-ping-bars="latency"] > [data-node-ping-bar][data-node-ping-state="data"]')
       await expect(highValueDataBuckets).not.toHaveCount(0)
@@ -520,16 +520,16 @@ test.describe('Ping v3 Chinese configuration and task-strip behavior', () => {
       if (!isMobile) {
         await bucket.hover()
         await expect(activeDataTooltip(page)).toBeVisible()
-        expectFixedRailGeometry(await readTaskStripGeometry(highValueStrip), geometryCase.thickness, geometryCase.hitHeight, geometryCase.bucketGap)
+        expectFixedRailGeometry(await readTaskStripGeometry(highValueStrip), geometryCase.thickness, geometryCase.rowGap, geometryCase.bucketGap)
       }
       await bucket.focus()
       await expect(activeDataTooltip(page)).toBeVisible()
       await expect(activeDataTooltip(page)).toContainText('延迟159 ms')
       await expect(activeDataTooltip(page)).toContainText('丢包25.0%')
-      expectFixedRailGeometry(await readTaskStripGeometry(highValueStrip), geometryCase.thickness, geometryCase.hitHeight, geometryCase.bucketGap)
+      expectFixedRailGeometry(await readTaskStripGeometry(highValueStrip), geometryCase.thickness, geometryCase.rowGap, geometryCase.bucketGap)
       expect(await readTaskStripGeometry(highValueStrip)).toEqual(beforeInteraction)
       await page.evaluate(() => document.documentElement.classList.add('dark'))
-      expectFixedRailGeometry(await readTaskStripGeometry(highValueStrip), geometryCase.thickness, geometryCase.hitHeight, geometryCase.bucketGap)
+      expectFixedRailGeometry(await readTaskStripGeometry(highValueStrip), geometryCase.thickness, geometryCase.rowGap, geometryCase.bucketGap)
       await page.evaluate(() => document.documentElement.classList.remove('dark'))
 
       fixture.setNodeCardPingDisplayConfigV3(serializeNodeCardPingConfig(v3Config({
@@ -538,7 +538,7 @@ test.describe('Ping v3 Chinese configuration and task-strip behavior', () => {
       await page.reload()
       const singleTaskStrip = page.locator(`[data-node-card-uuid="${PRIMARY_NODE_UUID}"] [data-node-ping-task-id="202"]`)
       await expect(page.locator(`[data-node-card-uuid="${PRIMARY_NODE_UUID}"] [data-node-ping-task-id]`)).toHaveCount(1)
-      expectFixedRailGeometry(await readTaskStripGeometry(singleTaskStrip), geometryCase.thickness, geometryCase.hitHeight, geometryCase.bucketGap)
+      expectFixedRailGeometry(await readTaskStripGeometry(singleTaskStrip), geometryCase.thickness, geometryCase.rowGap, geometryCase.bucketGap)
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1)
     })
   }
@@ -569,10 +569,10 @@ test.describe('Ping v3 Chinese configuration and task-strip behavior', () => {
     await pendingBucket.hover()
     await expect(activeDataTooltip(page)).toContainText('等待采样')
     await page.keyboard.press('Escape')
-    expectFixedRailGeometry(await readTaskStripGeometry(pendingStrip), 8, 14, 2)
+    expectCompactRailGeometry(await readTaskStripGeometry(pendingStrip))
     const invalidStrip = card.locator('[data-node-ping-invalid-slot="2"]')
     await expect(invalidStrip.locator('[data-node-ping-state="invalid"]')).toHaveCount(40)
-    expectFixedRailGeometry(await readTaskStripGeometry(invalidStrip), 8, 14, 2)
+    expectCompactRailGeometry(await readTaskStripGeometry(invalidStrip))
 
     releasePending()
     await expect(pendingStrip).toHaveAttribute('data-node-ping-status', 'data')
@@ -583,7 +583,7 @@ test.describe('Ping v3 Chinese configuration and task-strip behavior', () => {
     await expect(missingBucket).toHaveAttribute('data-node-ping-severity', 'no-sample')
     await missingBucket.focus()
     await expect(activeDataTooltip(page)).toContainText('无采样')
-    expectFixedRailGeometry(await readTaskStripGeometry(pendingStrip), 8, 14, 2)
+    expectCompactRailGeometry(await readTaskStripGeometry(pendingStrip))
 
     fixture.setNodeCardPingFixture({ metric: 'error', legacy: 'error' })
     await page.reload()
@@ -591,7 +591,7 @@ test.describe('Ping v3 Chinese configuration and task-strip behavior', () => {
     const errorBucket = pendingStrip.locator('[data-node-ping-state="error"]').first()
     await errorBucket.focus()
     await expect(activeDataTooltip(page)).toContainText('更新失败')
-    expectFixedRailGeometry(await readTaskStripGeometry(pendingStrip), 8, 14, 2)
+    expectCompactRailGeometry(await readTaskStripGeometry(pendingStrip))
   })
 
   test('renders 158, 170, and 180 ms as moderate or elevated while reserving critical for over 200 ms', async ({ page }) => {
@@ -756,7 +756,7 @@ test.describe('Ping v3 Chinese configuration and task-strip behavior', () => {
     await expect(activeDataTooltip(page)).toContainText('延迟不可达')
     await expect(activeDataTooltip(page)).toContainText('丢包100%')
     const geometry = await readTaskStripGeometry(strip)
-    expectFixedRailGeometry(geometry, 8, 14, 2)
+    expectCompactRailGeometry(geometry)
   })
 
   test('keeps mixed full, partial, and invalid triple-mode cards equal height', async ({ page }) => {

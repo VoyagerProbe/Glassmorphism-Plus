@@ -33,8 +33,8 @@ application.
   installer ZIP.
 - bun run release:prepare verifies that installer ZIP and creates the filtered
   release snapshot. It does not create the publish clone.
-- The installer layout remains komari-theme.json, preview.png, and dist/.
-- New GitHub Releases default to Pre-release with title equal to tag, never automatic Latest/stable. The user promotes tested releases; only explicit per-task authorization overrides this default.
+- The installer layout remains komari-theme.json, preview.png, LICENSE, and dist/.
+- [CODEX.md §11](CODEX.md#11-two-stage-candidate-validation-and-publication-policy) is the sole authority for trial approval, validation timing, and release status. Historical releases are not instructions.
 - The final customer installer stays outside Git. A formal GitHub Release uploads
   that exact locally verified ZIP by default as its sole custom asset unless the
   user explicitly opts out for that version, followed by an external temporary
@@ -43,7 +43,7 @@ application.
 ## Commands and testing
 
 Run commands from the repository root. Use actual [package.json](package.json)
-scripts as the authority:
+scripts as the authority. The validation and release commands below apply only after the stage gate in CODEX.md §11:
 
 ```bash
 bun run dev

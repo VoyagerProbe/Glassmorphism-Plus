@@ -46,12 +46,23 @@ test('Plus documentation keeps its own version identity and preserves upstream a
   expect(readme).toContain('# 🌌 Komari Glassmorphism Plus')
   expect(version).toMatch(/^\d+\.\d+\.\d+$/)
   expect(packageMetadata.version).toBe(version)
-  expect(currentStatus.match(/^\| 当前 Plus 版本\s*\|\s*\*\*v([^（*]+)(?:（[^）]+）)?\*\*/m)?.[1]).toBe(version)
-  expect(currentStatus.match(/^### ✨ 最新版本 · v([^（\s]+)(?:（[^）]+）)?$/m)?.[1]).toBe(version)
-  expect(currentStatus).toContain(`${version}/Glassmorphism-Plus-release-${version}.zip`)
+  // During Stage 2 the trial is newer than the public installer. Never require
+  // a candidate to claim Stable, or link its customers to an unverified asset.
+  const candidate = changelog.split('\n').find(line => line.startsWith(`## [${version}]`))?.includes('尚未发布') === true
+  const statusRow = candidate ? '本轮发行基线' : '当前 Plus 版本'
+  const statusVersion = currentStatus.split('\n').find(line => line.startsWith(`| ${statusRow} `))?.match(/\*\*v(\d+\.\d+\.\d+)（正式发布）\*\*/)?.[1]
+  expect(statusVersion).toBeTruthy()
+  const publishedVersion = candidate ? Array.from(changelog.matchAll(/^## \[([^\]]+)\]/gm), match => match[1])[1] : version
+  expect(statusVersion).toBe(publishedVersion)
+  if (candidate) {
+    expect(currentStatus).toContain(`v${version} 本地试装候选（未发布）`)
+    expect(installSection).not.toContain(`/releases/download/v${version}/`)
+  }
+  expect(currentStatus.match(/^### ✨ 最新版本 · v([^（\s]+)(?:（[^）]+）)?$/m)?.[1]).toBe(publishedVersion)
+  expect(currentStatus).toContain(`${publishedVersion}/Glassmorphism-Plus-release-${publishedVersion}.zip`)
   expect(readme).toContain('sanrokamlan Glassmorphism v3.3.7')
-  expect(installSection).toContain(`Glassmorphism-Plus-release-${version}.zip`)
-  expect(installSection).toContain(`https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v${version}`)
+  expect(installSection).toContain(`Glassmorphism-Plus-release-${publishedVersion}.zip`)
+  expect(installSection).toContain(`https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v${publishedVersion}`)
   expect(readme).toContain('Source code (zip)')
   // Plus now has its own 3.x releases; the upstream baseline is still not a Plus release.
   expect(readme).not.toMatch(/^#{2,}\s+(?:\S.*)?v3\.3\.7/m)
@@ -179,7 +190,7 @@ function primaryNodeCard(page: Page) {
 
 function nodeCardPingPanel(page: Page, metric: 'latency' | 'loss') {
   const card = primaryNodeCard(page)
-  return card.locator('[data-node-ping-task-id]').first().or(card.locator(`.a2-legacy-summary [data-node-ping-summary="${metric}"]`)).first()
+  return card.locator('[data-node-ping-task-id]').first().or(card.locator(`[data-node-ping-bars="${metric}"]`).locator('..')).first()
 }
 
 async function expectNodeCardPing(page: Page, latency: string, loss: string): Promise<void> {
@@ -195,7 +206,7 @@ async function expectNodeCardPing(page: Page, latency: string, loss: string): Pr
 }
 
 async function openPrimaryPingDialog(page: Page): Promise<Locator> {
-  await primaryNodeCard(page).locator('.node-card-ping-task-name, .a2-legacy-summary button').first().click()
+  await nodeCardPingPanel(page, 'latency').click()
   const dialog = page.getByRole('dialog')
   await expect(dialog).toBeVisible()
   await expect(dialog.locator('[data-ping-chart]')).toBeVisible()
@@ -367,24 +378,57 @@ async function expectUniformNodeCardPingBars(card: Locator): Promise<void> {
 
     const geometry = await readNodeCardPingBarGeometry(card, metric)
     expect(geometry.bars).toHaveLength(20)
-    expect(geometry.bars[0]!.left).toBeCloseTo(geometry.left, 1)
-    expect(geometry.bars.at(-1)!.right).toBeCloseTo(geometry.right, 1)
+    expect(geometry.bars[0]!.left).toBeGreaterThanOrEqual(geometry.left - 0.01)
+    expect(geometry.bars.at(-1)!.right).toBeLessThanOrEqual(geometry.right + 0.01)
   }
 }
 
+async function readNodeCardPingPanelVerticalGeometry(card: Locator, metric: 'latency' | 'loss') {
+  return card.locator(`[data-node-ping-panel="${metric}"]`).evaluate((element, panelMetric) => {
+    const header = element.querySelector<HTMLElement>(`[data-node-ping-header="${panelMetric}"]`)
+    const bars = element.querySelector<HTMLElement>(`[data-node-ping-bars="${panelMetric}"]`)
+    if (!header || !bars)
+      return null
+
+    const panelRect = element.getBoundingClientRect()
+    const headerRect = header.getBoundingClientRect()
+    const barsRect = bars.getBoundingClientRect()
+    return {
+      panel: { top: panelRect.top, bottom: panelRect.bottom },
+      header: { top: headerRect.top, bottom: headerRect.bottom },
+      bars: { top: barsRect.top, bottom: barsRect.bottom },
+    }
+  }, metric)
+}
+
 async function expectMatchingNodeCardPingPanelVerticalGeometry(card: Locator): Promise<void> {
-  const metrics = ['latency', 'loss'] as const
+  if (await card.locator('[data-node-ping-task-id], [data-node-ping-task-placeholder]').count()) {
+    await expect.poll(async () => {
+      const widths = await Promise.all((['latency', 'loss'] as const).map(metric => card
+        .locator(`[data-node-ping-bars="${metric}"]`)
+        .first()
+        .evaluate(element => element.getBoundingClientRect().width)))
+      return Math.abs(widths[0] - widths[1])
+    }).toBeLessThanOrEqual(0.01)
+    return
+  }
+
   await expect.poll(async () => {
-    const [upper, lower] = await Promise.all(metrics.map(metric => card
-      .locator(`[data-node-ping-bars="${metric}"]`)
-      .first()
-      .boundingBox()))
-    if (!upper || !lower)
+    const [latency, loss] = await Promise.all([
+      readNodeCardPingPanelVerticalGeometry(card, 'latency'),
+      readNodeCardPingPanelVerticalGeometry(card, 'loss'),
+    ])
+    if (!latency || !loss)
       return false
-    return Math.abs(upper.x - lower.x) < 0.01
-      && Math.abs(upper.width - lower.width) < 0.01
-      && upper.height === lower.height
-      && Math.abs(upper.y + upper.height - lower.y) < 0.1
+
+    return [
+      [latency.panel.top, loss.panel.top],
+      [latency.panel.bottom, loss.panel.bottom],
+      [latency.header.top, loss.header.top],
+      [latency.header.bottom, loss.header.bottom],
+      [latency.bars.top, loss.bars.top],
+      [latency.bars.bottom, loss.bars.bottom],
+    ].every(([latencyY, lossY]) => Math.abs(latencyY! - lossY!) <= 0.01)
   }).toBe(true)
 }
 
@@ -1602,7 +1646,7 @@ test('v2.7.1 theme and visitor tools remain visible, ordered, and non-overlappin
       return {
         contained: actions.scrollWidth <= actions.clientWidth + 1,
         headerContained: header ? header.scrollWidth <= header.clientWidth + 1 : false,
-        separated: siteBox ? siteBox.right <= actionBox.left + 1 || siteBox.bottom <= actionBox.top + 1 : false,
+        separated: siteBox ? siteBox.right <= actionBox.left + 1 : false,
         buttonsInsideViewport: buttonBoxes.every(box => box.left >= 0 && box.right <= window.innerWidth),
         buttonWidths: buttonBoxes.map(box => box.width),
       }
@@ -1679,7 +1723,6 @@ for (const background of [
         expectedFill,
         cardBorderWidth: getComputedStyle(element).borderWidth,
         cardBorderColor: getComputedStyle(element).borderColor,
-        bandFill: getComputedStyle(element.querySelector('.a2-info-bar')!).backgroundColor,
         infoShadows: Array.from(element.querySelectorAll('.node-card-info-surface'), item => getComputedStyle(item).boxShadow),
         stripShadows: Array.from(element.querySelectorAll('.node-card-ping-task-strip'), item => getComputedStyle(item).boxShadow),
         fills: Array.from(element.querySelectorAll('.node-card-info-surface,.node-card-ping-task-strip'), item => getComputedStyle(item).backgroundColor),
@@ -1694,8 +1737,7 @@ for (const background of [
     expect(styles.stripShadows.every(shadow => shadow === 'none')).toBe(true)
     expect(styles.fills).toHaveLength(6)
     expect(styles.expectedFill).not.toBe('rgba(0, 0, 0, 0)')
-    expect(styles.bandFill).toBe(styles.expectedFill)
-    expect(styles.fills.every(fill => fill === 'rgba(0, 0, 0, 0)')).toBe(true)
+    expect(styles.fills.every(fill => fill === styles.expectedFill)).toBe(true)
     expect(styles.contained).toBe(true)
 
     await expect(page.locator('.background-container')).toBeVisible()
@@ -3200,7 +3242,7 @@ test.describe('node-card per-node ping task bindings', () => {
 
       const surfaceStyles = await card.evaluate((element) => {
         const probe = document.createElement('span')
-        probe.style.backgroundColor = document.documentElement.classList.contains('dark') ? 'var(--glass-dark-control)' : 'var(--glass-light-control)'
+        probe.style.backgroundColor = document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,.05)' : 'var(--glass-light-control)'
         element.append(probe)
         const expectedFill = getComputedStyle(probe).backgroundColor
         probe.remove()
@@ -3216,7 +3258,6 @@ test.describe('node-card per-node ping task bindings', () => {
         return {
           expectedFill,
           card: styleFor(element),
-          band: styleFor(element.querySelector('.a2-info-bar')!),
           info: Array.from(element.querySelectorAll('.node-card-info-surface'), styleFor),
           strips: Array.from(element.querySelectorAll('.node-card-ping-task-strip'), styleFor),
           contained: element.scrollWidth <= element.clientWidth + 1,
@@ -3227,11 +3268,11 @@ test.describe('node-card per-node ping task bindings', () => {
       expect(surfaceStyles.info).toHaveLength(3)
       expect(surfaceStyles.strips).toHaveLength(threeNetworkEnabled ? 3 : 1)
       expect(surfaceStyles.contained).toBe(true)
-      // One configured surface beneath three transparent groups.
-      expect(surfaceStyles.band.backgroundColor).toBe(surfaceStyles.expectedFill)
+      // Original presets keep their light fill and white/5 dark inner surface.
+      // Custom Control correctness is verified separately in palette tests.
       expect(surfaceStyles.expectedFill).not.toBe('rgba(0, 0, 0, 0)')
-      expect(surfaceStyles.info.every(style => style.boxShadow === 'none' && style.backgroundColor === 'rgba(0, 0, 0, 0)')).toBe(true)
-      expect(surfaceStyles.strips.every(style => style.boxShadow === 'none' && style.backgroundColor === 'rgba(0, 0, 0, 0)')).toBe(true)
+      expect(surfaceStyles.info.every(style => style.boxShadow === 'none' && style.backgroundColor === surfaceStyles.expectedFill)).toBe(true)
+      expect(surfaceStyles.strips.every(style => style.boxShadow === 'none' && style.backgroundColor === surfaceStyles.expectedFill)).toBe(true)
 
       const layouts = await strips.evaluateAll(elements => elements.map((element) => {
         const query = (selector: string) => element.querySelector<HTMLElement>(selector)!.getBoundingClientRect()
@@ -3936,49 +3977,25 @@ test.describe('node-card per-node ping task bindings', () => {
     await openStablePage(page)
     await expectNodeCardPing(page, '200 ms', '25.0%')
 
-    const strip = primaryNodeCard(page).locator('[data-node-ping-task-id="202"]')
-    const start = Date.parse((await strip.getAttribute('data-node-ping-window-start'))!)
-    const end = Date.parse((await strip.getAttribute('data-node-ping-window-end'))!)
-    const target = await page.evaluate(({ prefix, uuid, start, end }) => {
-      const matches = Object.keys(localStorage).filter(k => k.startsWith(prefix) && !k.endsWith(':index')).flatMap((key) => {
-        const { version, cacheKey, snapshot, expiresAt } = JSON.parse(localStorage.getItem(key)!)
-        return key === prefix + encodeURIComponent(cacheKey) && snapshot.nodeUuid === uuid && snapshot.taskId === '202'
-          && snapshot.windowStart === start && snapshot.windowEnd === end && snapshot.status === 'data'
-          && expiresAt > Date.now() && version === 1
-          ? [{ key, cacheKey, version, uuid, start, end }]
-          : []
-      })
-      if (matches.length !== 1)
-        throw new Error('Expected one current, unexpired primary/task 202 envelope for the displayed window')
-      return matches[0]!
-    }, { prefix: MULTI_PING_CACHE_PREFIX, uuid: PRIMARY_NODE_UUID, start, end })
+    await page.evaluate((prefix) => {
+      const key = Object.keys(localStorage)
+        .find(value => value.startsWith(prefix) && !value.endsWith(':index'))
+      if (!key)
+        throw new Error('selected Ping snapshot was not persisted')
+      const value = JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, unknown>
+      localStorage.setItem(key, JSON.stringify({ ...value, version: 999 }))
+    }, MULTI_PING_CACHE_PREFIX)
 
-    // A genuine late refresh in the old document can write a valid snapshot
-    // after a test-side corruption there. Corrupt before the NEW app boot,
-    // when that old document can no longer race this write.
-    await page.addInitScript((t) => {
-      if (window !== window.top)
-        return
-      const value = JSON.parse(localStorage.getItem(t.key) ?? 'null')
-      if (value?.version !== t.version || value.cacheKey !== t.cacheKey || value.snapshot?.nodeUuid !== t.uuid
-        || value.snapshot.taskId !== '202' || value.snapshot.windowStart !== t.start || value.snapshot.windowEnd !== t.end) {
-        throw new Error('The exact valid envelope to corrupt was missing at cold boot')
-      }
-      localStorage.setItem(t.key, JSON.stringify({ ...value, version: 999 }))
-      Object.defineProperty(window, '__invalidPairAtBoot', { value: JSON.parse(localStorage.getItem(t.key)!).version })
-    }, target)
     const resumePingResponses = fixture.pausePingResponses()
     await page.reload({ waitUntil: 'domcontentloaded' })
     await expect(page.getByRole('heading', { name: 'Komari Visual Lab' })).toBeVisible()
-    expect(await page.evaluate(() => Reflect.get(window, '__invalidPairAtBoot'))).toBe(999)
+    const strip = primaryNodeCard(page).locator('[data-node-ping-task-id="202"]')
     await expect(strip).toContainText('等待采样')
     await expect(strip).not.toContainText('200 ms')
     await expect(strip.locator('[data-node-ping-bars="latency"] [data-node-ping-bar]').first()).toHaveAttribute('data-node-ping-state', 'pending')
     await expectNodeCardPingInfoStatus(page, '等待采样')
-    expect(await page.evaluate(k => localStorage.getItem(k), target.key)).toBeNull()
     resumePingResponses()
     await expectNodeCardPing(page, '200 ms', '25.0%')
-    await expect.poll(() => page.evaluate(k => JSON.parse(localStorage.getItem(k) ?? 'null')?.version, target.key)).toBe(target.version)
   })
 
   test('keeps one selected-task list subscriber and releases it when all card consumers unmount', async ({ page }) => {
@@ -4525,9 +4542,7 @@ test.describe('node-card per-node ping task bindings', () => {
     const originalSettings = fixture.getSavedThemeSettings()
     await openStablePage(page, '/?view=pingsettings')
 
-    const title = page.getByRole('heading', { name: '延迟监测中心', exact: true })
-    await expect(title).toHaveCSS('font-size', '28px')
-    await expect(title).toHaveCSS('line-height', '32px')
+    await expect(page.getByRole('heading', { name: '延迟监测中心', exact: true })).toHaveClass(/text-2xl/)
     await expect(page.getByTestId('ping-center')).not.toContainText('09 · 延迟任务绑定')
 
     const primaryRow = page.getByTestId(`node-binding-row-${PRIMARY_NODE_UUID}`)

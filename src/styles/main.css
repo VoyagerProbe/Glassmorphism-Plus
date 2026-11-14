@@ -59,26 +59,7 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.625rem;
-  /* Tokens only at document level: Reka portals and the Canvas option
-     builders share the same language selection without styling other apps. */
-  --gp-font-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto;
-  --gp-font-cjk: 'PingFang SC', 'PingFang TC', 'Microsoft YaHei UI', 'Microsoft JhengHei UI', 'Noto Sans CJK SC';
-  --gp-font-ui: var(--gp-font-system), var(--gp-font-cjk), system-ui, sans-serif;
-  --gp-font-code: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
-}
-
-:root:lang(en) {
-  --gp-font-cjk: system-ui, 'PingFang SC', 'PingFang TC', 'Microsoft YaHei UI', 'Noto Sans CJK SC';
-}
-:root:is(:lang(zh-CN), :lang(zh-SG), :lang(zh-Hans)) {
-  --gp-font-cjk: 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Noto Sans CJK SC';
-}
-:root:is(:lang(zh-TW), :lang(zh-Hant)) {
-  --gp-font-cjk: 'PingFang TC', 'Microsoft JhengHei UI', 'Microsoft JhengHei', 'Noto Sans CJK TC';
-}
-:root:is(:lang(zh-HK), :lang(zh-MO), :lang(zh-Hant-HK), :lang(zh-Hant-MO)) {
-  --gp-font-cjk:
-    'PingFang HK', 'PingFang TC', 'Microsoft JhengHei UI', 'Microsoft JhengHei', 'Noto Sans CJK HK', 'Noto Sans CJK TC';
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
 .dark {
@@ -163,7 +144,7 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-
+  --font-sans: var(--font-sans);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -184,11 +165,13 @@
 
   html {
     background-color: var(--color-background);
+    font-family: var(--font-sans);
   }
 
   body,
   #app {
     color: var(--color-foreground);
+    font-family: var(--font-sans);
   }
 
   body {
@@ -208,19 +191,6 @@
   min-height: 100vh;
   min-height: 100dvh;
   padding-bottom: env(safe-area-inset-bottom);
-}
-
-.app-viewport,
-.app-viewport .toaster[data-sonner-toaster],
-[data-app-dialog-content],
-[data-gp-tooltip] {
-  font-family: var(--gp-font-ui);
-}
-:where(.app-viewport, [data-app-dialog-content]) :where(button, input, select, textarea, option, optgroup) {
-  font-family: inherit;
-}
-:where(.app-viewport, [data-app-dialog-content], [data-gp-tooltip]) :is(code, pre, kbd, samp, .font-mono) {
-  font-family: var(--gp-font-code);
 }
 
 /* Keep the native detail-node menu in the same color scheme as the active theme.
@@ -596,10 +566,10 @@ header {
 
 .node-card-ping-task-strip {
   --ping-dot-size: 6px;
-  --ping-bucket-height: 4px;
+  --ping-bucket-height: 5px;
   --ping-bucket-gap: 2px;
   --ping-row-gap: 3px;
-  --ping-label-width: 30px;
+  --ping-label-width: 14px;
   --ping-trend-row-height: 10px;
   --ping-strip-height: 52px;
   --ping-strip-padding-x: 8px;
@@ -615,10 +585,10 @@ header {
 }
 
 .node-card-ping-task-strip[data-node-ping-size='mini'] {
-  --ping-bucket-height: 3px;
+  --ping-bucket-height: 4px;
   --ping-bucket-gap: 1px;
   --ping-row-gap: 2px;
-  --ping-label-width: 28px;
+  --ping-label-width: 12px;
   --ping-trend-row-height: 9px;
   --ping-strip-height: 40px;
   --ping-strip-padding-x: 6px;
@@ -627,7 +597,7 @@ header {
 
 .node-card-ping-task-strip[data-node-ping-size='comfortable'],
 .node-card-ping-task-strip[data-node-ping-size='large'] {
-  --ping-bucket-height: 5px;
+  --ping-bucket-height: 6px;
   --ping-bucket-gap: 2px;
   --ping-row-gap: 4px;
   --ping-strip-height: 58px;
@@ -646,9 +616,6 @@ header {
 
 .node-card-ping-status-dot {
   grid-column: 1;
-}
-
-.node-card-ping-status-dot {
   width: var(--ping-dot-size);
   height: var(--ping-dot-size);
   flex: none;
@@ -792,22 +759,29 @@ header {
 }
 
 .node-card-ping-trend-label {
-  display: inline-flex;
-  box-sizing: border-box;
-  width: fit-content;
-  min-width: 0;
+  display: grid;
+  place-items: center;
+  width: var(--ping-label-width);
   height: var(--ping-trend-row-height);
-  align-items: center;
-  gap: 4px;
-  color: var(--color-muted-foreground);
-  white-space: nowrap;
-  font-size: 9px;
-  font-weight: 400;
-  line-height: 1;
+  color: #0369a1;
 }
 
-.node-card-ping-task-strip[data-node-ping-size='mini'] .node-card-ping-trend-label {
-  font-size: 8px;
+.node-card-ping-trend-label svg {
+  display: block;
+  width: var(--ping-trend-row-height);
+  height: var(--ping-trend-row-height);
+}
+
+.node-card-ping-trend-label[data-node-ping-header='loss'] {
+  color: #7e22ce;
+}
+
+.dark .node-card-ping-trend-label {
+  color: #38bdf8;
+}
+
+.dark .node-card-ping-trend-label[data-node-ping-header='loss'] {
+  color: #c084fc;
 }
 
 .node-card-ping-bucket-grid {

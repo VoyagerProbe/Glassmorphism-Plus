@@ -114,14 +114,4 @@ Do not rename/move these files without updating helper mappings and checking all
 
 ## Validation
 
-For source changes, run from repo root. The root `AGENTS.md` release/safety contract remains mandatory:
-
-```bash
-bun run lint
-bun run build
-bun run test:visual
-```
-
-`tests/visual/` is the deterministic Playwright regression suite. Follow `CODEX.md` for scoped lint, one build including type-check, artifact reuse and risk-matched regression coverage, including formal releases. Expand beyond relevant tests only when the affected behavior warrants it. Do not invent an unrelated `bun test`/Vitest command.
-
-Update [../AICACHE.md](../AICACHE.md) with validation results or explain why validation was skipped.
+Follow [CODEX.md §11](../CODEX.md#11-two-stage-candidate-validation-and-publication-policy) for authorization and timing. For Stage 1 review source and package only; record deferred checks in the private AICACHE. In Stage 2 run all applicable configured suites, including the deterministic Playwright suite in `tests/visual/`, and record actual results. Do not invent a Vitest or `bun test` command.

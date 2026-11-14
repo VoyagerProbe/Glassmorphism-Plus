@@ -154,7 +154,7 @@ test('shared tooltip highlights only exact abnormal cells and restores normal co
   expect(f.errors).toEqual([])
 })
 
-test('intrinsic tracks include bottom long names, protect all numbers and stay stable while scrolling', async ({ page }, testInfo) => {
+test('intrinsic tracks include bottom long names, protect all numbers and stay stable while scrolling', async ({ page, browserName, isMobile }, testInfo) => {
   await setup(page)
   let tip = await open(page)
   const shortWidth = await tip.evaluate(el => el.parentElement!.getBoundingClientRect().width)
@@ -184,13 +184,25 @@ test('intrinsic tracks include bottom long names, protect all numbers and stay s
     expect(values[1]).toBeLessThanOrEqual(before.contentRight + 1)
   }
   const time = await tip.locator('.ping-tooltip-time').textContent()
+  const mobileWebKit = browserName === 'webkit' && isMobile
+  const scrollList = async (delta: number) => {
+    if (mobileWebKit) {
+      // Mobile WebKit has no mouse.wheel implementation. Scroll real rows into
+      // view and measure the same DOM; do not synthesize a wheel or claim inertia.
+      const edge = delta > 0 ? tip.locator('.ping-tooltip-row').last() : tip.locator('.ping-tooltip-time')
+      await edge.scrollIntoViewIfNeeded()
+    }
+    else {
+      await page.mouse.wheel(0, delta)
+    }
+  }
   await tip.hover()
-  await page.mouse.wheel(0, 650)
+  await scrollList(650)
   await expect.poll(async () => (await measure()).scroll).toBeGreaterThan(0)
   await expect(tip).toBeVisible()
   expect((await measure()).width).toBe(before.width)
   await expect(tip.locator('.ping-tooltip-time')).toHaveText(time!)
-  await page.mouse.wheel(0, -650)
+  await scrollList(-650)
   await expect.poll(async () => (await measure()).scroll).toBe(0)
   const bar = await tip.evaluate((el) => {
     const box = el.getBoundingClientRect()
@@ -205,11 +217,11 @@ test('intrinsic tracks include bottom long names, protect all numbers and stay s
     await expect(tip).toBeVisible()
     await expect(tip.locator('.ping-tooltip-time')).toHaveText(time!)
     await tip.hover()
-    await page.mouse.wheel(0, -650)
+    await scrollList(-650)
     await expect.poll(async () => (await measure()).scroll).toBe(0)
   }
   else {
-    testInfo.annotations.push({ type: 'limitation', description: 'This WebKit platform exposes no reserved scrollbar hit area; wheel is verified here, native scrollbar drag is verified on Chromium.' })
+    testInfo.annotations.push({ type: 'limitation', description: mobileWebKit ? 'Mobile WebKit exposes no mouse wheel; actual list scrolling and positions are measured here. Native wheel and scrollbar drag are verified on desktop.' : 'This platform exposes no reserved scrollbar hit area; wheel is verified here, native scrollbar drag is verified on Chromium.' })
   }
   await tip.getByText('Region 1', { exact: true }).click()
   await expect(tip).toBeVisible() // desktop mouse click is not touch dismissal

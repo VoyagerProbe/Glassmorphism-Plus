@@ -807,32 +807,30 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div v-if="shouldRenderHeader" class="a2-overview" :class="wrapperClass" :data-overview-only="!showEarth || undefined" :data-tiled="isTiledEarth || undefined">
-    <!-- Only the stats adopt the dashboard gutter. Retain the globe's original centered grid. -->
-    <div v-if="showEarth" class="a2-earth-layout" :class="isTiledEarth ? 'row-start-2' : 'row-start-1'">
-      <NodeEarthGlobe
-        :nodes="globeNodes"
-        :class="earthClass"
-      />
-    </div>
+  <div v-if="shouldRenderHeader" :class="wrapperClass">
+    <NodeEarthGlobe
+      v-if="showEarth"
+      :nodes="globeNodes"
+      :class="earthClass"
+    />
 
-    <div v-if="visibleCards.length > 0" class="a2-stats" :class="cardGridClass">
+    <div v-if="visibleCards.length > 0" :class="cardGridClass">
       <CardX
         v-for="(card, index) in visibleCards"
         :key="card.key"
         :data-general-card-key="card.key"
         hoverable
         :class="[cardClass, getCardPositionClass(index), card.action && 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring']"
-        content-class="a2-stat-content h-full"
+        content-class="h-full !p-3"
         :role="card.action ? 'button' : undefined"
         :tabindex="card.action ? 0 : undefined"
         :aria-label="card.action ? `查看${card.label}明细` : undefined"
-        @click.capture="activateCard(card)"
+        @click="activateCard(card)"
         @keydown="handleCardKeydown($event, card)"
       >
         <div class="flex h-full flex-col justify-between gap-1">
           <div class="flex items-start justify-between gap-2">
-            <span class="a2-stat-label text-xs font-medium tracking-wider text-muted-foreground truncate">{{ card.label }}</span>
+            <span class="text-xs font-medium tracking-wider text-muted-foreground truncate">{{ card.label }}</span>
             <Icon
               :icon="card.icon" :width="20" :height="20"
               class="shrink-0 text-slate-500/20 group-hover:text-slate-500 transition-colors"
@@ -848,13 +846,13 @@ onMounted(async () => {
             <Transition v-bind="metricSwitchTransitionProps">
               <div
                 :key="`${card.key}-${summaryTransitionKey}`"
-                class="a2-stat-reading flex items-baseline gap-1 min-w-0"
+                class="flex items-baseline gap-1 min-w-0"
                 :style="getMetricSwitchStyle(index)"
               >
                 <span class="text-md md:text-2xl font-bold leading-none tracking-tight truncate">
                   {{ card.value }}
                 </span>
-                <span v-if="card.unit" class="a2-stat-unit" :class="unitClass">
+                <span v-if="card.unit" :class="unitClass">
                   {{ card.unit }}
                 </span>
               </div>

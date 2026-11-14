@@ -1205,6 +1205,16 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
     useFakeTimers: options.fakeTimers ?? false,
   })
 
+  // A visual fixture must not depend on live exchange or GeoIP services. Context
+  // routes are lower priority than the explicit page routes in provider failure tests.
+  for (const pattern of ['https://open.er-api.com/**', 'https://api.frankfurter.app/**']) {
+    await page.context().route(pattern, route => route.fulfill({
+      json: { rates: { CNY: 1, USD: 0.142536, HKD: 1.108377, EUR: 0.12102, GBP: 0.105581, JPY: 22.231552, RUB: 13.5, CHF: 0.12, INR: 11.8, VND: 3500, THB: 5, CAD: 0.19 } },
+    }))
+  }
+  for (const pattern of ['https://api.ip.sb/**', 'https://ipinfo.io/**', 'https://ipwho.is/**', 'https://ipapi.co/**'])
+    await page.context().route(pattern, route => route.fulfill({ json: {} }))
+
   await page.route('**/api/public', route => route.fulfill({
     contentType: 'application/json',
     body: JSON.stringify({

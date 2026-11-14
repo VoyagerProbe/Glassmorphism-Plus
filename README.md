@@ -4,7 +4,7 @@
 
 面向 Komari Monitor 的增强玻璃拟态主题，重点强化每节点 Ping 任务绑定、长时间历史、性能、移动端体验和日常运维能力。
 
-![Version](https://img.shields.io/github/v/release/VoyagerProbe/Glassmorphism-Plus?include_prereleases&style=for-the-badge&label=release&color=10b981)
+![Version](https://img.shields.io/github/v/release/VoyagerProbe/Glassmorphism-Plus?style=for-the-badge&label=release&color=10b981)
 ![Vue](https://img.shields.io/badge/Vue-3-42b883?style=for-the-badge&logo=vue.js)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff?style=for-the-badge&logo=vite)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4-38bdf8?style=for-the-badge&logo=tailwindcss)
@@ -25,26 +25,28 @@
 
 ## 🚦 项目状态
 
-| 项目               | 当前状态                                                                                                               |
-| :----------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v3.0.1（预发布）**                                                                                                   |
-| 当前稳定 Latest    | [v3.0.0](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)                                       |
-| 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7) |
-| 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                        |
-| 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                             |
-| 已验证 Komari 版本 | **1.6.0、1.5.1、1.5.0-fix1、1.5.0、1.4.3**（平台与范围见下文；不是全部设备保证）                                       |
-| 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                         |
-| 源码发布           | [v3.0.1 Pre-release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.1)；稳定版仍为 v3.0.0        |
-| 本地安装包         | `3.0.1/Glassmorphism-Plus-release-3.0.1.zip`                                                                           |
+| 项目               | 当前状态                                                                                                                  |
+| :----------------- | :------------------------------------------------------------------------------------------------------------------------ |
+| 本轮发行基线       | **v3.0.0（正式发布）**                                                                                                    |
+| 基线正式版         | [v3.0.0](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)                                          |
+| 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7)    |
+| 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                           |
+| 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                                |
+| 已验证 Komari 版本 | **1.6.0、1.5.1、1.5.0-fix1、1.5.0、1.4.3**（平台与范围见下文；不是全部设备保证）                                          |
+| 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                            |
+| 源码发布           | GitHub `main` 与 [v3.0.0 Release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)；唯一客户安装包 |
+| 本地安装包         | `3.0.0/Glassmorphism-Plus-release-3.0.0.zip`                                                                              |
 
 Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用自己的版本体系；上游 v3.3.7 仅代表当前同步基线，并非 Plus 的版本号。同步来源、选择性合并和署名详见 [UPSTREAM.md](UPSTREAM.md)。
 
-### ✨ 最新版本 · v3.0.1（预发布）
+> **v3.0.1 本地试装候选（未发布）**：从 v3.0.0 建立；仅替换双轨左侧的波形／柱状图标、将每轨 20 格在四种密度下各加高 1px，并整理配色中心表单。权限、草稿和保存流程未修改。完整验证待此候选试装批准后执行。下方发行与兼容记录属于 v3.0.0，不是本候选的测试结果。
 
-- 首页总览、筛选与节点列表共用内容边界，保留原点阵地球。compact 使用独立间距和文字层级，密度介于 mini 与 comfortable 之间；四档都保留蓝色波形、紫色柱形和两排各 20 格的 Ping 历史。
-- 节点详情的总览、硬件与网络信息、历史图表，以及首页完整 Ping 弹窗，沿用站点的浅深配色。时间范围、任务选择、延迟／丢包双图和触控操作保持不变。
-- 界面、弹层及图表文字统一优先使用系统字体。Apple 设备优先使用原生字体，其他平台使用本机回退；不下载或附带字体。代码和 JSON 保持等宽。
-- 延迟任务概览、三网配置和配色中心保留全站十项配色；访客只读，管理员可保存。既有配置、采样及在线 Worker 不变，无需清除浏览器数据。
+### ✨ 最新版本 · v3.0.0
+
+- 维持 v2.8.4 的卡片材质、深浅配色、阴影与标准图表颜色，保留六项总览、四档卡片密度及三任务六排历史。
+- 首页配色中心入口对所有访客可见，位于延迟监测中心与后台管理之间；未获管理权限时只读查看站点配色，管理员验证后可通过五个色点按钮、RGB／HEX、精确透明度及十键 JSON 编辑全站配色。
+- 配色统一为全站默认，取消个人覆盖与范围切换；“导入”只更新草稿预览，移除手动重新读取按钮。点击保存直接验证管理权限、完整合并并读回核对，保护 Ping 绑定和未知设置；成功提示 5 秒后自动关闭，也可手动关闭。旧个人配色记录原样保留但不再生效。
+- 保留原方案、自定义颜色、背景、三段模式、监控数据逻辑与 `/sw.js` 在线兼容层；完成固定 Komari 1.6.0 兼容检查，范围见[兼容记录](docs/compatibility/komari-1.6.0.md)。
 
 ---
 
@@ -95,24 +97,20 @@ _历史数据的实际可查看范围取决于后端保留时间及已有采样�
 
 ### 重要说明
 
-- **[v3.0.1 预发布下载](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.1)**：下载 `Glassmorphism-Plus-release-3.0.1.zip`，先在测试环境导入。
-- 当前 Stable／Latest 为 [v3.0.0](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)。
+- **[v3.0.0 正式版](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)只附加一个客户安装包：** `Glassmorphism-Plus-release-3.0.0.zip`。
+- 本地开发基线的正式发行是 [v3.0.0](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)。本次转正沿用当前已验证的安装包，已安装该包无需重复导入。
 - GitHub 自动生成的 **Source code (zip)** 是源码快照，**不是** Komari 可安装主题包。
 - Komari 的远程仓库导入流程应使用正式 Release 中的 installer asset；仍不要用 GitHub 自动生成的源码压缩包代替。
 
 ### 方式一：本地生成安装包
 
-Windows、macOS 或 Linux 安装 Node.js 与 Bun 后，在项目根目录执行：
+维护者生成试装候选请遵守 [两阶段流程](CODEX.md#11-two-stage-candidate-validation-and-publication-policy)：先使用独立工作目录，避免覆盖同版本旧 ZIP。已安装锁定依赖时只需生产编译：
 
 ```bash
-bun install --frozen-lockfile
-bun run lint
-bun run type-check
-bun run build
-bun run release:prepare
+bun run build-only
 ```
 
-`bun run build` 会在源码目录的上一级创建客户安装 ZIP：
+生产打包插件会在构建目录的上一级创建客户安装 ZIP，再交付至新的候选编号目录：
 
 ```text
 <version>/Glassmorphism-Plus-release-<version>.zip
@@ -166,6 +164,8 @@ v2.8.3 安装包原样附带既有 LICENSE，并校验内容一致性；已发�
 
 ## 🛠️ 本地开发
 
+下列为开发工具与第二阶段验证命令，不是生成试装包前的必跑命令；完整验证只在具体候选获批后执行。
+
 ```bash
 bun install --frozen-lockfile
 bun run dev
@@ -178,7 +178,7 @@ bun run release:prepare
 
 - `bun run lint` 会使用 ESLint `--fix`，执行后应检查 diff。
 - `bun run test:visual`／`bun run test:webkit` 会先做不产出 installer 的测试构建，再运行 Playwright；除非有明确视觉变更，不要更新基准快照。
-- `bun run build` 才执行正式 production build 与版本化 Komari installer 打包，避免测试覆盖历史版本产物。
+- `bun run build` 包含类型检查和生产编译；`bun run build-only` 是单独的 Vite 编译。客户包须在隔离的版本目录生成，不得覆盖已试装的包。
 - 首次运行浏览器测试可能需要 `bunx playwright install chromium`。
 - `bun run release:prepare` 会验证 `bun run build` 已生成的客户安装 ZIP，并建立过滤后的本地 release snapshot；两者都不得加入 Git。正式发布默认将这一个已验证 ZIP 上传为唯一自定义 Release asset，随后从 Release 回下载并复核 SHA-256、结构与 manifest。
 
@@ -188,19 +188,12 @@ bun run release:prepare
 
 ## 📝 版本历史
 
-当前版本更新见上方「最新版本 · v3.0.1」。
+当前版本更新见上方「最新版本 · v3.0.0」。
 
 <details>
 <summary><strong>📚 查看历史版本更新</strong></summary>
 
 <br>
-
-### v3.0.0
-
-- 维持 v2.8.4 的卡片材质、深浅配色、阴影与标准图表颜色，保留六项总览、四档卡片密度及三任务六排历史。
-- 首页配色中心入口对所有访客可见，位于延迟监测中心与后台管理之间；未获管理权限时只读查看站点配色，管理员验证后可通过五个色点按钮、RGB／HEX、精确透明度及十键 JSON 编辑全站配色。
-- 配色统一为全站默认，取消个人覆盖与范围切换；“导入”只更新草稿预览，移除手动重新读取按钮。点击保存直接验证管理权限、完整合并并读回核对，保护 Ping 绑定和未知设置；成功提示 5 秒后自动关闭，也可手动关闭。旧个人配色记录原样保留但不再生效。
-- 保留原方案、自定义颜色、背景、三段模式、监控数据逻辑与 `/sw.js` 在线兼容层；完成固定 Komari 1.6.0 兼容检查，范围见[兼容记录](docs/compatibility/komari-1.6.0.md)。
 
 ### v2.8.4
 

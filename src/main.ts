@@ -6,10 +6,6 @@ import App from './App.vue'
 import router from './router'
 
 import './styles/main.css'
-import './styles/a2-home.css'
-import './styles/a2-rails.css'
-import './styles/scheme2-surfaces.css'
-import './styles/detail-ping.css'
 
 window.$message = message
 

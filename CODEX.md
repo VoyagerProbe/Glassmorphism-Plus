@@ -86,14 +86,11 @@ explicitly requests implementation or release work.
 
 Examples: fix, implement, optimize, modify, or add a feature.
 
-Edit only in-scope canonical source, add/update directly relevant tests, and run
-proportionate validation. Do not automatically turn implementation into a formal
-release.
+Edit only in-scope canonical source. Follow §11: deliver the local candidate before running validation. Implementation is not authorization to publish.
 
 ### Formal release
 
-A formal release requires an explicit version/release/publication instruction.
-Only then follow the formal release pipeline in this guide.
+Publication requires the candidate-specific authorization and all gates in §11. A version number or earlier release request does not bypass the trial.
 
 ## 5. Start-of-task workflow
 
@@ -167,7 +164,7 @@ the task. Justify every new production dependency in the final report.
 ## 9. Standard commands
 
 Run commands from the repository root. `package.json` is the authority for scripts.
-Current supported commands include:
+Stage 1 uses only the inspected production compilation/packaging part (currently `bun run build-only`); the normal commands below are for their authorized stage, not a startup checklist:
 
 ```bash
 bun run dev
@@ -185,9 +182,7 @@ Do not repeat type-check or rebuild unchanged inputs. `bun run test:visual`
 builds again; use the installed Playwright CLI to reuse validated dist when safe.
 Use installed ESLint on changed files without automatic unrelated fixes; the
 project lint script includes `--fix`, so scope it and review the resulting diff.
-Run directly relevant Chromium regressions and risk-matched WebKit/mobile checks.
-Expand coverage only for shared behavior changes, exposed regressions, or failed
-artifact startup. Unrun full suites must be reported as unrun, never passed.
+In Stage 2 run the complete applicable suite, including the configured browsers; targeted diagnostics do not replace full gates. Report unrun suites as unrun.
 
 Do not invent `bun test`, Vitest, or another test framework unless it actually
 exists in the repository. Never claim an unexecuted command passed.
@@ -209,38 +204,26 @@ unrealistic fixture, or environment. Visual snapshots may change only when the
 product change truly requires it. Update only directly affected snapshots and
 document why.
 
-## 11. Permanent formal-release pipeline
+## 11. Two-stage candidate, validation and publication policy
 
-For every formal release, use this complete sequence unless a real, reported
-blocker prevents a required step:
+This is the single authoritative workflow for this and future product revisions, unless the user explicitly changes it. It supersedes historical test-before-handoff and default Pre-release instructions. The commands and quality gates elsewhere in this repository describe **what** to validate, not permission to run them early.
 
-```text
-canonical source implementation
-  -> dependency verify/install
-  -> scoped lint and resulting-diff review
-  -> necessary failing regression reproduction
-  -> build including type-check (creates the installer ZIP)
-  -> risk-matched Playwright/browser regression on the same artifact
-  -> final artifact startup check on Komari-compatible paths
-  -> combined privacy, Git diff/staged-file, version and identity review
-  -> establish the final approved source state
-  -> versioned publish clone
-  -> filtered release snapshot
-  -> local customer installer ZIP verification
-  -> artifact/source provenance verification
-  -> commit approved maintainable source
-  -> remote/branch confirmation
-  -> non-force push main
-  -> tag/GitHub Release verification when used
-  -> GitHub main verification
-  -> upload the verified customer installer as the sole custom Release asset
-  -> download the Release asset outside the repository and verify SHA-256, structure, and manifest
-  -> safely clean the temporary downloaded copy
-```
+### Stage 1 — local candidate; stop for user installation
 
-`bun run release:prepare` verifies the installer produced by the build and then
-creates the filtered release snapshot. It does not create the publish clone. A
-release is not complete merely because the build succeeds.
+1. Preserve existing work, Git references and same-version ZIPs. Start at the user-approved, verified local source baseline. Edit only the requested product and rule files. No GitHub access (including fetch/pull, API reads, push, PR, tags, Release, workflows or market operations).
+2. Inspect real scripts and their hooks. Review source and identity; use only the necessary production bundler with the approved lockfile. Isolate its versioned output so it cannot overwrite an older installer. Do not run browsers, Playwright, screenshots, smoke, unit/integration tests, lint, independent type-check, full validation, or release preparation in this stage. Do not weaken the normal build, test suite or CI.
+3. Deliver the real installer in a new, never-overwritten `<version>/local-candidate-YYYYMMDD-NN/` directory. Record source commit (or dirty inputs), filename, size, full SHA-256, safe archive structure, privacy scan and what was **not** tested. README/changelog changes remain unpublished drafts. Stop. Local compilation and archive inspection are not functional verification.
+
+### Stage 2 — explicit approval of a specific candidate
+
+1. Confirm the user's successful trial and explicit scope of approval against candidate number, filename, source and ZIP SHA-256 (`H_APPROVED`). Silence, approval of an older build, or feedback asking for changes is not approval. Test-only permission stops before remote publication.
+2. Run all applicable real gates: lint, type-check, complete build, unit/integration suites where present, the configured browsers and visual regressions, Tooltip, palette permissions/save, Worker, isolated Komari installation and final privacy review. Use a separate verification output; do not overwrite the approved ZIP. Preserve data assertions, thresholds and required coverage; report missing environments honestly.
+3. A fixture/test-only correction with unchanged production inputs and ZIP requires the affected and complete applicable validation, not new installer bytes. Any change to product inputs, manifest, layout or packaged payload stops publication: return to Stage 1 with a new numbered ZIP and obtain new trial approval. Fix any privacy issue before public action.
+4. With publication authorized and local gates passed, check live account, repo, main, complete tags/releases/assets, concurrent changes, protection and market references. Safely integrate source and docs, use a normal non-force push, and wait for every applicable remote quality/security check on the final commit. Verify final tag/source provenance, documenting any docs/test-only differences from the approved product inputs.
+5. Publish directly as **Stable / Latest** (title = tag, draft=false, prerelease=false), not an intermediate Pre-release. Use the exact approved original ZIP as the sole customer asset. Do not rebuild to change its status. Re-download outside the source tree; require `H_DOWNLOAD == H_APPROVED`, equal size, safe extraction, manifest and runtime resources. Reconcile README, changelog and Release with the actual result; docs-only closeout does not move the production tag.
+6. If the name already exists, stop before changing anything: inventory the peeled tag, Release target/status, assets, hashes and market references. Replacing a different draft/Pre-release or moving a tag requires separate, object-specific approval and backup. No overwrite, deletion, downgrade or bypass of Stable/Latest, immutable/protected tags or assets; do not invent a different version. The market uses the existing short; no submission on the user's behalf.
+
+A build, a handoff, Git operations and a completed public release are distinct outcomes; record only what actually happened.
 
 ## 12. Version source of truth
 
@@ -268,7 +251,7 @@ version and classify every remaining occurrence.
 
 ## 13. Versioned release paths
 
-For version `<version>`, the established paths are:
+For Stage 2 formal publication only, the established paths are (Stage 1 uses the isolated candidate directories in §11):
 
 ```text
 <source-parent>/<version>/Glassmorphism-Plus-publish-<version>/
@@ -301,6 +284,7 @@ contain:
 ```text
 komari-theme.json
 preview.png
+LICENSE
 dist/
 ```
 
@@ -328,9 +312,7 @@ A formal release has one authoritative final source state. GitHub `main`, the
 final commit, release tag when used, publish clone, release snapshot, customer
 installer ZIP, and installer manifest version must all correspond to that state.
 
-Do not publish an installer built from a stale pre-fix tree. If artifacts were
-built before the final source change, rebuild them or prove exact payload parity.
-A GitHub Release tag must target the intended final commit.
+Keep the original approved candidate ZIP. Document any later docs/test-only differences. Changed production inputs or installer payload require a new numbered candidate and user trial under §11; the formal tag must target the verified final commit.
 
 ## 16. Published-release immutability
 
@@ -338,9 +320,7 @@ Do not silently rewrite an already published formal version. After public releas
 do not move the published tag, rewrite its history, silently replace it with
 incompatible code, or present a changed artifact as the same immutable release.
 
-If a released version has a serious regression, normally prepare the next patch
-version. Rewrite a published release only when the user explicitly requests it
-after understanding the implications.
+For a same-version conflict follow §11: never overwrite a Stable/Latest or protected release or choose a replacement version unilaterally.
 
 ## 17. Formal GitHub policy
 
@@ -350,7 +330,7 @@ The formal repository is:
 https://github.com/VoyagerProbe/Glassmorphism-Plus
 ```
 
-The formal branch is `main`. Before a formal commit, push, or release, run and
+The formal branch is `main`. Only in authorized Stage 2, before publication, run and
 inspect:
 
 ```bash
@@ -366,8 +346,7 @@ Stop and report if the remote or branch is not the intended target. Never
 accidentally push to sanrokamlan upstream, `komari-monitor`, LuminaPlus, or the
 upstream reference.
 
-Use normal non-force `git push origin main`. Never force-push `main` without
-explicit authorization and a separate safety review. GitHub `main` must contain
+Use normal non-force `git push origin main`; this policy never authorizes a force-push to `main`. GitHub `main` must contain
 complete maintainable source, not a dist-only, release-only, installer-only, or
 local-debug repository.
 
@@ -385,10 +364,7 @@ template, report, screenshot, cache, or local backup.
 
 For every future formal Release:
 
-- create it as **Pre-release** by default and explicitly disable automatic Latest
-  promotion; the user will manually promote a tested release to stable/Latest.
-  Only explicit per-task user authorization may override this rule. Never promote
-  it after creation on the user's behalf without that authorization;
+- use the publication state and same-name conflict gates in §11;
 - use the full SemVer tag `v<version>`;
 - set the Release title/name to exactly the tag (`release.name === release.tag_name`)
   without a product-name or `Release` prefix;
@@ -549,8 +525,8 @@ Do not treat generated output as source of truth.
 Do not declare a formal release complete merely because code compiles, the build
 succeeds, or an installer ZIP exists. Applicable completion gates include:
 
-- requested implementation complete;
-- targeted regressions pass;
+- matched candidate trial and Stage 2 publication authorization recorded (§11);
+- requested implementation complete and all applicable regressions pass;
 - type-check, lint, and build pass;
 - relevant Playwright/browser regression pass;
 - privacy scan and staged-diff review complete;
