@@ -25,28 +25,25 @@
 
 ## 🚦 项目状态
 
-| 项目               | 当前状态                                                                                                                  |
-| :----------------- | :------------------------------------------------------------------------------------------------------------------------ |
-| 本轮发行基线       | **v3.0.0（正式发布）**                                                                                                    |
-| 基线正式版         | [v3.0.0](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)                                          |
-| 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7)    |
-| 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                           |
-| 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                                |
-| 已验证 Komari 版本 | **1.6.0、1.5.1、1.5.0-fix1、1.5.0、1.4.3**（平台与范围见下文；不是全部设备保证）                                          |
-| 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                            |
-| 源码发布           | GitHub `main` 与 [v3.0.0 Release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)；唯一客户安装包 |
-| 本地安装包         | `3.0.0/Glassmorphism-Plus-release-3.0.0.zip`                                                                              |
+| 项目               | 当前状态                                                                                                                                                 |
+| :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 当前 Plus 版本     | **v3.0.1（正式发布）**                                                                                                                                   |
+| Latest             | [v3.0.1](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.1)                                                                         |
+| 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7)                                   |
+| 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                                                          |
+| 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                                                               |
+| 已验证 Komari 版本 | **1.6.0、1.5.1、1.5.0-fix1、1.5.0、1.4.3**（平台与范围见下文；不是全部设备保证）                                                                         |
+| 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                                                           |
+| 源码发布           | GitHub `main` 与 [v3.0.1 Release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.1)                                                |
+| 客户安装包         | [Glassmorphism-Plus-release-3.0.1.zip](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/download/v3.0.1/Glassmorphism-Plus-release-3.0.1.zip) |
 
 Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用自己的版本体系；上游 v3.3.7 仅代表当前同步基线，并非 Plus 的版本号。同步来源、选择性合并和署名详见 [UPSTREAM.md](UPSTREAM.md)。
 
-> **v3.0.1 本地试装候选（未发布）**：从 v3.0.0 建立；仅替换双轨左侧的波形／柱状图标、将每轨 20 格在四种密度下各加高 1px，并整理配色中心表单。权限、草稿和保存流程未修改。完整验证待此候选试装批准后执行。下方发行与兼容记录属于 v3.0.0，不是本候选的测试结果。
+### ✨ 最新版本 · v3.0.1
 
-### ✨ 最新版本 · v3.0.0
-
-- 维持 v2.8.4 的卡片材质、深浅配色、阴影与标准图表颜色，保留六项总览、四档卡片密度及三任务六排历史。
-- 首页配色中心入口对所有访客可见，位于延迟监测中心与后台管理之间；未获管理权限时只读查看站点配色，管理员验证后可通过五个色点按钮、RGB／HEX、精确透明度及十键 JSON 编辑全站配色。
-- 配色统一为全站默认，取消个人覆盖与范围切换；“导入”只更新草稿预览，移除手动重新读取按钮。点击保存直接验证管理权限、完整合并并读回核对，保护 Ping 绑定和未知设置；成功提示 5 秒后自动关闭，也可手动关闭。旧个人配色记录原样保留但不再生效。
-- 保留原方案、自定义颜色、背景、三段模式、监控数据逻辑与 `/sw.js` 在线兼容层；完成固定 Komari 1.6.0 兼容检查，范围见[兼容记录](docs/compatibility/komari-1.6.0.md)。
+- 首页 Ping 轨道以蓝色波形标示延迟、紫色柱状图标示丢包，保留右侧摘要和信息入口。两轨各 20 格，左旧右新；格高按 mini、compact、comfortable、large 分别为 4、5、6、6 px。
+- 配色中心调整控件间距、排版和分组。访客仍为只读；管理员可预览、取消、保存并读回全站配色，完整合并设置，保留 Ping 绑定与其他配置。
+- 保留点阵旋转地球、VPS 国旗、三网监控、历史图表及现有 Service Worker。正式包在 Windows 官方 Komari 1.6.0 上通过新装与同版本升级；Linux 官方五版本矩阵通过，验证包解压内容与正式包一致。测试环境边界见[兼容记录](docs/compatibility/komari-1.6.0.md)。
 
 ---
 
@@ -97,8 +94,8 @@ _历史数据的实际可查看范围取决于后端保留时间及已有采样�
 
 ### 重要说明
 
-- **[v3.0.0 正式版](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)只附加一个客户安装包：** `Glassmorphism-Plus-release-3.0.0.zip`。
-- 本地开发基线的正式发行是 [v3.0.0](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.0)。本次转正沿用当前已验证的安装包，已安装该包无需重复导入。
+- **[v3.0.1 正式版](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.1)** 的唯一客户安装包是 [Glassmorphism-Plus-release-3.0.1.zip](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/download/v3.0.1/Glassmorphism-Plus-release-3.0.1.zip)。
+- 安装包为 7,659,705 字节；SHA-256：`5a302859877d84b31a8cc6d240928751def393b2175e399c69960f5b5ff0c409`。
 - GitHub 自动生成的 **Source code (zip)** 是源码快照，**不是** Komari 可安装主题包。
 - Komari 的远程仓库导入流程应使用正式 Release 中的 installer asset；仍不要用 GitHub 自动生成的源码压缩包代替。
 
@@ -188,12 +185,19 @@ bun run release:prepare
 
 ## 📝 版本历史
 
-当前版本更新见上方「最新版本 · v3.0.0」。
+当前版本更新见上方「最新版本 · v3.0.1」。
 
 <details>
 <summary><strong>📚 查看历史版本更新</strong></summary>
 
 <br>
+
+### v3.0.0
+
+- 维持 v2.8.4 的卡片材质、深浅配色、阴影与标准图表颜色，保留六项总览、四档卡片密度及三任务六排历史。
+- 首页配色中心入口对所有访客可见，位于延迟监测中心与后台管理之间；未获管理权限时只读查看站点配色，管理员验证后可通过五个色点按钮、RGB／HEX、精确透明度及十键 JSON 编辑全站配色。
+- 配色统一为全站默认，取消个人覆盖与范围切换；“导入”只更新草稿预览，移除手动重新读取按钮。点击保存直接验证管理权限、完整合并并读回核对，保护 Ping 绑定和未知设置；成功提示 5 秒后自动关闭，也可手动关闭。旧个人配色记录原样保留但不再生效。
+- 保留原方案、自定义颜色、背景、三段模式、监控数据逻辑与 `/sw.js` 在线兼容层；完成固定 Komari 1.6.0 兼容检查，范围见[兼容记录](docs/compatibility/komari-1.6.0.md)。
 
 ### v2.8.4
 
