@@ -38,6 +38,8 @@ export interface VisualFixtureOptions {
   nodeNames?: string[]
   clockNow?: string
   fakeTimers?: boolean
+  /** For high-density polling tests: keep the mock server and a paused browser on one explicit clock. */
+  synchronizedPingClock?: boolean
   preserveStorageOnReload?: boolean
   adminAccess?: 'admin' | 'guest' | 'forbidden'
   hidePingTaskBindingEntry?: boolean
@@ -162,6 +164,7 @@ export interface KomariFixtureController {
   /** For paused-clock NodeCard tests only; drains each already-triggered refresh. */
   advanceTimeAndDrain: (milliseconds: number) => Promise<void>
   waitForPingRefreshSettled: () => Promise<void>
+  fastForwardSynchronizedPingClock: (milliseconds: number) => Promise<void>
   getPingRefreshDiagnostics: () => Promise<{
     pendingRpcRoutes: number
     state: Awaited<ReturnType<typeof readPingRefreshState>>
@@ -1154,8 +1157,19 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
     fixtureUnrelatedSetting: 'preserve-me',
   }
 
-  if (options.fakeTimers)
+  if (options.synchronizedPingClock) {
+    if (!options.fakeTimers)
+      throw new Error('A synchronized Ping clock requires fake timers')
+    // Pause before any product navigation or interval is installed. In this opt-in
+    // case every routed RPC can use the exact same virtual instant without issuing
+    // two traced page.evaluate calls for each request in a 30-node burst.
+    await page.clock.install({ time: new Date(currentNow - 1_000) })
+    await page.clock.pauseAt(currentNow)
+    expect(await page.evaluate(() => Date.now())).toBe(currentNow)
+  }
+  else if (options.fakeTimers) {
     await page.clock.install({ time: new Date(options.clockNow ?? FIXED_NOW) })
+  }
 
   await page.addInitScript(({ fixedNow, preserveStorageOnReload, useFakeTimers }) => {
     if (!preserveStorageOnReload) {
@@ -1258,7 +1272,7 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
         pingResponseGate,
         options.missingCpuMetricHistory ?? false,
         options.loadMetricFixture,
-        readBrowserNow,
+        options.synchronizedPingClock ? async () => currentNow : readBrowserNow,
         pingTimeline,
       )
     }
@@ -1350,6 +1364,13 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
     pauseAdminResponses: () => adminResponseGate.pause(),
     getPingRefreshDiagnostics,
     waitForPingRefreshSettled,
+    fastForwardSynchronizedPingClock: async (milliseconds) => {
+      if (!options.synchronizedPingClock || !Number.isSafeInteger(milliseconds) || milliseconds <= 0)
+        throw new Error('An explicit paused Ping clock and a positive whole step are required')
+      currentNow += milliseconds
+      await page.clock.fastForward(milliseconds)
+      expect(await page.evaluate(() => Date.now())).toBe(currentNow)
+    },
     advanceTimeAndDrain: async (milliseconds) => {
       if (!options.fakeTimers)
         throw new Error('advanceTimeAndDrain requires a paused fake clock')

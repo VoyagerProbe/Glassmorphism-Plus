@@ -219,14 +219,18 @@ test('thirty-node palette editing adds no monitoring request or interval and ret
   const coldStartLimitMs = 45_000
   const editAndPollLimitMs = 90_000
   const coldStart = performance.now()
-  const fixture = await originalTheme(page, { nodeCount: 30, fakeTimers: true })
+  const fixture = await originalTheme(page, { nodeCount: 30, fakeTimers: true, synchronizedPingClock: true })
   await fixture.waitForPingRefreshSettled()
-  // clock.install alone still advances with wall time. Slow traced WebKit runs
-  // crossed the ordinary 60-second polling deadline and counted its refresh as
-  // palette traffic. Pause after loading and drain due work to isolate editing;
-  // verify the normal polling path separately after the zero-traffic assertion.
-  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 60_000))
+  // Advance a real browser polling interval before editing and another afterwards.
+  // Only the synthetic server clock is local; all product RPC, timers, responses,
+  // native interactions and trace snapshots remain in the test.
+  await fixture.fastForwardSynchronizedPingClock(60_000)
   await fixture.waitForPingRefreshSettled()
+  const { state, pendingRpcRoutes } = await fixture.getPingRefreshDiagnostics()
+  expect(pendingRpcRoutes).toBe(0)
+  expect(state.snapshots).toHaveLength(90)
+  expect(state.snapshots.every(s => !s.refreshing && s.fetchedAt > 0)).toBe(true)
+  await expect(page.locator('[data-node-ping-status="data"]')).toHaveCount(90)
   const coldStartMs = Math.round(performance.now() - coldStart)
   expect(coldStartMs).toBeLessThanOrEqual(coldStartLimitMs)
   const start = performance.now()
@@ -245,14 +249,15 @@ test('thirty-node palette editing adds no monitoring request or interval and ret
     await expect(page.getByTestId('palette-status')).toContainText('已验证管理权限')
     for (const value of ['#123456E6', '#ABCDEF80', '#F8FAFCE6'])
       await page.locator('#palette-hex').fill(value)
-    await page.getByRole('button', { name: '取消', exact: true }).click()
+    await page.getByTestId('palette-panel').getByRole('button', { name: '取消', exact: true }).click()
   }
   await expect(page.locator('[data-node-ping-bars]')).toHaveCount(180)
   expect(fixture.timeline.length).toBe(calls)
   expect(await page.evaluate(() => (window as any).paletteIntervalCount)).toBe(0)
-  await page.clock.fastForward(60_000)
+  await fixture.fastForwardSynchronizedPingClock(60_000)
   await fixture.waitForPingRefreshSettled()
   expect(fixture.timeline.length).toBeGreaterThan(calls)
+  expect(fixture.timeline.slice(calls).every(r => r.requestAt === fixture.now() && r.responseAt === fixture.now())).toBe(true)
   const editAndPollMs = Math.round(performance.now() - start)
   expect(editAndPollMs).toBeLessThanOrEqual(editAndPollLimitMs)
   await info.attach('palette-30-node-budget', {
