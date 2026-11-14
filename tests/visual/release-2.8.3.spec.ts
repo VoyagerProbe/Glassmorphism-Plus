@@ -19,29 +19,30 @@ async function labelGeometry(strip: Locator) {
       height: rect(element).height,
       status: rect(status),
       labels: Array.from(element.querySelectorAll<HTMLElement>('.node-card-ping-trend-label'), (label) => {
-        const dot = label.querySelector('.node-card-ping-trend-dot')!
+        const icon = label.querySelector('svg')!
         const row = label.parentElement!
         const rail = row.querySelector('[data-node-ping-bars]')!
         const c = getComputedStyle(label)
-        const d = getComputedStyle(dot)
-        const range = document.createRange()
-        range.selectNodeContents(label)
+        const shape = icon.querySelector('path, rect')!
+        const wave = shape.tagName.toLowerCase() === 'path'
+        const hidden = label.querySelector<HTMLElement>('.sr-only')!
         return {
-          text: label.textContent?.trim(),
+          metric: label.dataset.nodePingHeader,
+          text: hidden.textContent?.trim(),
+          hiddenSize: rect(hidden),
           label: rect(label),
-          dot: rect(dot),
+          icon: rect(icon),
           rail: rect(rail),
           row: rect(row),
-          bounds: Array.from(range.getClientRects(), r => ({ top: r.top, bottom: r.bottom, right: r.right })),
+          shape: wave ? shape.getAttribute('d') : Array.from(icon.querySelectorAll('rect'), r => r.getAttribute('height')),
           border: c.borderTopWidth,
           background: c.backgroundColor,
           padding: c.padding,
-          fontSize: c.fontSize,
-          color: c.color,
-          dotColor: d.backgroundColor,
-          radius: d.borderRadius,
-          transform: d.transform,
-          ariaHidden: dot.getAttribute('aria-hidden'),
+          color: wave ? getComputedStyle(shape).stroke : getComputedStyle(shape).fill,
+          transform: getComputedStyle(icon).transform,
+          ariaHidden: icon.getAttribute('aria-hidden'),
+          focusable: icon.getAttribute('focusable'),
+          interactive: Boolean(label.closest('button, [role="button"]') || label.querySelector('[tabindex], button, title') || label.hasAttribute('title')),
           gap: getComputedStyle(rail).columnGap,
           fills: Array.from(rail.querySelectorAll('[data-node-ping-bucket-fill]'), fill => ({ ...rect(fill), transform: getComputedStyle(fill).transform })),
         }
@@ -54,37 +55,44 @@ function checkGeometry(value: Awaited<ReturnType<typeof labelGeometry>>, size = 
   expect(value.status.width).toBe(6)
   expect(value.status.height).toBe(6)
   expect(value.height).toBe(size === 'mini' ? 40 : size === 'compact' ? 52 : 58)
-  expect(value.labels.map(l => l.text)).toEqual(['延迟', '丢包'])
+  expect(value.labels.map(l => l.metric)).toEqual(['latency', 'loss'])
+  expect(value.labels.map(l => l.text)).toEqual(['延迟历史', '丢包历史'])
+  expect(value.labels.map(l => l.shape)).toEqual(['M1.5 8h3l1.8-5 3.1 10 1.8-5h3.3', ['6', '12', '9']])
   expect(value.labels[0]!.rail.left).toBeCloseTo(value.labels[1]!.rail.left, 1)
   expect(value.labels[0]!.rail.right).toBeCloseTo(value.labels[1]!.rail.right, 1)
-  expect(value.labels[0]!.dotColor).not.toBe(value.labels[1]!.dotColor)
-  expect(value.labels[0]!.color).toBe(value.labels[1]!.color)
+  expect(value.labels[0]!.color).not.toBe(value.labels[1]!.color)
+  const iconSize = size === 'mini' ? 9 : size === 'compact' ? 10 : 11
   for (const label of value.labels) {
-    expect(label.dot.width).toBe(value.status.width)
-    expect(label.dot.height).toBe(value.status.height)
-    expect(label.dot.top).toBeGreaterThanOrEqual(label.row.top)
-    expect(label.dot.bottom).toBeLessThanOrEqual(label.row.bottom)
-    expect(label.radius).toBe('50%')
+    expect(label.icon.width).toBe(iconSize)
+    expect(label.icon.height).toBe(iconSize)
+    expect(label.hiddenSize.width).toBe(1)
+    expect(label.hiddenSize.height).toBe(1)
+    expect(label.icon.left).toBeGreaterThanOrEqual(label.label.left)
+    expect(label.icon.right).toBeLessThanOrEqual(label.label.right)
+    expect(label.icon.top).toBeGreaterThanOrEqual(label.row.top)
+    expect(label.icon.bottom).toBeLessThanOrEqual(label.row.bottom)
+    expect((label.icon.top + label.icon.bottom) / 2).toBeCloseTo((label.rail.top + label.rail.bottom) / 2, 1)
     expect(label.transform).toBe('none')
     expect(label.ariaHidden).toBe('true')
+    expect(label.focusable).toBe('false')
+    expect(label.interactive).toBe(false)
     expect(label.border).toBe('0px')
     expect(label.background).toBe('rgba(0, 0, 0, 0)')
     expect(label.padding).toBe('0px')
-    expect(label.fontSize).toBe(size === 'mini' ? '8px' : '9px')
+    expect(label.label.width).toBe(size === 'mini' ? 12 : 14)
     expect(label.label.right).toBeLessThan(label.rail.left)
-    expect(label.bounds.every(r => r.right <= label.label.right + 0.1)).toBe(true)
     expect(label.fills).toHaveLength(20)
     expect(label.gap).toBe(size === 'mini' ? '1px' : '2px')
     expect(label.fills[0]!.left).toBeCloseTo(label.rail.left, 1)
     expect(label.fills[19]!.right).toBeCloseTo(label.rail.right, 1)
     for (const fill of label.fills) {
-      expect(fill.height).toBe(size === 'mini' ? 3 : size === 'compact' ? 4 : 5)
+      expect(fill.height).toBe(size === 'mini' ? 4 : size === 'compact' ? 5 : 6)
       expect(fill.transform).toBe('none')
     }
   }
 }
 
-test.describe('v2.8.3 localized labels and footer', () => {
+test.describe('localized rail markers and protected footer', () => {
   for (const variant of [
     { name: 'desktop dark', width: 1280, size: 'compact', dark: true, three: true },
     { name: 'desktop light', width: 1280, size: 'compact', dark: false, three: true },
@@ -94,7 +102,7 @@ test.describe('v2.8.3 localized labels and footer', () => {
     { name: 'comfortable', width: 390, size: 'comfortable', dark: false, three: true },
     { name: 'large', width: 390, size: 'large', dark: true, three: true },
   ] as const) {
-    test(`${variant.name}: equal metric dots preserve fixed rails`, async ({ page }, info) => {
+    test(`${variant.name}: accessible metric icons preserve fixed rails`, async ({ page }, info) => {
       await page.setViewportSize({ width: variant.width, height: 900 })
       await installKomariFixture(page, {
         hideEarth: true,
@@ -124,7 +132,7 @@ test.describe('v2.8.3 localized labels and footer', () => {
     await expect(strip).toHaveAttribute('data-node-ping-status', 'pending')
     const pending = await labelGeometry(strip)
     checkGeometry(pending)
-    const colors = pending.labels.map(l => l.dotColor)
+    const colors = pending.labels.map(l => l.color)
     resume()
     for (const sample of [{ task202Latency: 9, task202Loss: 0 }, { task202Latency: 999, task202Loss: 25 }, { task202Latency: null, task202Loss: 100 }]) {
       fixture.setNodeCardPingFixture({ metric: 'valid', legacy: 'valid', ...sample })
@@ -132,7 +140,7 @@ test.describe('v2.8.3 localized labels and footer', () => {
       await expect(strip).toHaveAttribute('data-node-ping-status', 'data')
       const current = await labelGeometry(strip)
       checkGeometry(current)
-      expect(current.labels.map(l => l.dotColor)).toEqual(colors)
+      expect(current.labels.map(l => l.color)).toEqual(colors)
     }
     for (const state of ['selected-empty', 'error'] as const) {
       fixture.setNodeCardPingFixture({ metric: state, legacy: state })
@@ -140,11 +148,11 @@ test.describe('v2.8.3 localized labels and footer', () => {
       await expect(strip.locator(`[data-node-ping-state="${state === 'error' ? 'error' : 'confirmed-missing'}"]`)).not.toHaveCount(0)
       const current = await labelGeometry(strip)
       checkGeometry(current)
-      expect(current.labels.map(l => l.dotColor)).toEqual(colors)
+      expect(current.labels.map(l => l.color)).toEqual(colors)
     }
   })
 
-  test('automatic and custom theme text uses the existing secondary color', async ({ page }) => {
+  test('metric kinds keep their colors in light, dark and automatic mode with custom secondary text', async ({ page }) => {
     const fixture = await installKomariFixture(page, { hideEarth: true, nodeCount: 1, managedThemeMode: 'beijing', nodeCardPingDisplayConfigV3: config(false), nodeCardPingFixture: { metric: 'valid' } })
     await page.goto('/')
     const label = page.locator(stripSelector).locator('.node-card-ping-trend-label').first()
@@ -152,9 +160,17 @@ test.describe('v2.8.3 localized labels and footer', () => {
     for (const mode of ['light', 'dark', 'beijing']) {
       fixture.setThemeSetting('themeMode', mode)
       await page.reload()
-      // Custom color token inheritance, without modifying any theme algorithm.
-      await label.evaluate(e => (e as HTMLElement).style.setProperty('--color-muted-foreground', 'rgb(94, 123, 145)'))
-      await expect(label).toHaveCSS('color', 'rgb(94, 123, 145)')
+      // The summary retains the theme's secondary color; icon kinds do not inherit it.
+      const summary = page.locator(stripSelector).locator('[data-node-ping-summary="latency"] > span')
+      await summary.evaluate((e) => {
+        const parent = e.parentElement!
+        parent.style.setProperty('--glass-light-muted-text', 'rgb(94, 123, 145)')
+        parent.style.setProperty('--glass-dark-muted-text', 'rgb(94, 123, 145)')
+      })
+      await expect(summary).toHaveCSS('color', 'rgb(94, 123, 145)')
+      const dark = await page.locator('html').evaluate(e => e.classList.contains('dark'))
+      await expect(label.locator('path')).toHaveCSS('stroke', dark ? 'rgb(56, 189, 248)' : 'rgb(3, 105, 161)')
+      await expect(page.locator(stripSelector).locator('[data-node-ping-header="loss"] rect').first()).toHaveCSS('fill', dark ? 'rgb(192, 132, 252)' : 'rgb(126, 34, 206)')
     }
   })
 
@@ -193,7 +209,8 @@ test.describe('v2.8.3 localized labels and footer', () => {
   })
 
   test('manifest identity and build provenance contracts stay explicit', () => {
-    expect(manifest.version).toBe('3.0.0')
+    expect(manifest.version).toBe('3.0.1')
+    expect(manifest.version).toBe(JSON.parse(readFileSync('package.json', 'utf8')).version)
     expect(manifest.description).toBe(description)
     expect(manifest.short).toBe('glassmorphism-plus')
     expect(manifest.configuration.type).toBe('managed')

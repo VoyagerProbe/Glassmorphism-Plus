@@ -286,7 +286,7 @@ function moveField(event: KeyboardEvent) {
 }
 .palette-inputs {
   display: grid;
-  grid-template-columns: 3.75rem minmax(9rem, 1fr) minmax(12rem, 1.35fr) minmax(6.5rem, .48fr);
+  grid-template-columns: 3.75rem minmax(9rem, 1fr) minmax(12rem, 1.35fr) minmax(6.5rem, 0.48fr);
   gap: 8px 12px;
 }
 .palette-panel select,

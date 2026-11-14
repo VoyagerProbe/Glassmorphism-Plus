@@ -120,10 +120,10 @@ function expectFixedRailGeometry(
 }
 
 const NODE_CARD_PING_GEOMETRY = [
-  { size: 'mini', viewportWidth: 390, thickness: 3, rowGap: 8, bucketGap: 1 },
-  { size: 'compact', viewportWidth: 768, thickness: 4, rowGap: 9, bucketGap: 2 },
-  { size: 'comfortable', viewportWidth: 1024, thickness: 5, rowGap: 10, bucketGap: 2 },
-  { size: 'large', viewportWidth: 1440, thickness: 5, rowGap: 10, bucketGap: 2 },
+  { size: 'mini', viewportWidth: 390, thickness: 4, rowGap: 7, bucketGap: 1 },
+  { size: 'compact', viewportWidth: 768, thickness: 5, rowGap: 8, bucketGap: 2 },
+  { size: 'comfortable', viewportWidth: 1024, thickness: 6, rowGap: 9, bucketGap: 2 },
+  { size: 'large', viewportWidth: 1440, thickness: 6, rowGap: 9, bucketGap: 2 },
 ] as const
 
 function historyPoint(value: Partial<NodeCardPingHistoryPoint> = {}): NodeCardPingHistoryPoint {

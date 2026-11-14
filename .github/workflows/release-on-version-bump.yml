@@ -6,11 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       release_commit:
-        description: 'Full final commit of the published tag (not a branch name)'
+        description: Full final commit of the published tag (not a branch name)
         required: true
         type: string
       approved_zip_sha256:
-        description: 'SHA-256 of the original ZIP installed and approved by the user'
+        description: SHA-256 of the original ZIP installed and approved by the user
         required: true
         type: string
 
