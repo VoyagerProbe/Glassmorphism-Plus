@@ -82,19 +82,21 @@ function moveField(event: KeyboardEvent) {
       <legend class="sr-only">
         编辑配色草稿
       </legend>
-      <label class="palette-select">配色方案
-        <select :value="selectedPreset" data-testid="palette-preset" @change="setPreset(($event.target as HTMLSelectElement).value as PaletteChoice)">
-          <option v-for="(label, preset) in PALETTE_PRESET_VALUES" :key="preset" :value="preset">{{ label }}</option>
-        </select>
-      </label>
-      <div class="palette-groups" role="group" aria-label="正在编辑的色组，不改变页面模式">
-        <Button variant="outline" :aria-pressed="group === 'light'" @click="group = 'light'">
-          编辑浅色
-        </Button>
-        <Button variant="outline" :aria-pressed="group === 'dark'" @click="group = 'dark'">
-          编辑深色
-        </Button>
-        <span>页面当前为{{ app.resolvedThemeMode === 'dark' ? '深色' : '浅色' }}；编辑色组不会切换模式。</span>
+      <div class="palette-options">
+        <label class="palette-select">配色方案
+          <select :value="selectedPreset" data-testid="palette-preset" @change="setPreset(($event.target as HTMLSelectElement).value as PaletteChoice)">
+            <option v-for="(label, preset) in PALETTE_PRESET_VALUES" :key="preset" :value="preset">{{ label }}</option>
+          </select>
+        </label>
+        <div class="palette-groups" role="group" aria-label="正在编辑的色组，不改变页面模式">
+          <Button variant="outline" :aria-pressed="group === 'light'" @click="group = 'light'">
+            编辑浅色
+          </Button>
+          <Button variant="outline" :aria-pressed="group === 'dark'" @click="group = 'dark'">
+            编辑深色
+          </Button>
+          <span>页面当前为{{ app.resolvedThemeMode === 'dark' ? '深色' : '浅色' }}；编辑色组不会切换模式。</span>
+        </div>
       </div>
       <div class="palette-fields" role="radiogroup" aria-label="配色项目" @keydown="moveField">
         <Button v-for="item in fields" :key="item.key" type="button" variant="outline" role="radio" :aria-checked="field === item.key" :tabindex="field === item.key ? 0 : -1" :data-testid="`palette-field-${item.key}`" @click="field = item.key">
@@ -165,7 +167,7 @@ function moveField(event: KeyboardEvent) {
   position: relative;
   z-index: 2;
   margin: 12px 16px 20px;
-  padding: 16px;
+  padding: 22px;
   border: 1px solid var(--editor-border);
   border-radius: 12px;
   background: var(--editor-bg);
@@ -187,30 +189,48 @@ function moveField(event: KeyboardEvent) {
 .palette-top {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   gap: 12px;
 }
-.palette-top > button {
-  align-self: flex-start;
-}
 .palette-top h2 {
-  color: var(--editor-text);
-  font-size: 18px;
-  font-weight: 600;
   margin: 0;
-}
-.palette-panel p {
-  margin: 8px 0;
+  color: var(--editor-text);
+  font-size: 19px;
+  line-height: 1.35;
+  font-weight: 650;
 }
 .palette-top p,
 .palette-hint,
-.palette-groups span {
+.palette-groups span,
+.palette-advanced label {
   color: var(--editor-muted);
+  font-size: 13px;
 }
-.palette-panel fieldset {
+.palette-top p {
+  margin: 3px 0 0;
+}
+.palette-editing {
   min-width: 0;
-  border: 0;
+  max-width: 62rem;
+  margin: 14px 0 10px;
   padding: 0;
-  margin: 14px 0;
+  border: 0;
+}
+.palette-options {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.palette-select,
+.palette-inputs label {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+}
+.palette-select {
+  width: min(100%, 16rem);
 }
 .palette-actions,
 .palette-fields,
@@ -218,27 +238,35 @@ function moveField(event: KeyboardEvent) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 6px;
+}
+.palette-groups {
+  min-height: 38px;
+}
+.palette-groups span {
+  margin-inline-start: 2px;
+}
+.palette-fields {
+  margin: 12px 0;
 }
 .palette-panel :deep([data-slot='button']) {
+  min-height: 36px;
+  height: auto;
+  border: 1px solid var(--editor-border) !important;
+  border-radius: 7px;
   background: var(--editor-surface) !important;
   color: var(--editor-text) !important;
-  border: 1px solid transparent !important;
-  border-radius: 6px;
   white-space: normal;
-  height: auto;
-  min-height: 36px;
 }
 .palette-panel :deep([aria-pressed='true']),
-.palette-panel :deep([aria-checked='true']),
-.palette-panel :deep([data-variant='default']) {
+.palette-panel :deep([aria-checked='true']) {
   border-color: var(--editor-focus) !important;
+  background: color-mix(in srgb, var(--editor-focus) 12%, var(--editor-surface)) !important;
 }
 .palette-fields :deep(button) {
-  white-space: nowrap;
   gap: 6px;
-  padding: 5px 9px;
+  padding: 5px 10px;
+  white-space: nowrap;
 }
 .palette-swatch {
   flex: 0 0 14px;
@@ -249,84 +277,123 @@ function moveField(event: KeyboardEvent) {
 }
 .palette-panel :deep(:focus-visible) {
   outline: 2px solid var(--editor-focus);
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
 .palette-panel :deep(button:disabled) {
   opacity: 1;
   color: var(--editor-muted) !important;
   border-style: dashed !important;
 }
-.palette-select {
+.palette-inputs {
   display: grid;
-  gap: 6px;
-  max-width: 300px;
-  margin-top: 12px;
+  grid-template-columns: 3.75rem minmax(9rem, 1fr) minmax(12rem, 1.35fr) minmax(6.5rem, .48fr);
+  gap: 8px 12px;
 }
 .palette-panel select,
 .palette-panel textarea,
+.palette-inputs input[type='color'],
 .palette-panel :deep([data-slot='input']) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  padding: 6px 10px;
+  border: 1px solid var(--editor-border) !important;
+  border-radius: 7px;
   background: var(--editor-bg) !important;
   color: var(--editor-text) !important;
-  border: 1px solid var(--editor-border) !important;
-  border-radius: 6px;
   font-size: 16px;
-  padding: 8px;
-}
-.palette-panel select {
-  min-height: 38px;
-}
-.palette-inputs {
-  display: grid;
-  grid-template-columns: 70px minmax(140px, 1fr) minmax(170px, 1.3fr) minmax(100px, 0.6fr);
-  gap: 12px;
-  margin-top: 16px;
-}
-.palette-inputs label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
 }
 .palette-inputs input[type='color'] {
-  width: 64px;
-  height: 36px;
+  padding: 5px;
+  background: var(--editor-surface) !important;
   cursor: pointer;
+}
+.palette-inputs input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.palette-inputs input[type='color']::-webkit-color-swatch {
+  border: 1px solid var(--editor-border);
+  border-radius: 3px;
+}
+.palette-inputs input[type='color']::-moz-color-swatch {
+  border: 1px solid var(--editor-border);
+  border-radius: 3px;
+}
+.palette-panel :deep([aria-invalid='true']) {
+  border-color: var(--editor-error) !important;
 }
 .palette-error {
   color: var(--editor-error) !important;
 }
+.palette-hint {
+  margin: 5px 0 0;
+  overflow-wrap: anywhere;
+}
 .palette-advanced {
-  margin-top: 16px;
+  margin-top: 10px;
+  padding-block: 7px;
+  border-block: 1px solid var(--editor-border);
 }
 .palette-advanced summary {
+  width: fit-content;
+  max-width: 100%;
   cursor: pointer;
-  margin-bottom: 10px;
+  font-weight: 600;
+}
+.palette-advanced[open] summary {
+  margin-bottom: 7px;
 }
 .palette-advanced textarea {
   display: block;
-  width: 100%;
-  margin-top: 8px;
-  font-family: monospace;
+  height: auto;
+  margin: 6px 0 8px;
+  resize: vertical;
+  font-family: ui-monospace, monospace;
+  line-height: 1.45;
+}
+.palette-advanced p,
+.palette-panel > p {
+  margin: 6px 0;
 }
 .palette-footer {
-  border-top: 1px solid var(--editor-border);
-  padding-top: 12px;
+  gap: 8px;
+  margin-top: 10px;
+}
+.palette-footer :deep([data-testid='palette-save-site']:enabled) {
+  border-color: var(--editor-focus) !important;
+  background: var(--editor-text) !important;
+  color: var(--editor-bg) !important;
 }
 @media (max-width: 767px) {
-  .palette-inputs {
-    grid-template-columns: 1fr 1fr;
-  }
   .palette-panel {
-    padding: 14px;
+    padding: 15px;
+  }
+  .palette-inputs {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  }
+  .palette-inputs input[type='color'] {
+    max-width: 4.75rem;
   }
 }
-@media (max-width: 359px) {
+@media (max-width: 480px) {
+  .palette-options {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .palette-groups span {
+    flex-basis: 100%;
+    margin: 0;
+  }
   .palette-inputs {
-    grid-template-columns: 1fr;
+    grid-template-columns: 3.75rem minmax(0, 1fr);
+  }
+  .palette-inputs label:nth-child(n + 3) {
+    grid-column: 1 / -1;
   }
   .palette-panel {
     margin-inline: 10px;
-    padding: 12px;
+    padding: 14px;
   }
 }
 </style>

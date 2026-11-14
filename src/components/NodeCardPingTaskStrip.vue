@@ -2,6 +2,7 @@
 import type { NodeCardPingHistoryPoint, NodeCardPingPairSnapshot, NodeCardPingSample } from '@/types/node-card-ping'
 import { Icon } from '@iconify/vue'
 import { computed } from 'vue'
+import PingMetricMarker from '@/components/PingMetricMarker.vue'
 import { DataTooltip } from '@/components/ui/data-tooltip'
 import { formatDateTime } from '@/utils/helper'
 import {
@@ -248,7 +249,7 @@ function barTooltip(point: NodeCardPingHistoryPoint): string {
       </DataTooltip>
     </div>
     <div class="node-card-ping-trend-row" data-node-ping-panel="latency" data-node-ping-trend="latency">
-      <span class="node-card-ping-trend-label" data-node-ping-header="latency"><span class="node-card-ping-trend-dot" aria-hidden="true" />延迟</span>
+      <PingMetricMarker metric="latency" />
       <span class="node-card-ping-bucket-grid" data-node-ping-bars="latency">
         <template v-for="(point, index) in history" :key="`latency-${index}`">
           <DataTooltip
@@ -287,7 +288,7 @@ function barTooltip(point: NodeCardPingHistoryPoint): string {
       </span>
     </div>
     <div class="node-card-ping-trend-row" data-node-ping-panel="loss" data-node-ping-trend="loss">
-      <span class="node-card-ping-trend-label" data-node-ping-header="loss"><span class="node-card-ping-trend-dot" aria-hidden="true" />丢包</span>
+      <PingMetricMarker metric="loss" />
       <span class="node-card-ping-bucket-grid" data-node-ping-bars="loss">
         <template v-for="(point, index) in history" :key="`loss-${index}`">
           <DataTooltip

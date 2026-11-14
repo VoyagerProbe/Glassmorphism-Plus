@@ -566,10 +566,10 @@ header {
 
 .node-card-ping-task-strip {
   --ping-dot-size: 6px;
-  --ping-bucket-height: 4px;
+  --ping-bucket-height: 5px;
   --ping-bucket-gap: 2px;
   --ping-row-gap: 3px;
-  --ping-label-width: 30px;
+  --ping-label-width: 14px;
   --ping-trend-row-height: 10px;
   --ping-strip-height: 52px;
   --ping-strip-padding-x: 8px;
@@ -585,10 +585,10 @@ header {
 }
 
 .node-card-ping-task-strip[data-node-ping-size='mini'] {
-  --ping-bucket-height: 3px;
+  --ping-bucket-height: 4px;
   --ping-bucket-gap: 1px;
   --ping-row-gap: 2px;
-  --ping-label-width: 28px;
+  --ping-label-width: 12px;
   --ping-trend-row-height: 9px;
   --ping-strip-height: 40px;
   --ping-strip-padding-x: 6px;
@@ -597,7 +597,7 @@ header {
 
 .node-card-ping-task-strip[data-node-ping-size='comfortable'],
 .node-card-ping-task-strip[data-node-ping-size='large'] {
-  --ping-bucket-height: 5px;
+  --ping-bucket-height: 6px;
   --ping-bucket-gap: 2px;
   --ping-row-gap: 4px;
   --ping-strip-height: 58px;
@@ -616,10 +616,6 @@ header {
 
 .node-card-ping-status-dot {
   grid-column: 1;
-}
-
-.node-card-ping-status-dot,
-.node-card-ping-trend-dot {
   width: var(--ping-dot-size);
   height: var(--ping-dot-size);
   flex: none;
@@ -763,30 +759,29 @@ header {
 }
 
 .node-card-ping-trend-label {
-  display: inline-flex;
-  box-sizing: border-box;
-  width: fit-content;
-  min-width: 0;
+  display: grid;
+  place-items: center;
+  width: var(--ping-label-width);
   height: var(--ping-trend-row-height);
-  align-items: center;
-  gap: 4px;
-  color: var(--color-muted-foreground);
-  white-space: nowrap;
-  font-size: 9px;
-  font-weight: 400;
-  line-height: 1;
+  color: #0369a1;
 }
 
-.node-card-ping-task-strip[data-node-ping-size='mini'] .node-card-ping-trend-label {
-  font-size: 8px;
+.node-card-ping-trend-label svg {
+  display: block;
+  width: var(--ping-trend-row-height);
+  height: var(--ping-trend-row-height);
 }
 
-.node-card-ping-trend-label[data-node-ping-header='latency'] .node-card-ping-trend-dot {
-  background-color: color-mix(in srgb, var(--color-info) 82%, var(--color-foreground));
+.node-card-ping-trend-label[data-node-ping-header='loss'] {
+  color: #7e22ce;
 }
 
-.node-card-ping-trend-label[data-node-ping-header='loss'] .node-card-ping-trend-dot {
-  background-color: color-mix(in srgb, #a855f7 70%, var(--color-foreground));
+.dark .node-card-ping-trend-label {
+  color: #38bdf8;
+}
+
+.dark .node-card-ping-trend-label[data-node-ping-header='loss'] {
+  color: #c084fc;
 }
 
 .node-card-ping-bucket-grid {

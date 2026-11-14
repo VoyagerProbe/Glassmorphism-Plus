@@ -53,7 +53,7 @@
 
 ## 3. 常用命令
 
-必须在仓库根目录运行：
+命令在仓库根目录执行；能否运行由 [CODEX.md §11](CODEX.md#11-two-stage-candidate-validation-and-publication-policy) 的阶段授权决定，以下不是每轮启动清单。
 
 ```bash
 bun run dev       # Vite dev server，代理 /api 到配置目标
@@ -71,7 +71,7 @@ bun run build
 bun run test:visual
 ```
 
-源码变更与正式版本均按 [CODEX.md](CODEX.md) 的风险匹配原则运行必要回归，复用构建产物、避免重复命令；遵守根 `AGENTS.md` 的发布、隐私和安装包完整性门槛。
+浏览器与完整回归仅在获批候选的第二阶段运行；不得在第一阶段提前执行本手册中的验证条目。
 
 ## 4. 根目录地图
 
@@ -105,6 +105,7 @@ zip 固定结构：
 ```text
 komari-theme.json
 preview.png
+LICENSE
 dist/
 ```
 
@@ -120,9 +121,7 @@ Vite 注入的全局常量：
 发布注意：
 
 - GitHub Release 自动化必须读取 `komari-theme.json.version`。
-- 新建 GitHub Release 默认 **Pre-release**，标题等于 tag，不自动设为 Latest／stable；用户实测后亲自提升。仅当次任务的明确授权可覆盖这一默认策略，不能在创建后自行转正。
-- 改 release workflow 或 bump 版本后，不要只信本地 build，要检查 GitHub Actions 和 Release assets。
-- 如果已发布构建坏了，应该 bump patch version 后发布新 Release，不要静默依赖旧失败 tag。
+- 正式发布时的授权、用户批准的原 ZIP、同名冲突、CI 与回下载门槛见 [CODEX.md §11](CODEX.md#11-two-stage-candidate-validation-and-publication-policy)。历史预发布记录不构成授权。
 
 ## 6. v3 总架构
 
@@ -167,7 +166,7 @@ Vue Component
   - `/instance/:id` -> `InstanceDetail`
 - 不要加全局 router guard。公开首页/详情页必须保持公开，敏感数据路径自己做权限 gate。
 - `RouterView` 的路由组件被 `Transition` 和 `KeepAlive` 包裹，因此 `HomeView`、`InstanceDetail` 必须保持单一 HTML 元素根节点。全局弹窗、抽屉和 Teleport 入口也要放在该根容器内部；Fragment 根会让 Vue 无法执行离场动画，`out-in` 模式可能只剩背景且必须刷新才能恢复。
-- 改路由视图根结构后，必须在浏览器验证首页 -> 详情 -> 返回首页，确认无需刷新、控制台没有 `Component inside <Transition> renders non-element root node` 警告；同时覆盖开启和关闭“减弱过渡动画”的模式。
+- 改路由视图根结构后，获批进入第二阶段时必须在浏览器验证首页 -> 详情 -> 返回首页，确认无需刷新、控制台没有 `Component inside <Transition> renders non-element root node` 警告；同时覆盖开启和关闭“减弱过渡动画”的模式。
 
 ## 8. 状态管理
 
@@ -351,7 +350,7 @@ window.$message?.warning('请先登录')
 2. 若需要配置，先改 [komari-theme.json](komari-theme.json) schema，再在 [src/stores/app.ts](src/stores/app.ts) 做防御性解析。
 3. 视图只做编排，组件只做展示。
 4. 优先复用 `src/components/ui/`。
-5. 跑 `bun run lint` 和 `bun run build`。
+5. 依 §11 区分第一阶段候选编译与第二阶段质量验证。
 6. 更新 [AICACHE.md](AICACHE.md)。
 
 ### 12.2 新增需要请求的数据功能
@@ -401,11 +400,7 @@ HomeView tool button
 ### 12.5 改发布逻辑或版本
 
 1. 更新 [komari-theme.json](komari-theme.json) 的 `version`；如果 [package.json](package.json) 已有顶层 `version` metadata，也同步它，但不能把它当作 release source。
-2. 本地跑 `bun run build`，确认生成动态版本路径的安装 ZIP。
-3. 跑 `bun run release:prepare`，建立并验证过滤后的 release snapshot。
-4. 在动态 publish 路径 clone 已核准的 GitHub target，审查后同步有效 source、提交并推送。
-5. 如需 Tag / GitHub Release，按 CODEX 发布契约创建 Pre-release（可显式 dispatch workflow）；除非用户对该版本明确要求不上传，否则把本地已完成结构、版本、隐私和 SHA-256 验证的最终客户 ZIP 作为唯一自定义 Release asset 上传。ZIP 始终不得进入 Git。
-6. 从 Release 下载 asset 到正式仓库以外的临时目录，复核 SHA-256、可解压性、根结构和 manifest 版本，确认自定义 asset 数量恰为 1 后安全清理临时副本；将 tag、Release、Actions 和验证结果记录到 [AICACHE.md](AICACHE.md)。
+2. 候选、审批、完整验证和集中正式发行的唯一流程见 [CODEX.md §11](CODEX.md#11-two-stage-candidate-validation-and-publication-policy)。记录当前阶段与可追溯产物，不将客户 ZIP 纳入 Git。
 
 ## 13. 里程碑边界
 
@@ -491,6 +486,5 @@ HomeView tool button
 - [ ] 敏感功能有权限验证。
 - [ ] theme setting 已在 app store 归一化。
 - [ ] 没引入 Naive UI / UnoCSS / SCSS / lucide-vue-next。
-- [ ] `bun run lint` 已跑，或说明未跑原因。
-- [ ] `bun run build` 已跑，或说明未跑原因。
+- [ ] 区分第一阶段生产编译与第二阶段完整验证；列出实际执行与未执行事项。
 - [ ] [AICACHE.md](AICACHE.md) 已更新。
