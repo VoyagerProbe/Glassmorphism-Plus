@@ -126,6 +126,12 @@ const NODE_CARD_PING_GEOMETRY = [
   { size: 'large', viewportWidth: 1440, thickness: 6, rowGap: 9, bucketGap: 2 },
 ] as const
 
+// All compact strip states use the exact same density contract as the measured data strips.
+function expectCompactRailGeometry(geometry: Awaited<ReturnType<typeof readTaskStripGeometry>>): void {
+  const { thickness, rowGap, bucketGap } = NODE_CARD_PING_GEOMETRY[1]
+  expectFixedRailGeometry(geometry, thickness, rowGap, bucketGap)
+}
+
 function historyPoint(value: Partial<NodeCardPingHistoryPoint> = {}): NodeCardPingHistoryPoint {
   return {
     time: '2026-09-02T16:19:00.000Z',
@@ -563,10 +569,10 @@ test.describe('Ping v3 Chinese configuration and task-strip behavior', () => {
     await pendingBucket.hover()
     await expect(activeDataTooltip(page)).toContainText('等待采样')
     await page.keyboard.press('Escape')
-    expectFixedRailGeometry(await readTaskStripGeometry(pendingStrip), 4, 9, 2)
+    expectCompactRailGeometry(await readTaskStripGeometry(pendingStrip))
     const invalidStrip = card.locator('[data-node-ping-invalid-slot="2"]')
     await expect(invalidStrip.locator('[data-node-ping-state="invalid"]')).toHaveCount(40)
-    expectFixedRailGeometry(await readTaskStripGeometry(invalidStrip), 4, 9, 2)
+    expectCompactRailGeometry(await readTaskStripGeometry(invalidStrip))
 
     releasePending()
     await expect(pendingStrip).toHaveAttribute('data-node-ping-status', 'data')
@@ -577,7 +583,7 @@ test.describe('Ping v3 Chinese configuration and task-strip behavior', () => {
     await expect(missingBucket).toHaveAttribute('data-node-ping-severity', 'no-sample')
     await missingBucket.focus()
     await expect(activeDataTooltip(page)).toContainText('无采样')
-    expectFixedRailGeometry(await readTaskStripGeometry(pendingStrip), 4, 9, 2)
+    expectCompactRailGeometry(await readTaskStripGeometry(pendingStrip))
 
     fixture.setNodeCardPingFixture({ metric: 'error', legacy: 'error' })
     await page.reload()
@@ -585,7 +591,7 @@ test.describe('Ping v3 Chinese configuration and task-strip behavior', () => {
     const errorBucket = pendingStrip.locator('[data-node-ping-state="error"]').first()
     await errorBucket.focus()
     await expect(activeDataTooltip(page)).toContainText('更新失败')
-    expectFixedRailGeometry(await readTaskStripGeometry(pendingStrip), 4, 9, 2)
+    expectCompactRailGeometry(await readTaskStripGeometry(pendingStrip))
   })
 
   test('renders 158, 170, and 180 ms as moderate or elevated while reserving critical for over 200 ms', async ({ page }) => {
@@ -750,7 +756,7 @@ test.describe('Ping v3 Chinese configuration and task-strip behavior', () => {
     await expect(activeDataTooltip(page)).toContainText('延迟不可达')
     await expect(activeDataTooltip(page)).toContainText('丢包100%')
     const geometry = await readTaskStripGeometry(strip)
-    expectFixedRailGeometry(geometry, 4, 9, 2)
+    expectCompactRailGeometry(geometry)
   })
 
   test('keeps mixed full, partial, and invalid triple-mode cards equal height', async ({ page }) => {

@@ -214,6 +214,11 @@ test('thirty-node palette editing adds no monitoring request or interval and ret
   // cycles, exhausting the test before its final assertions. Keep every cycle,
   // input and invariant; allow bounded runner overhead and report elapsed time.
   test.setTimeout(90_000)
+  // Retain this candidate's original end-to-end cap as well as the two timed
+  // phases verified by the published workflow. Use wall time, not page.clock.
+  const coldStartLimitMs = 45_000
+  const editAndPollLimitMs = 90_000
+  const coldStart = performance.now()
   const fixture = await originalTheme(page, { nodeCount: 30, fakeTimers: true })
   await fixture.waitForPingRefreshSettled()
   // clock.install alone still advances with wall time. Slow traced WebKit runs
@@ -222,6 +227,9 @@ test('thirty-node palette editing adds no monitoring request or interval and ret
   // verify the normal polling path separately after the zero-traffic assertion.
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 60_000))
   await fixture.waitForPingRefreshSettled()
+  const coldStartMs = Math.round(performance.now() - coldStart)
+  expect(coldStartMs).toBeLessThanOrEqual(coldStartLimitMs)
+  const start = performance.now()
   const calls = fixture.timeline.length
   await page.evaluate(() => {
     const host = window as any
@@ -232,7 +240,6 @@ test('thirty-node palette editing adds no monitoring request or interval and ret
       return original(...args)
     }) as typeof window.setInterval
   })
-  const start = Date.now()
   for (let cycle = 0; cycle < 8; cycle++) {
     await page.getByTestId('palette-entry').click()
     await expect(page.getByTestId('palette-status')).toContainText('已验证管理权限')
@@ -246,5 +253,10 @@ test('thirty-node palette editing adds no monitoring request or interval and ret
   await page.clock.fastForward(60_000)
   await fixture.waitForPingRefreshSettled()
   expect(fixture.timeline.length).toBeGreaterThan(calls)
-  await info.attach('palette-30-node-budget', { body: JSON.stringify({ elapsedMs: Date.now() - start, cycles: 8, colorInputs: 24, additionalMonitoringRequestsDuringEditing: 0, additionalIntervals: 0, existingPollContinuesAfterClockAdvance: true }), contentType: 'application/json' })
+  const editAndPollMs = Math.round(performance.now() - start)
+  expect(editAndPollMs).toBeLessThanOrEqual(editAndPollLimitMs)
+  await info.attach('palette-30-node-budget', {
+    body: JSON.stringify({ coldStartMs, coldStartLimitMs, editAndPollMs, editAndPollLimitMs, elapsedMs: editAndPollMs, cycles: 8, colorInputs: 24, additionalMonitoringRequestsDuringEditing: 0, additionalIntervals: 0, existingPollContinuesAfterClockAdvance: true }),
+    contentType: 'application/json',
+  })
 })

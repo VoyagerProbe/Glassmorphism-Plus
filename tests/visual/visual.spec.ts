@@ -46,12 +46,23 @@ test('Plus documentation keeps its own version identity and preserves upstream a
   expect(readme).toContain('# 🌌 Komari Glassmorphism Plus')
   expect(version).toMatch(/^\d+\.\d+\.\d+$/)
   expect(packageMetadata.version).toBe(version)
-  expect(currentStatus.match(/^\| 当前 Plus 版本\s*\|\s*\*\*v([^（*]+)(?:（[^）]+）)?\*\*/m)?.[1]).toBe(version)
-  expect(currentStatus.match(/^### ✨ 最新版本 · v([^（\s]+)(?:（[^）]+）)?$/m)?.[1]).toBe(version)
-  expect(currentStatus).toContain(`${version}/Glassmorphism-Plus-release-${version}.zip`)
+  // During Stage 2 the trial is newer than the public installer. Never require
+  // a candidate to claim Stable, or link its customers to an unverified asset.
+  const candidate = changelog.split('\n').find(line => line.startsWith(`## [${version}]`))?.includes('尚未发布') === true
+  const statusRow = candidate ? '本轮发行基线' : '当前 Plus 版本'
+  const statusVersion = currentStatus.split('\n').find(line => line.startsWith(`| ${statusRow} `))?.match(/\*\*v(\d+\.\d+\.\d+)（正式发布）\*\*/)?.[1]
+  expect(statusVersion).toBeTruthy()
+  const publishedVersion = candidate ? Array.from(changelog.matchAll(/^## \[([^\]]+)\]/gm), match => match[1])[1] : version
+  expect(statusVersion).toBe(publishedVersion)
+  if (candidate) {
+    expect(currentStatus).toContain(`v${version} 本地试装候选（未发布）`)
+    expect(installSection).not.toContain(`/releases/download/v${version}/`)
+  }
+  expect(currentStatus.match(/^### ✨ 最新版本 · v([^（\s]+)(?:（[^）]+）)?$/m)?.[1]).toBe(publishedVersion)
+  expect(currentStatus).toContain(`${publishedVersion}/Glassmorphism-Plus-release-${publishedVersion}.zip`)
   expect(readme).toContain('sanrokamlan Glassmorphism v3.3.7')
-  expect(installSection).toContain(`Glassmorphism-Plus-release-${version}.zip`)
-  expect(installSection).toContain(`https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v${version}`)
+  expect(installSection).toContain(`Glassmorphism-Plus-release-${publishedVersion}.zip`)
+  expect(installSection).toContain(`https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v${publishedVersion}`)
   expect(readme).toContain('Source code (zip)')
   // Plus now has its own 3.x releases; the upstream baseline is still not a Plus release.
   expect(readme).not.toMatch(/^#{2,}\s+(?:\S.*)?v3\.3\.7/m)
