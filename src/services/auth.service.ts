@@ -1,4 +1,5 @@
 import type { MeInfo } from '@/utils/api'
+import { ref } from 'vue'
 import { SECURITY_CONFIG } from '@/constants/security'
 import { getSharedApi } from '@/utils/api'
 
@@ -38,10 +39,10 @@ let authSession: AuthSession = {
   lastVerifiedAt: 0,
 }
 let verifyPromise: Promise<AuthSession> | null = null
-let sessionRevision = 0
+const sessionRevision = ref(0)
 
 export function getAuthSessionRevision(): number {
-  return sessionRevision
+  return sessionRevision.value
 }
 
 function sessionIdentity(session: AuthSession): string {
@@ -50,7 +51,7 @@ function sessionIdentity(session: AuthSession): string {
 
 function replaceSession(session: AuthSession, explicit = false): AuthSession {
   if (explicit || sessionIdentity(session) !== sessionIdentity(authSession))
-    sessionRevision++
+    sessionRevision.value++
   authSession = session
   return authSession
 }
@@ -99,13 +100,13 @@ export async function verifyLogin(options: VerifyLoginOptions = {}): Promise<Aut
   if (verifyPromise)
     return verifyPromise
 
-  const requestedRevision = sessionRevision
+  const requestedRevision = sessionRevision.value
   verifyPromise = getSharedApi().getMe().then((user) => {
-    if (requestedRevision !== sessionRevision)
+    if (requestedRevision !== sessionRevision.value)
       return authSession
     return replaceSession(createSessionFromMe(user))
   }).catch((error) => {
-    if (requestedRevision !== sessionRevision)
+    if (requestedRevision !== sessionRevision.value)
       return authSession
     return replaceSession({
       status: 'error',

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ChartTuple } from '@/utils/pingChartProjection'
 import type { PingTimeWindow } from '@/utils/pingTime'
 import type { MetricSeries, PingMetricTaskStats, PingRecord, PingTaskInfo } from '@/utils/rpc'
 import { Icon } from '@iconify/vue'
@@ -15,17 +16,22 @@ import { useChartTheme } from '@/composables/useChartTheme'
 import { usePingTooltipTouch } from '@/composables/usePingTooltipTouch'
 import { CACHE_CONFIG } from '@/constants/cache'
 import { PING_RECORD_MAX_COUNT } from '@/constants/load'
+import { getAuthSessionRevision } from '@/services/auth.service'
 import { loadPingRecordsWithTasks } from '@/services/history.service'
 import { loadPingMetricStats, loadPublicPingTasks } from '@/services/metrics.service'
+import { readChartMetricWindow, restoreMissingChartRows } from '@/services/pingChartTail.service'
 import { loadPingMetricCoverage } from '@/services/pingMetricCoverage.service'
 import { useAppStore } from '@/stores/app'
 import { ACCESSIBLE_LINE_TYPES, getChartSeriesPalette } from '@/utils/chartPalette'
-import { normalizeMetricSeriesList, orderPingTasksByBackend, PING_LATENCY_METRIC, PING_LOSS_METRIC, pingTaskId, pingTaskName } from '@/utils/metricSeries'
+import { PING_LATENCY_METRIC, PING_LOSS_METRIC } from '@/utils/metricSeries'
+import { assignedChartTasks, currentPingId, pingReadDenied } from '@/utils/pingChartDirectory'
 import { resolvePingChartDisplayDomain } from '@/utils/pingChartDisplayDomain'
 import { escapePingTooltip, pingChartTaskLabels, pingLossPercent, pingTooltipLoss } from '@/utils/pingChartPresentation'
+import { chartMetricSamples, chartSymbols } from '@/utils/pingChartProjection'
 import { smoothPingChartDisplayRows } from '@/utils/pingChartSmoothing'
-import { normalizePingMetricSamples } from '@/utils/pingMetricSamples'
+import { mergePingMetricCoverageResponses } from '@/utils/pingMetricCoverage'
 import { createNextAlignedPingTimeWindow, createPingTimeWindow, isPingTimestampInWindow, parsePingTimestampMs } from '@/utils/pingTime'
+import { RpcError } from '@/utils/rpc'
 import '@/utils/echarts' // 共享 ECharts 配置
 
 const props = defineProps<{
@@ -174,6 +180,7 @@ const legacyCustomRangeFallback = ref(false)
 const selectedTaskIds = ref<number[]>([])
 // Local UI state: reconcile only accepted task inventories, not range/loading resets.
 let selectionAvailableTaskIds: number[] | null = null
+let followAllTasks = true
 const isTouchTooltipMode = ref(false)
 const activeTaskTooltipId = ref<number | null>(null)
 const smoothPeaks = ref(false)
@@ -189,7 +196,7 @@ function clearChartHover() {
   chart.value?.dispatchAction({ type: 'updateAxisPointer', currTrigger: 'leave' })
 }
 const smoothInfoTooltipOpen = ref(false)
-const legendSelection = shallowRef<Record<string, boolean>>({})
+const hiddenInLegend = shallowRef(new Set<number>())
 
 const chartMargin = { top: 30, right: 24, bottom: 52, left: 56 }
 let coarsePointerMediaQuery: MediaQueryList | null = null
@@ -230,25 +237,11 @@ function toggleSmoothInfoTooltip() {
   smoothInfoTooltipOpen.value = !smoothInfoTooltipOpen.value
 }
 
-function normalizeMetricTaskId(taskId: string): number {
-  if (!taskId.trim())
-    return Number.NaN
-
-  const numericTaskId = Number(taskId)
-  if (Number.isFinite(numericTaskId))
-    return numericTaskId
-
-  let hash = 0
-  for (let index = 0; index < taskId.length; index++)
-    hash = (hash * 31 + taskId.charCodeAt(index)) | 0
-  return Math.abs(hash)
-}
-
 function normalizeMetricTask(stat: PingMetricTaskStats): PingChartTaskInfo {
   const lossAvailable = stat.total > 0 && Number.isFinite(stat.loss)
   return {
-    id: normalizeMetricTaskId(stat.task_id),
-    name: stat.name?.trim() || pingTaskName(stat) || `Task ${stat.task_id}`,
+    id: currentPingId(stat.task_id),
+    name: stat.name ?? '',
     interval: stat.interval ?? 0,
     // Keep the mandatory display field typed while explicitly marking an
     // unavailable summary. The raw latency records remain usable either way.
@@ -257,7 +250,7 @@ function normalizeMetricTask(stat: PingMetricTaskStats): PingChartTaskInfo {
     min: stat.min,
     max: stat.max,
     avg: typeof stat.avg === 'number' && Number.isFinite(stat.avg) ? stat.avg : undefined,
-    latest: typeof stat.latest === 'number' && Number.isFinite(stat.latest) ? stat.latest : undefined,
+    latest: typeof stat.latest === 'number' && Number.isFinite(stat.latest) && stat.latest >= 0 && stat.valid !== 0 ? stat.latest : undefined,
     p50: stat.p50,
     p99: stat.p99,
     p99_p50_ratio: stat.p99_p50_ratio,
@@ -274,13 +267,9 @@ function buildMetricRecords(
   nodeUuid: string,
   window: PingTimeWindow,
 ): { records: PingChartRecord[], hasObservedData: boolean } {
-  const samples = normalizePingMetricSamples(seriesList, {
-    entityId: nodeUuid,
-    start: window.start,
-    end: window.end,
-  })
+  const samples = chartMetricSamples(seriesList, nodeUuid, window)
   const records = samples.flatMap((sample) => {
-    const taskId = normalizeMetricTaskId(sample.taskId)
+    const taskId = currentPingId(sample.taskId)
     if (!Number.isFinite(taskId))
       return []
 
@@ -310,99 +299,107 @@ function getPingChartTimeWindow(): PingTimeWindow | null {
   return createNextAlignedPingTimeWindow(Date.now(), selectedHours.value, HISTORY_BUCKET_COUNT)
 }
 
-function filterRecordsToWindow(records: PingChartRecord[], window: PingTimeWindow): PingChartRecord[] {
-  return records.filter((record) => {
-    const timestamp = parsePingTimestampMs(record.time)
-    return timestamp !== null && isPingTimestampInWindow(timestamp, window)
-  })
-}
-
-async function loadMetricPingPayload(
+async function loadChartWindow(
   nodeUuid: string,
   window: PingTimeWindow,
-): Promise<{ records: PingChartRecord[], tasks: PingChartTaskInfo[] } | null> {
-  const metricRangeParams = {
-    start: new Date(window.start).toISOString(),
-    end: new Date(window.end).toISOString(),
+  legacyHours: number,
+  custom: boolean,
+  current: () => boolean,
+) {
+  const range = { start: new Date(window.start).toISOString(), end: new Date(window.end).toISOString() }
+  const params = {
+    entity_id: nodeUuid,
+    metric_keys: [PING_LATENCY_METRIC, PING_LOSS_METRIC],
+    ...range,
+    downsample: true,
+    fill_empty: true,
+    max_points: PING_RECORD_MAX_COUNT,
+    aggregation: 'avg',
   }
-
-  const [statsResult, metricsResult, publicTasksResult] = await Promise.allSettled([
-    loadPingMetricStats({ entity_id: nodeUuid, ...metricRangeParams, max_points: PING_RECORD_MAX_COUNT }),
-    loadPingMetricCoverage({
-      // Keep the established paired query unchanged. Detail may also display
-      // its loss samples; both entries still share the same Metric cache.
-      metric_keys: [PING_LATENCY_METRIC, PING_LOSS_METRIC],
-      entity_id: nodeUuid,
-      ...metricRangeParams,
-      downsample: true,
-      fill_empty: true,
-      max_points: PING_RECORD_MAX_COUNT,
-      aggregation: 'avg',
+  let legacy: Awaited<ReturnType<typeof loadPingRecordsWithTasks>> | undefined
+  const readLegacy = async () => legacy ??= await loadPingRecordsWithTasks(legacyHours, PING_RECORD_MAX_COUNT, nodeUuid)
+  let directory: PingTaskInfo[]
+  try {
+    directory = assignedChartTasks(await loadPublicPingTasks(), nodeUuid)
+  }
+  catch (error) {
+    // Old servers without this method may return their current, UUID-filtered
+    // directory alongside records. A denial or partial directory is not empty.
+    if (!(error instanceof RpcError) || error.code !== -32601 || !current())
+      throw error
+    const scoped = await readLegacy()
+    if (!scoped.hasTaskDirectory)
+      throw new Error('无法确认当前节点的 Ping 任务目录')
+    directory = assignedChartTasks(scoped.tasks, nodeUuid, true)
+  }
+  const ids = new Set(directory.map(task => task.id))
+  const empty = { records: [] as PingChartRecord[], tasks: [] as PingChartTaskInfo[], legacy: false }
+  if (!current() || !ids.size)
+    return empty
+  let denied = false
+  const [stats, coverage] = await Promise.allSettled([
+    loadPingMetricStats({ entity_id: nodeUuid, ...range, max_points: PING_RECORD_MAX_COUNT }).catch((error: unknown) => {
+      denied = pingReadDenied(error)
+      throw error
     }),
-    loadPublicPingTasks(),
+    loadPingMetricCoverage(params, (query) => {
+      if (!current() || denied)
+        throw new Error('Ping 请求上下文已变更')
+      return readChartMetricWindow(query, query.start === params.start ? 'window' : 'supplement')
+    }),
   ])
-
-  const metricStats = statsResult.status === 'fulfilled'
-    ? (statsResult.value.stats ?? []).filter(stat => stat.entity_id === nodeUuid)
-    : []
-  const rawMetricSeries = metricsResult.status === 'fulfilled'
-    ? metricsResult.value.response.series
-    : []
-  const metricSeries = metricsResult.status === 'fulfilled'
-    ? normalizeMetricSeriesList(rawMetricSeries).filter(series => (
-        series.entity_id === nodeUuid
-        && (series.metric_key === PING_LATENCY_METRIC || series.metric_key === PING_LOSS_METRIC)
-      ))
-    : []
-  const metricRecordResult = metricsResult.status === 'fulfilled'
-    ? buildMetricRecords(rawMetricSeries, nodeUuid, window)
-    : { records: [], hasObservedData: false }
-
-  // The Metric latency series is the authoritative chart data. Statistics are
-  // supplementary metadata and can arrive later or omit loss fields, so they
-  // must never cause a successful raw series to fall back to the legacy API.
-  if (!metricRecordResult.hasObservedData)
-    return null
-
-  const taskMap = new Map<number, PingChartTaskInfo>()
-  for (const stat of metricStats) {
-    const task = normalizeMetricTask(stat)
-    if (!Number.isFinite(task.id))
-      continue
-    taskMap.set(task.id, task)
+  if (!current())
+    return empty
+  for (const result of [stats, coverage]) {
+    if (result.status === 'rejected' && pingReadDenied(result.reason))
+      throw result.reason
   }
-
-  for (const series of metricSeries) {
-    const taskId = normalizeMetricTaskId(pingTaskId(series))
-    if (!taskId || taskMap.has(taskId))
-      continue
-
-    taskMap.set(taskId, {
-      id: taskId,
-      name: pingTaskName(series) || `Task ${taskId}`,
-      interval: series.interval_seconds ?? 0,
-      loss: 0,
-      lossAvailable: false,
-      loss_approximate: true,
-    })
-  }
-
-  const publicTasks = publicTasksResult.status === 'fulfilled'
-    ? publicTasksResult.value
-    : []
-
-  // Catalog membership is independent of the selected window's samples.
-  if (props.lossHistory) {
-    for (const task of publicTasks) {
-      if (task.clients?.some(client => typeof client === 'string' && client.toLowerCase() === nodeUuid.toLowerCase()) && !taskMap.has(task.id))
-        taskMap.set(task.id, { ...task, loss: 0, lossAvailable: false })
+  const summaries = new Map<number, PingChartTaskInfo>()
+  if (stats.status === 'fulfilled') {
+    for (const stat of stats.value.stats ?? []) {
+      const id = currentPingId(stat.task_id)
+      if (stat.entity_id?.toLowerCase() === nodeUuid.toLowerCase() && ids.has(id) && stat.total > 0)
+        summaries.set(id, normalizeMetricTask(stat))
     }
   }
-
-  return {
-    records: metricRecordResult.records,
-    tasks: orderPingTasksByBackend([...taskMap.values()], publicTasks),
+  let records = coverage.status === 'fulfilled'
+    ? buildMetricRecords(coverage.value.response.series, nodeUuid, window).records.filter(record => ids.has(record.task_id))
+    : []
+  if (coverage.status === 'fulfilled') {
+    records = await restoreMissingChartRows(records, ids, params, (response, start, end) => buildMetricRecords(mergePingMetricCoverageResponses([response]).series, nodeUuid, { ...window, start, end }).records, current)
   }
+  const useLegacy = !records.some(record => record.finalized)
+  if (useLegacy) {
+    const scoped = await readLegacy()
+    if (!current())
+      return empty
+    const byTime = new Map<string, PingChartRecord>()
+    for (const record of scoped.records) {
+      const time = parsePingTimestampMs(record.time)
+      if (record.client.toLowerCase() !== nodeUuid.toLowerCase() || !ids.has(record.task_id)
+        || time === null || !isPingTimestampInWindow(time, window) || !Number.isFinite(record.value)) {
+        continue
+      }
+      const key = `${record.task_id}:${time}`
+      const previous = byTime.get(key)
+      if (!previous)
+        byTime.set(key, { ...record, time: new Date(time).toISOString(), finalized: true })
+      else if (previous.value !== record.value)
+        previous.value = -1 // equally ranked, conflicting Legacy observations: unknown, not an inferred loss percentage
+    }
+    records = [...byTime.values()]
+    const witnessed = new Set(records.map(r => r.task_id))
+    for (const task of scoped.tasks) {
+      if (!custom && !summaries.has(task.id) && ids.has(task.id) && ((task.total ?? 0) > 0 || (task.total === undefined && witnessed.has(task.id)))) {
+        summaries.set(task.id, { ...task, latest: typeof task.latest === 'number' && task.latest >= 0 && task.valid !== 0 ? task.latest : undefined, lossAvailable: Number.isFinite(task.loss) })
+      }
+    }
+  }
+  const ordered = directory.map((task): PingChartTaskInfo => {
+    const summary = summaries.get(task.id)
+    return { ...summary, id: task.id, name: task.name, interval: task.interval ?? summary?.interval ?? 0, type: task.type ?? summary?.type, loss: summary?.loss ?? 0, lossAvailable: summary?.lossAvailable ?? false }
+  })
+  return { tasks: ordered, records, legacy: useLegacy }
 }
 
 // ==================== 数据获取 ====================
@@ -411,6 +408,8 @@ async function fetchRecords() {
   clearChartHover()
   const sequence = ++fetchRecordsSequence
   const requestedUuid = props.uuid
+  const revision = getAuthSessionRevision()
+  const current = () => sequence === fetchRecordsSequence && requestedUuid === props.uuid && revision === getAuthSessionRevision()
   if (!requestedUuid)
     return
 
@@ -438,11 +437,6 @@ async function fetchRecords() {
   error.value = null
 
   try {
-    const metricPayload = await loadMetricPingPayload(requestedUuid, requestedWindow).catch(() => null)
-    if (sequence !== fetchRecordsSequence || requestedUuid !== props.uuid)
-      return
-
-    legacyCustomRangeFallback.value = !metricPayload && isCustomRange.value
     const range = appliedCustomRange.value
     const legacyHours = range
       ? Math.min(
@@ -450,43 +444,25 @@ async function fetchRecords() {
           Math.max(range.hours, Math.ceil(dayjs().diff(range.start, 'hour', true))),
         )
       : selectedHours.value
-    const result = metricPayload ?? await loadPingRecordsWithTasks(legacyHours, PING_RECORD_MAX_COUNT, requestedUuid)
-    if (sequence !== fetchRecordsSequence || requestedUuid !== props.uuid)
+    const result = await loadChartWindow(requestedUuid, requestedWindow, legacyHours, isCustomRange.value, current)
+    if (!current())
       return
-
-    const chartRecords: PingChartRecord[] = result.records.filter(record => record.client.toLowerCase() === requestedUuid.toLowerCase()).map(record => ({
-      ...record,
-      finalized: 'finalized' in record ? record.finalized === true : true,
-    }))
-    const records = filterRecordsToWindow(chartRecords, requestedWindow)
-    records.sort((a, b) => (parsePingTimestampMs(a.time) ?? 0) - (parsePingTimestampMs(b.time) ?? 0))
-
-    const legacyCatalog = metricPayload ? [] : await loadPublicPingTasks().catch(() => [])
-    if (sequence !== fetchRecordsSequence || requestedUuid !== props.uuid)
-      return
-    const nextTasks = new Map<number, PingChartTaskInfo>(result.tasks.map(task => [task.id, task]))
-    if (props.lossHistory && !metricPayload) {
-      for (const task of legacyCatalog) {
-        if (task.clients?.some(client => typeof client === 'string' && client.toLowerCase() === requestedUuid.toLowerCase()) && !nextTasks.has(task.id))
-          nextTasks.set(task.id, { ...task, loss: 0, lossAvailable: false })
-      }
-    }
-
+    legacyCustomRangeFallback.value = result.legacy && isCustomRange.value
     activeTimeWindow.value = requestedWindow
-    remoteData.value = records
-    tasks.value = metricPayload ? [...nextTasks.values()] : orderPingTasksByBackend([...nextTasks.values()], legacyCatalog)
+    remoteData.value = result.records.sort((a, b) => (parsePingTimestampMs(a.time) ?? 0) - (parsePingTimestampMs(b.time) ?? 0))
+    tasks.value = result.tasks
 
     const availableIds = tasks.value.map(t => t.id)
     if (selectionAvailableTaskIds === null || availableIds.join(',') !== selectionAvailableTaskIds.join(',')) {
       const retainedIds = selectedTaskIds.value.filter(id => availableIds.includes(id))
-      selectedTaskIds.value = selectionAvailableTaskIds === null || (selectedTaskIds.value.length > 0 && retainedIds.length === 0)
+      selectedTaskIds.value = selectionAvailableTaskIds === null || followAllTasks
         ? availableIds
         : retainedIds
       selectionAvailableTaskIds = availableIds
     }
   }
   catch (err) {
-    if (sequence !== fetchRecordsSequence || requestedUuid !== props.uuid)
+    if (!current())
       return
 
     activeTimeWindow.value = requestedWindow
@@ -615,7 +591,7 @@ const taskLabels = computed(() => pingChartTaskLabels(tasks.value))
 const taskLabel = (id: number) => taskLabels.value.get(id) ?? `#${id}`
 
 const visibleTaskIds = computed(() => selectedTasks.value
-  .filter(task => legendSelection.value[taskLabel(task.id)] !== false)
+  .filter(task => !hiddenInLegend.value.has(task.id))
   .map(task => task.id))
 
 const pingChartDisplayDomain = computed(() => {
@@ -641,7 +617,17 @@ function handleLegendSelectionChanged(event: unknown): void {
   const selected = event && typeof event === 'object' && 'selected' in event
     ? (event as { selected?: Record<string, boolean> }).selected
     : undefined
-  legendSelection.value = selected ? { ...selected } : {}
+  if (!selected)
+    return
+  const hidden = new Set(hiddenInLegend.value)
+  for (const task of selectedTasks.value) {
+    const label = taskLabel(task.id)
+    if (selected[label] === false)
+      hidden.add(task.id)
+    else if (selected[label] === true)
+      hidden.delete(task.id)
+  }
+  hiddenInLegend.value = hidden
 }
 
 watch(
@@ -653,6 +639,7 @@ watch(
 
 // 切换任务选中状态
 function toggleTask(taskId: number) {
+  followAllTasks = false
   if (selectedTaskIds.value.includes(taskId)) {
     selectedTaskIds.value = selectedTaskIds.value.filter(id => id !== taskId)
   }
@@ -662,10 +649,12 @@ function toggleTask(taskId: number) {
 }
 
 function showAllTasks() {
+  followAllTasks = true
   selectedTaskIds.value = tasks.value.map(t => t.id)
 }
 
 function hideAllTasks() {
+  followAllTasks = false
   selectedTaskIds.value = []
 }
 
@@ -713,20 +702,23 @@ const latencyChartOption = computed(() => {
     const lineType = appStore.colorVisionFriendly
       ? (ACCESSIBLE_LINE_TYPES[index % ACCESSIBLE_LINE_TYPES.length] ?? 'solid')
       : 'solid'
+    const points: ChartTuple[] = []
+    for (const row of data) {
+      if (!Object.hasOwn(row, task.id))
+        continue
+      const timestamp = parsePingTimestampMs(row.time)
+      if (timestamp === null)
+        continue
+      const raw = row[task.id]
+      points.push([timestamp, typeof raw === 'number' && Number.isFinite(raw) ? raw : null])
+    }
     return {
       id: `latency-${task.id}`,
       name: taskLabel(task.id),
       type: 'line' as const,
-      data: data.flatMap((row) => {
-        const timestamp = parsePingTimestampMs(row.time)
-        if (timestamp === null)
-          return []
-        const rawValue = row[task.id]
-        const value = typeof rawValue === 'number' && Number.isFinite(rawValue) ? rawValue : null
-        return [[timestamp, value] as [number, number | null]]
-      }),
+      data: points,
       smooth: smoothPeaks.value ? 0.6 : false,
-      showSymbol: false,
+      ...chartSymbols(points),
       connectNulls: false,
       lineStyle: { width: 1.5, color, cap: 'round' as const, type: lineType },
       itemStyle: { color }, // 确保 symbol 颜色一致
@@ -791,7 +783,7 @@ const latencyChartOption = computed(() => {
       icon: 'roundRect',
       textStyle: { fontSize: 11, color: chartThemeColors.value.textSecondary },
       data: taskList.map(t => taskLabel(t.id)),
-      selected: Object.fromEntries(taskList.map(task => [taskLabel(task.id), legendSelection.value[taskLabel(task.id)] !== false])),
+      selected: Object.fromEntries(taskList.map(task => [taskLabel(task.id), !hiddenInLegend.value.has(task.id)])),
     },
     grid: chartMargin,
     xAxis: {
@@ -844,14 +836,11 @@ const pingChartOption = computed(() => {
     return { ...base, tooltip: { ...base.tooltip, className: '', transitionDuration: 0.4 }, axisPointer: { link: [] } }
 
   const rows = new Map(chartData.value.map(row => [parsePingTimestampMs(row.time), row]))
-  const lossSeries = base.series.map((series, index) => ({
-    ...series,
-    id: `loss-${selectedTasks.value[index]!.id}`,
-    xAxisIndex: 1,
-    yAxisIndex: 1,
-    smooth: false,
-    data: series.data.map(([timestamp]) => [timestamp, lossPoints.value.get(`${selectedTasks.value[index]!.id}:${timestamp}`) ?? null]),
-  }))
+  const lossSeries = base.series.map((series, index) => {
+    const id = selectedTasks.value[index]!.id
+    const points: ChartTuple[] = series.data.map(([t]) => [t, lossPoints.value.get(`${id}:${t}`) ?? null])
+    return { ...series, id: `loss-${id}`, xAxisIndex: 1, yAxisIndex: 1, smooth: false, data: points, ...chartSymbols(points) }
+  })
   return {
     ...base,
     // Both x axes have identical domains, pixel bounds and timestamp arrays.
@@ -911,14 +900,15 @@ watch(selectedView, () => {
   fetchRecords()
 })
 
-watch(() => props.uuid, () => {
+watch([() => props.uuid, getAuthSessionRevision], () => {
   clearChartHover()
   showLoss.value = true
-  legendSelection.value = {}
+  hiddenInLegend.value = new Set()
   remoteData.value = []
   tasks.value = []
   selectedTaskIds.value = []
   selectionAvailableTaskIds = null
+  followAllTasks = true
   activeTaskTooltipId.value = null
   smoothInfoTooltipOpen.value = false
   fetchRecords()

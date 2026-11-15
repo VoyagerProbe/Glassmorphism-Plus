@@ -25,9 +25,11 @@
 
 ## 🚦 项目状态
 
+**v3.0.2 本地试装候选（未发布）**：核对长范围 Ping 的任务身份、近期覆盖与折线可读性。下表的 v3.0.1 仍是最近的正式发布；候选不替代正式安装包。
+
 | 项目               | 当前状态                                                                                                                                                 |
 | :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 当前 Plus 版本     | **v3.0.1（正式发布）**                                                                                                                                   |
+| 本轮发行基线       | **v3.0.1（正式发布）**                                                                                                                                   |
 | Latest             | [v3.0.1](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.1)                                                                         |
 | 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7)                                   |
 | 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                                                          |

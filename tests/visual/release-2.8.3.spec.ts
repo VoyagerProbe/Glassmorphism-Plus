@@ -209,7 +209,7 @@ test.describe('localized rail markers and protected footer', () => {
   })
 
   test('manifest identity and build provenance contracts stay explicit', () => {
-    expect(manifest.version).toBe('3.0.1')
+    expect(manifest.version).toBe('3.0.2')
     expect(manifest.version).toBe(JSON.parse(readFileSync('package.json', 'utf8')).version)
     expect(manifest.description).toBe(description)
     expect(manifest.short).toBe('glassmorphism-plus')

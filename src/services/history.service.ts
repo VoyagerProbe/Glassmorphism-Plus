@@ -1,6 +1,8 @@
 import type { PingRecord, PingTaskInfo, StatusRecord } from '@/utils/rpc'
+import { getAuthSessionRevision } from '@/services/auth.service'
 import { requestManager } from '@/services/request.service'
 import { ApiError, getSharedApi } from '@/utils/api'
+import { pingReadDenied } from '@/utils/pingChartDirectory'
 import { getSharedRpc, RpcError } from '@/utils/rpc'
 
 function numberOrZero(value: unknown): number {
@@ -23,7 +25,7 @@ function cachePart(value: string | number | undefined): string {
 
 function shouldRetryHistoryRequest(error: unknown): boolean {
   if (error instanceof RpcError)
-    return error.code !== 401 && error.code !== 403
+    return !pingReadDenied(error)
   if (error instanceof ApiError)
     return error.code !== 401 && error.code !== 403
   return true
@@ -57,7 +59,7 @@ export function getNodeLoadRecordsRequestKey(uuid: string, hours: number, maxCou
 }
 
 export function getPingRecordsRequestKey(hours: number, maxCount?: number, uuid?: string): string {
-  return `history:ping:${cachePart(uuid)}:${normalizeHours(hours)}:${cachePart(normalizeMaxCount(maxCount))}`
+  return `history:ping:${getAuthSessionRevision()}:${cachePart(uuid)}:${normalizeHours(hours)}:${cachePart(normalizeMaxCount(maxCount))}`
 }
 
 export function abortLoadRecords(uuid: string | undefined, hours: number, maxCount?: number): void {
@@ -165,7 +167,7 @@ export async function loadPingRecords(hours: number, maxCount?: number, uuid?: s
   )
 }
 
-export async function loadPingRecordsWithTasks(hours: number, maxCount?: number, uuid?: string): Promise<{ records: PingRecord[], tasks: PingTaskInfo[] }> {
+export async function loadPingRecordsWithTasks(hours: number, maxCount?: number, uuid?: string): Promise<{ records: PingRecord[], tasks: PingTaskInfo[], hasTaskDirectory: boolean }> {
   const safeHours = normalizeHours(hours)
   const safeMaxCount = normalizeMaxCount(maxCount)
   return requestManager.run(
@@ -175,6 +177,7 @@ export async function loadPingRecordsWithTasks(hours: number, maxCount?: number,
       return {
         records: result.records ?? [],
         tasks: result.tasks ?? [],
+        hasTaskDirectory: Array.isArray(result.tasks),
       }
     },
     { shouldRetry: shouldRetryHistoryRequest },

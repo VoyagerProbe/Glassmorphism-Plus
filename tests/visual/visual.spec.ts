@@ -956,11 +956,43 @@ test('v2.7.0 uses the latest finalized selected Ping sample as the relative disp
     // The dual plot can scroll inside the dialog. A raw boundingBox includes
     // clipped pixels; the old bottom coordinate hit the backdrop and closed it.
     await echarts.scrollIntoViewIfNeeded()
-    const chartBounds = await echarts.boundingBox()
-    expect(chartBounds).not.toBeNull()
-    if (!chartBounds)
-      throw new Error('Ping chart bounds are unavailable')
-    const point = { x: chartBounds.x + chartBounds.width / 2, y: chartBounds.y + chartBounds.height - 14 }
+    // The current directory may supply a much longer third label. The middle
+    // pixel of the canvas is not necessarily inside the middle legend item.
+    const label = await chart.locator('[data-ping-chart-task-id="202"] .truncate').first().textContent()
+    const point = await chart.locator('x-vue-echarts').evaluate((element, label) => {
+      interface TextShape {
+        type: string
+        style?: { text?: string }
+        getBoundingRect: () => { clone: () => { x: number, y: number, width: number, height: number, applyTransform: (transform: unknown) => void } }
+        getComputedTransform: () => unknown
+      }
+      interface Plot {
+        getDom: () => HTMLElement
+        getWidth: () => number
+        getHeight: () => number
+        getZr: () => { storage: { getDisplayList: () => TextShape[] } }
+      }
+      interface VNode { el?: Element, component?: { exposed?: { chart?: { value?: Plot } }, subTree?: VNode }, children?: VNode[], suspense?: { activeBranch?: VNode } }
+      function find(n?: VNode): Plot | undefined {
+        if (!n)
+          return
+        if (n.el === element && n.component?.exposed?.chart?.value)
+          return n.component.exposed.chart.value
+        for (const child of [n.component?.subTree, n.suspense?.activeBranch, ...(Array.isArray(n.children) ? n.children : [])]) {
+          const match = find(child)
+          if (match)
+            return match
+        }
+      }
+      const plot = find((document.querySelector('#app') as unknown as { _vnode: VNode })._vnode)
+      const glyph = plot?.getZr().storage.getDisplayList().find(el => el.type === 'tspan' && el.style?.text === label)
+      if (!plot || !glyph)
+        throw new Error(`Missing rendered legend text: ${label}`)
+      const rect = glyph.getBoundingRect().clone()
+      rect.applyTransform(glyph.getComputedTransform())
+      const host = plot.getDom().getBoundingClientRect()
+      return { x: host.x + (rect.x + rect.width / 2) * host.width / plot.getWidth(), y: host.y + (rect.y + rect.height / 2) * host.height / plot.getHeight() }
+    }, label)
     expect(await echarts.evaluate((element, p) => element.contains(document.elementFromPoint(p.x, p.y)), point)).toBe(true)
     await page.mouse.click(point.x, point.y)
     await expect(dialog).toBeVisible()
@@ -1128,7 +1160,10 @@ test('a long custom Ping range reuses the bounded coverage loader without changi
     }
   })
   const coarse = [{ time: '2026-07-15T00:00:00.000Z', latency: 40, loss: 0, latencyCount: 1440, lossCount: 1440 }]
-  const fine = [{ time: '2026-08-01T00:00:00.000Z', latency: 30, loss: 0, latencyCount: 60, lossCount: 60 }]
+  // The selected custom end is 08:00 in Asia/Shanghai (00:00 UTC).
+  // This budget is for a genuinely covered assigned task, including its tail.
+  const fine = ['2026-08-01T00:00:00.000Z', '2026-08-12T22:00:00.000Z', '2026-08-12T23:00:00.000Z']
+    .map(time => ({ time, latency: 30, loss: 0, latencyCount: 60, lossCount: 60 }))
   await installKomariFixture(page, {
     clockNow: '2026-08-13T08:00:00.000Z',
     pingRecordPreserveTime: 720,
@@ -1138,6 +1173,7 @@ test('a long custom Ping range reuses the bounded coverage loader without changi
         { minHours: 601, intervalSeconds: 86_400, samples: coarse },
         { maxHours: 600, intervalSeconds: 3600, samples: fine },
       ],
+      task101Assigned: false,
     },
   })
   await openStablePage(page)
@@ -1159,6 +1195,9 @@ test('a long custom Ping range reuses the bounded coverage loader without changi
   await chart.getByRole('button', { name: '应用', exact: true }).click()
 
   await expect.poll(() => queryCalls.map(readPingRangeHours)).toEqual([720, 600])
+  await expect(chart.locator('[data-ping-chart-task-id]')).toHaveCount(1)
+  await expect(chart.locator('[data-ping-chart-task-id="202"]')).toBeVisible()
+  await expect(chart).toHaveAttribute('data-ping-chart-record-count', '4')
   await expect.poll(async () => {
     const start = Number(await chart.getAttribute('data-ping-chart-window-start'))
     const end = Number(await chart.getAttribute('data-ping-chart-window-end'))
@@ -1232,10 +1271,18 @@ test('30-day Ping stitches sparse daily history with the retained hourly tier in
         { minHours: 601, intervalSeconds: 86_400, samples: coarseSamples },
         { maxHours: 600, intervalSeconds: 3600, samples: fineSamples },
       ],
+      // All 302 actual rows belong to 202. The cold missing-assignment case
+      // and its separate query ceiling are exercised in ping-chart-window.
+      task101Assigned: false,
     },
   })
   await openStablePage(page)
   const dialog = await openPrimaryPingDialog(page)
+  // Opening the modal starts its own 1h query asynchronously. Observe it
+  // before measuring the separate 30d gesture; neither budget is relaxed.
+  await expect.poll(() => queryCalls
+    .filter(call => call.entity_id === PRIMARY_NODE_UUID && call.max_points === 6000)
+    .map(readPingRangeHours)).toEqual([1])
   queryCalls.length = 0
   legacyCalls.length = 0
   await dialog.locator('[data-ping-chart] [role="tab"]').getByText('30 天', { exact: true }).click()
@@ -1244,6 +1291,8 @@ test('30-day Ping stitches sparse daily history with the retained hourly tier in
   const chart = dialog.locator('[data-ping-chart]')
   await expect(chart).toHaveAttribute('data-ping-chart-axis-type', 'time')
   await expect(chart).toHaveAttribute('data-ping-chart-record-count', '302')
+  await expect(chart.locator('[data-ping-chart-task-id]')).toHaveCount(1)
+  await expect(chart.locator('[data-ping-chart-task-id="202"]')).toBeVisible()
   await expect.poll(async () => {
     const start = Number(await chart.getAttribute('data-ping-chart-window-start'))
     const end = Number(await chart.getAttribute('data-ping-chart-window-end'))
@@ -1251,6 +1300,7 @@ test('30-day Ping stitches sparse daily history with the retained hourly tier in
   }).toBe(720)
   await expect(chart).toHaveAttribute('data-ping-chart-display-start', await chart.getAttribute('data-ping-chart-window-start') ?? '')
   await expect(chart).toHaveAttribute('data-ping-chart-display-end', String(Date.parse('2026-08-13T07:00:00.000Z')))
+  expect(queryCalls.map(readPingRangeHours)).toEqual([720, 600])
   expect(legacyCalls.filter(call => Number(call.hours) === 720)).toHaveLength(0)
 
   await dialog.getByRole('button', { name: '关闭' }).click()

@@ -3,6 +3,7 @@ import { CACHE_CONFIG } from '@/constants/cache'
 import { TIME_MS } from '@/constants/time'
 import { SharedCache } from '@/services/cache.service'
 import { queryMetrics } from '@/services/metrics.service'
+import { pingReadDenied } from '@/utils/pingChartDirectory'
 import {
   getPingMetricResponseIntervalSeconds,
   mergePingMetricCoverageResponses,
@@ -118,7 +119,7 @@ export async function loadPingMetricCoverage(
     || window.hours <= coverageConfig.longRangeThresholdHours
     || (fullInterval !== null && fullInterval <= coverageConfig.maximumFineIntervalSeconds)
   ) {
-    return { response: fullResponse, requests }
+    return { response: mergePingMetricCoverageResponses([fullResponse]), requests }
   }
 
   const profileKey = capabilityKey(window.hours, fullInterval)
@@ -139,7 +140,9 @@ export async function loadPingMetricCoverage(
     try {
       probeResponse = await query(probeParams)
     }
-    catch {
+    catch (error) {
+      if (pingReadDenied(error))
+        throw error
       break
     }
 
@@ -161,9 +164,7 @@ export async function loadPingMetricCoverage(
   }
 
   return {
-    response: responses.length > 1
-      ? mergePingMetricCoverageResponses(responses)
-      : fullResponse,
+    response: mergePingMetricCoverageResponses(responses),
     requests,
   }
 }

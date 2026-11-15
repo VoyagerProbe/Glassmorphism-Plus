@@ -38,6 +38,8 @@ export interface PingMetricSample {
 }
 
 export interface PingMetricSampleOptions {
+  /** The full chart explicitly requests avg of success values and the -1 failure sentinel. */
+  signedPingAverage?: boolean
   entityId?: string
   taskId?: string
   start?: number
@@ -143,14 +145,15 @@ export function normalizePingMetricSamples(
         latency = null
       }
       else if (
-        latency !== null
+        rawLatency !== null && (latency !== null || options.signedPingAverage)
         && loss !== null
         && loss > 0
         && (sample.latency?.downsampled || sample.loss?.downsampled || totalCount > 1)
       ) {
         // Algebraically equivalent to `(avg * total + lost) / valid`, without
         // rounding a fractional loss ratio back to an integer lost count.
-        latency = (latency + loss) / (1 - loss)
+        const successfulMean = (rawLatency + loss) / (1 - loss)
+        latency = successfulMean >= 0 ? successfulMean : null
       }
 
       return {

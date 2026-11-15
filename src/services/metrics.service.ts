@@ -1,8 +1,10 @@
 import type { MetricDefinition, MetricPoint, MetricQueryParams, MetricQueryResponse, MetricSeries, PingMetricStatsParams, PingMetricStatsResponse, PingTaskInfo } from '@/utils/rpc'
 import { CACHE_CONFIG } from '@/constants/cache'
+import { getAuthSessionRevision } from '@/services/auth.service'
 import { SharedCache } from '@/services/cache.service'
 import { requestManager } from '@/services/request.service'
 import { metricSeriesDataKey, metricSeriesKey, normalizeMetricSeriesList, PING_LATENCY_METRIC, PING_LOSS_METRIC, pingTaskId } from '@/utils/metricSeries'
+import { pingReadDenied } from '@/utils/pingChartDirectory'
 import { getSharedRpc, RpcError } from '@/utils/rpc'
 
 export interface PublicPingTaskCatalog {
@@ -81,7 +83,7 @@ function cachePart(value: unknown): string {
 
 function shouldRetryMetricRequest(error: unknown): boolean {
   if (error instanceof RpcError)
-    return error.code !== 401 && error.code !== 403 && error.code !== -32601 && error.code !== -32602
+    return !pingReadDenied(error) && error.code !== -32601 && error.code !== -32602
   return true
 }
 
@@ -188,7 +190,7 @@ function normalizeRawPingMetricWindowPart(value: unknown): string | null {
 }
 
 function getRawPingMetricWindowKey(entityId: string, start: string, end: string): string {
-  return JSON.stringify(['metrics:raw-ping', entityId, start, end])
+  return JSON.stringify(['metrics:raw-ping', getAuthSessionRevision(), entityId, start, end])
 }
 
 function getRawPingMetricWindow(params: MetricQueryParams): { start: string, end: string } | null {
@@ -333,6 +335,7 @@ export function getMetricDefinitionsRequestKey(): string {
 export function getQueryMetricsRequestKey(params: MetricQueryParams): string {
   return [
     'metrics:query',
+    getAuthSessionRevision(),
     cachePart(normalizeMetricKeys(params)),
     cachePart(params.entity_id),
     cachePart(params.entity_ids),
@@ -353,6 +356,7 @@ export function getQueryMetricsRequestKey(params: MetricQueryParams): string {
 export function getPingMetricStatsRequestKey(params: PingMetricStatsParams): string {
   return [
     'metrics:ping-stats',
+    getAuthSessionRevision(),
     cachePart(params.uuid ?? params.entity_id),
     cachePart(params.entity_ids),
     cachePart(params.task_id),
@@ -365,7 +369,7 @@ export function getPingMetricStatsRequestKey(params: PingMetricStatsParams): str
 }
 
 export function getPublicPingTasksRequestKey(): string {
-  return 'metrics:public-ping-tasks'
+  return `metrics:public-ping-tasks:${getAuthSessionRevision()}`
 }
 
 function normalizePublicPingTaskId(value: unknown): string | null {
@@ -435,12 +439,14 @@ export async function queryMetrics(params: MetricQueryParams): Promise<MetricQue
     max_points: normalizeMaxPoints(params.max_points ?? params.downsample_points),
   }
 
+  const revision = getAuthSessionRevision()
   const response = await requestManager.run(
     getQueryMetricsRequestKey(normalizedParams),
     async signal => getSharedRpc().queryPublicMetrics(normalizedParams, signal),
     { shouldRetry: shouldRetryMetricRequest },
   )
-  cacheRawPingMetricQuery(normalizedParams, response)
+  if (revision === getAuthSessionRevision())
+    cacheRawPingMetricQuery(normalizedParams, response)
   return response
 }
 

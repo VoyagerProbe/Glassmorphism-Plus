@@ -489,7 +489,7 @@ test('advanced JSON remains atomic, ignores unknown keys and preserves mode on c
   expect(fixture.getThemeSaveCount()).toBe(0)
 })
 
-test('feedback controls retain only atomic Import and ten-color Copy actions', async ({ page }) => {
+test('feedback controls retain only atomic Import and ten-color Copy actions', async ({ page, hasTouch }) => {
   const fixture = await setup(page)
   await open(page)
   await page.locator('.palette-advanced summary').click()
@@ -497,12 +497,21 @@ test('feedback controls retain only atomic Import and ten-color Copy actions', a
   await expect(page.getByRole('button', { name: '导入', exact: true })).toHaveAccessibleName('导入')
   await expect(page.getByRole('button', { name: /重新读取|重新加载|同步站点|刷新/ })).toHaveCount(0)
   await page.evaluate(() => {
+    const writes: string[] = []
+    ;(window as any).paletteClipboardWrites = writes
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (text: string) => {
-      (window as any).copiedPalette = text
+      writes.push(text)
     } } })
   })
-  await page.getByRole('button', { name: '复制当前十键配色', exact: true }).click()
-  expect(JSON.parse(await page.evaluate(() => (window as any).copiedPalette))).toEqual(CUSTOM_COLORS)
+  const copy = page.getByRole('button', { name: '复制当前十键配色', exact: true })
+  if (hasTouch)
+    await copy.tap()
+  else
+    await copy.click()
+  await expect(page.getByTestId('palette-status')).toContainText('已复制十键配色')
+  const writes: string[] = await page.evaluate(() => (window as any).paletteClipboardWrites)
+  expect(writes).toHaveLength(1)
+  expect(JSON.parse(writes[0]!)).toEqual(CUSTOM_COLORS)
   expect(fixture.getThemeSaveCount()).toBe(0)
 })
 

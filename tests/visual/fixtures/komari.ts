@@ -89,6 +89,7 @@ export interface NodeCardPingFixture {
   /** Optional real-time delay by rounded requested hours for stale-response tests. */
   metricQueryDelayMsByHours?: Record<string, number>
   metricQueryOmitTaskIds?: number[]
+  task101Assigned?: boolean
   task202Exists?: boolean
   task202Assigned?: boolean
   task202Name?: string
@@ -325,7 +326,7 @@ function buildNodeCardPingTasks(
       interval: 60,
       loss: 0,
       weight: 1,
-      clients: assignedNodeUuids,
+      clients: fixture.task101Assigned === false ? [uuidFor(1)] : assignedNodeUuids,
       type: 'tcp',
       target: 'tokyo.fixture.example:443',
     },
@@ -932,7 +933,7 @@ async function handleRpc(
     : Array.from({ length: 48 }, (_, index) => ({ task_id: 1, client: uuid, time: new Date(Date.parse(FIXED_NOW) - (47 - index) * 75_000).toISOString(), value: index % 17 === 0 ? -1 : 76 + index }))
   const pingTasks = nodeCardPingFixture
     ? buildNodeCardPingTasks(nodeCardPingFixture, Object.keys(clientFixtures))
-    : [{ id: 1, name: 'Tokyo', interval: 60, loss: 3.2, weight: 1 }]
+    : [{ id: 1, name: 'Tokyo', interval: 60, loss: 3.2, weight: 1, clients: Object.keys(clientFixtures) }]
 
   let result: unknown
   let error: { code: number, message: string } | null = null

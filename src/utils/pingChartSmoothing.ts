@@ -17,6 +17,8 @@ export function smoothPingChartDisplayRows(
     let previous: number | null = null
 
     for (const row of displayRows) {
+      if (!Object.hasOwn(row, taskId))
+        continue
       const rawValue = row[taskId]
       if (typeof rawValue !== 'number' || !Number.isFinite(rawValue)) {
         previous = null

@@ -1,6 +1,5 @@
 import type { MetricPoint, MetricQueryResponse, MetricSeries } from '@/utils/rpc'
 import {
-  metricSeriesKey,
   metricTags,
   metricTagsKey,
   normalizeMetricSeriesList,
@@ -13,6 +12,8 @@ interface CoveragePointCandidate {
   point: MetricPoint
   resolutionSeconds: number
   sourceIndex: number
+  observation: boolean
+  conflict?: boolean
 }
 
 interface CoverageSeriesAccumulator {
@@ -52,11 +53,19 @@ function isPingCoverageMetric(series: Pick<MetricSeries, 'metric_key'>): boolean
   return series.metric_key === PING_LATENCY_METRIC || series.metric_key === PING_LOSS_METRIC
 }
 
+// Display metadata can change without creating a different observation.
+export function chartDimensionKey(tags: Record<string, unknown>): string {
+  const { name: _name, task_name: _taskName, ...dimensions } = tags
+  if (dimensions.task_id !== undefined)
+    dimensions.task_id = String(dimensions.task_id)
+  return metricTagsKey(dimensions)
+}
+
 function coveragePointKey(point: MetricPoint): string {
   const timestamp = parsePingTimestampMs(point.time)
   return JSON.stringify([
     timestamp ?? point.time,
-    metricTagsKey(metricTags(point)),
+    chartDimensionKey(metricTags(point)),
   ])
 }
 
@@ -64,6 +73,8 @@ function shouldReplaceCoveragePoint(
   current: CoveragePointCandidate,
   candidate: CoveragePointCandidate,
 ): boolean {
+  if (candidate.observation !== current.observation)
+    return candidate.observation
   if (candidate.resolutionSeconds !== current.resolutionSeconds)
     return candidate.resolutionSeconds < current.resolutionSeconds
   return candidate.sourceIndex > current.sourceIndex
@@ -90,7 +101,7 @@ export function hasObservedPingMetricData(response: MetricQueryResponse): boolea
 /**
  * Deterministically merge independently queried Ping rollup segments.
  *
- * A lower `interval_seconds` always wins at the same entity/task/timestamp,
+ * Observations beat fill-only markers. A lower `interval_seconds` then wins at the same entity/task/timestamp,
  * including an explicit finer null. Equal-resolution later segments win so a
  * refreshed supplemental response replaces its older copy without averaging.
  */
@@ -109,7 +120,7 @@ export function mergePingMetricCoverageResponses(
         continue
 
       const candidateResolution = metricResolutionSeconds(normalized)
-      const key = metricSeriesKey(normalized)
+      const key = JSON.stringify([normalized.metric_key, normalized.entity_id.toLowerCase(), chartDimensionKey(normalized.tags)])
       const accumulator = seriesByKey.get(key) ?? {
         series: cloneMetricSeries(normalized),
         resolutionSeconds: candidateResolution,
@@ -128,14 +139,28 @@ export function mergePingMetricCoverageResponses(
 
       for (const point of normalized.points) {
         const pointKey = coveragePointKey(point)
-        const candidate = {
+        if (parsePingTimestampMs(point.time) === null)
+          continue
+        const candidate: CoveragePointCandidate = {
+          observation: (typeof point.value === 'number' && Number.isFinite(point.value)) || (point.count ?? 0) > 0,
           point: cloneMetricPoint(point),
           resolutionSeconds: candidateResolution,
           sourceIndex,
         }
         const current = accumulator.points.get(pointKey)
-        if (!current || shouldReplaceCoveragePoint(current, candidate))
+        if (!current || shouldReplaceCoveragePoint(current, candidate)) {
           accumulator.points.set(pointKey, candidate)
+        }
+        else if (candidate.observation === current.observation && candidate.sourceIndex === current.sourceIndex
+          && candidate.resolutionSeconds === current.resolutionSeconds) {
+          // No version or source priority distinguishes two contradictory peers.
+          // Retain the timestamp as unknown, not whichever value arrived last.
+          if (current.conflict || current.point.value !== point.value) {
+            current.conflict = true
+            current.point.value = null
+          }
+          current.point.count = Math.max(current.point.count ?? 0, point.count ?? 0)
+        }
       }
 
       seriesByKey.set(key, accumulator)

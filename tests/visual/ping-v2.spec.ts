@@ -1124,6 +1124,19 @@ test.describe('Ping center route, access, and hidden-entry contracts', () => {
         adminRequests.push(request.url())
     })
     await installKomariFixture(page, { adminAccess: 'guest', nodeCount: 3 })
+    // This public task intentionally has no assigned clients; the next case covers three.
+    await page.route('**/rpc2', (route) => {
+      const { id, method } = route.request().postDataJSON()
+      if (method !== 'public:getPublicPingTasks')
+        return route.fallback()
+      return route.fulfill({
+        json: {
+          jsonrpc: '2.0',
+          id,
+          result: [{ id: 1, name: 'Tokyo', interval: 60, loss: 3.2, weight: 1, clients: [] }],
+        },
+      })
+    })
     await page.goto('/?view=pingsettings&pingtab=overview')
     await expect(page.getByTestId('ping-center-overview')).toBeVisible()
     await expect(page.getByRole('heading', { name: '延迟监测中心', exact: true })).toBeVisible()
