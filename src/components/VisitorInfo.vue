@@ -2,6 +2,7 @@
 import { Icon } from '@iconify/vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAppStore } from '@/stores/app'
+import { registerVisitorIcons } from '@/utils/visitorIcons'
 
 interface VisitorData {
   ip: string
@@ -22,6 +23,7 @@ const visitorFetchTimeout = 8000
 const mobileScrollIdleDelay = 700
 const mobileViewportQuery = '(max-width: 767px)'
 const appStore = useAppStore()
+registerVisitorIcons()
 
 const show = ref(false)
 const dismissed = ref(false)

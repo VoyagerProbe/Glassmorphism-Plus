@@ -1,0 +1,43 @@
+{
+  "prefix": "icon-park-outline",
+  "icons": {
+    "android": {
+      "body": "<g fill=\"none\"><path stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"M43.901 36H4.1C5.103 25.893 13.63 18 24 18c10.372 0 18.899 7.893 19.902 18Z\"/><path stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"m14 20l-4-7m23 7l4-7\"/><circle cx=\"15\" cy=\"29\" r=\"2\" fill=\"currentColor\"/><circle cx=\"33\" cy=\"29\" r=\"2\" fill=\"currentColor\"/></g>"
+    },
+    "apple": {
+      "body": "<g fill=\"none\"><path fill=\"currentColor\" d=\"M23.911 11.318c.082-2.232.71-4.192 1.866-5.83c1.163-1.647 3.086-2.817 5.717-3.48l.055.243v.424c0 .961-.233 2.064-.693 3.276c-.483 1.174-1.237 2.28-2.238 3.277c-.936.879-1.803 1.46-2.569 1.723c-.252.076-.599.15-1.018.217q-.558.087-1.12.15\"/><path stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"M24.35 14.629c-2.972 0-5.036-2.63-7.969-2.63c-2.932 0-8.973 2.696-8.973 12c0 9.306 5.365 15.3 5.965 16c.6.701 1.987 2.5 4.137 2.5s4.503-1.709 6.84-1.709s5.279 1.71 7.2 1.71c1.92 0 2.71-.783 4.016-2.134s3.8-5.47 4.67-7.944c-1.433-.854-5.234-3.17-5.234-8.422q0-5.251 3.838-8.725Q36.322 12 33 12c-3.323 0-5.677 2.629-8.65 2.629Z\"/></g>"
+    },
+    "browser-chrome": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"M24 15a9 9 0 1 1 0 18a9 9 0 0 1 0-18m0 0h17.865M17 42.74L29.644 31M6 15.272l10.875 14.28M24 44c11.046 0 20-8.954 20-20S35.046 4 24 4S4 12.954 4 24s8.954 20 20 20\"/>"
+    },
+    "close": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"m8 8l32 32M8 40L40 8\"/>"
+    },
+    "earth": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\"><path d=\"M24 44c11.046 0 20-8.954 20-20S35.046 4 24 4S4 12.954 4 24s8.954 20 20 20\" clip-rule=\"evenodd\"/><path d=\"M4 24h40\"/><path d=\"M24 44c4.418 0 8-8.954 8-20S28.418 4 24 4s-8 8.954-8 20s3.582 20 8 20\" clip-rule=\"evenodd\"/><path d=\"M9.858 10.142A19.94 19.94 0 0 0 24 16a19.94 19.94 0 0 0 14.142-5.858m0 27.716A19.94 19.94 0 0 0 24 32a19.94 19.94 0 0 0-14.142 5.858\"/></g>"
+    },
+    "laptop": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\"><path d=\"M8 8h32v20H8zm0 20L4 41h40l-4-13\"/><path d=\"M19.9 35h8.2l1.9 6H18z\"/></g>"
+    },
+    "local": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"4\"><path stroke-linecap=\"round\" d=\"M9.858 32.757C6.238 33.843 4 35.343 4 37c0 3.314 8.954 6 20 6s20-2.686 20-6c0-1.657-2.239-3.157-5.858-4.243\"/><path d=\"M24 35s13-8.496 13-18.318C37 9.678 31.18 4 24 4S11 9.678 11 16.682C11 26.504 24 35 24 35Z\"/><path d=\"M24 22a5 5 0 1 0 0-10a5 5 0 0 0 0 10Z\"/></g>"
+    },
+    "protect": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"4\"><path d=\"M6 9.256L24.009 4L42 9.256v10.778A26.32 26.32 0 0 1 24.003 45A26.32 26.32 0 0 1 6 20.029z\"/><path stroke-linecap=\"round\" d=\"m15 23l7 7l12-12\"/></g>"
+    },
+    "time": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"4\"><path d=\"M24 44c11.046 0 20-8.954 20-20S35.046 4 24 4S4 12.954 4 24s8.954 20 20 20Z\"/><path stroke-linecap=\"round\" d=\"M24.008 12v12.01l8.479 8.48\"/></g>"
+    },
+    "user": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\"><circle cx=\"24\" cy=\"12\" r=\"8\"/><path d=\"M42 44c0-9.941-8.059-18-18-18S6 34.059 6 44\"/></g>"
+    },
+    "windows": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"3.833\" d=\"m6.75 11.063l12.938-1.725v12.075H6.75zm18.112-2.218L41.25 6.75v14.663H24.862zm0 18.605l16.388.383V41.25l-16.388-2.683zM6.75 26.588l12.938.311V37.8L6.75 35.62z\"/>"
+    }
+  },
+  "not_found": [
+    "mac"
+  ],
+  "width": 48,
+  "height": 48
+}

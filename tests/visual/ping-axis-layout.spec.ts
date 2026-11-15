@@ -78,6 +78,12 @@ async function inspect(owner: Locator, action = 'inspect', argument: any = null)
     const node = find((document.querySelector('#app') as any)._vnode)
     const exposed = node.component.exposed
     let chart = exposed.chart.value
+    if (action === 'dimensions') {
+      const canvas = element.querySelector('canvas')
+      // Read the actual backing store as well as ECharts and its CSS host. Size
+      // probes must not dispatch chart actions or serialize series while waiting.
+      return [exposed.getHeight(), element.clientHeight, canvas?.clientHeight, canvas && canvas.height / chart.getDevicePixelRatio()]
+    }
     if (action === 'dispatch') {
       exposed.dispatchAction(argument)
       return
@@ -138,6 +144,10 @@ async function inspect(owner: Locator, action = 'inspect', argument: any = null)
   }, { action, argument })
 }
 
+async function expectRenderedHeight(owner: Locator, height: number) {
+  await expect.poll(() => inspect(owner, 'dimensions')).toEqual([height, height, height, height])
+}
+
 function assertLayout(state: any, dual: boolean) {
   expect(state.grids).toHaveLength(dual ? 2 : 1)
   expect(state.axes).toHaveLength(dual ? 2 : 1)
@@ -183,7 +193,7 @@ for (const width of [360, 390, 1280]) {
           await button.tap()
         else await button.click()
         await expect(button).toHaveAttribute('aria-pressed', 'false')
-        await expect.poll(async () => (await inspect(owner)).height).toBe(288)
+        await expectRenderedHeight(owner, 288)
         await page.mouse.move(0, 0)
         const single = await inspect(owner)
         writeFileSync(info.outputPath('single-model.json'), JSON.stringify(single, null, 2))
@@ -202,7 +212,7 @@ for (const width of [360, 390, 1280]) {
             await button.tap()
           else await button.click()
           const dual = i % 2 === 0
-          await expect.poll(async () => (await inspect(owner)).height).toBe(dual ? 528 : 288)
+          await expectRenderedHeight(owner, dual ? 528 : 288)
           const current = await inspect(owner)
           assertLayout(current, dual)
           expect(current.id).toBe(initial.id)
@@ -218,13 +228,13 @@ for (const width of [360, 390, 1280]) {
           assertLayout(before, false)
           const rangeRequests = [...calls]
           await button.click()
-          await expect.poll(async () => (await inspect(owner)).height).toBe(528)
+          await expectRenderedHeight(owner, 528)
           const dual = await inspect(owner)
           assertLayout(dual, true)
           expect(dual.axes[0].extent).toEqual(dual.axes[1].extent)
           expect(dual.series.slice(0, 3).map((s: any) => s.data)).toEqual(before.series.map((s: any) => s.data))
           await button.click()
-          await expect.poll(async () => (await inspect(owner)).height).toBe(288)
+          await expectRenderedHeight(owner, 288)
           assertLayout(await inspect(owner), false)
           expect(calls).toEqual(rangeRequests)
         }
@@ -267,7 +277,7 @@ for (const width of [360, 390, 1280]) {
           await page.getByRole('button', { name: '浅色模式', exact: true }).click()
           assertLayout(await inspect(owner), true)
           await button.click()
-          await expect.poll(async () => (await inspect(owner)).height).toBe(288)
+          await expectRenderedHeight(owner, 288)
           assertLayout(await inspect(owner), false)
           await page.getByRole('button', { name: '下一个节点', exact: true }).click()
           await expect(owner).toHaveAttribute('data-ping-chart-visible-task-ids', '1101,1202,1303')
@@ -307,7 +317,7 @@ test.describe('Ping axis additional iPhone widths', () => {
         for (let index = 0; index < 10; index += 1) {
           await button.tap()
           const dual = index % 2 === 1
-          await expect.poll(async () => (await inspect(owner)).height).toBe(dual ? 528 : 288)
+          await expectRenderedHeight(owner, dual ? 528 : 288)
           const state = await inspect(owner)
           assertLayout(state, dual)
           expect(state.id).toBe(initial.id)

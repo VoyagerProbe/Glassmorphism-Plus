@@ -24,6 +24,8 @@ The reviewed public LuminaPlus release did not include an explicit LICENSE file 
 
 ## License and copyright
 
+The visitor widget includes eleven unchanged [ByteDance IconPark Outline](https://github.com/bytedance/IconPark) glyphs from the locked Iconify dataset. The source and installer include their [Apache-2.0 license and attribution](public/licenses/iconpark-apache-2.0.txt). The theme license below is unchanged.
+
 The inherited [MIT License](LICENSE) is preserved unchanged. Its actual copyright notice is:
 
 > Copyright (c) 2025 Tony Liu (tonyliuzj, tony-liu.com)
