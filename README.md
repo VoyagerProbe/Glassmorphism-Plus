@@ -25,29 +25,25 @@
 
 ## 🚦 项目状态
 
-**v3.0.2 本地试装候选（未发布）**：核对长范围 Ping 的任务身份、近期覆盖与折线可读性。下表的 v3.0.1 仍是最近的正式发布；候选不替代正式安装包。
-
-候选随包提供访客面板的固定图标，避免整页切换时该面板仍向外部图标服务发起请求。其他图标仍使用原有加载方式。
-
 | 项目               | 当前状态                                                                                                                                                 |
 | :----------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 本轮发行基线       | **v3.0.1（正式发布）**                                                                                                                                   |
-| Latest             | [v3.0.1](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.1)                                                                         |
+| 当前 Plus 版本     | **v3.0.2（正式发布）**                                                                                                                                   |
+| Latest             | [v3.0.2](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.2)                                                                         |
 | 上游同步基线       | [sanrokamlan Glassmorphism v3.3.7](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases/tag/v3.3.7)                                   |
 | 当前维护者         | [VoyagerProbe](https://github.com/VoyagerProbe)                                                                                                          |
 | 适用平台           | [Komari Monitor](https://github.com/komari-monitor/komari)                                                                                               |
 | 已验证 Komari 版本 | **1.6.0、1.5.1、1.5.0-fix1、1.5.0、1.4.3**（平台与范围见下文；不是全部设备保证）                                                                         |
 | 技术栈             | Vue 3、TypeScript、Vite 7、Tailwind CSS 4、Pinia、ECharts、Bun                                                                                           |
-| 源码发布           | GitHub `main` 与 [v3.0.1 Release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.1)                                                |
-| 客户安装包         | [Glassmorphism-Plus-release-3.0.1.zip](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/download/v3.0.1/Glassmorphism-Plus-release-3.0.1.zip) |
+| 源码发布           | GitHub `main` 与 [v3.0.2 Release](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.2)                                                |
+| 客户安装包         | [Glassmorphism-Plus-release-3.0.2.zip](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/download/v3.0.2/Glassmorphism-Plus-release-3.0.2.zip) |
 
 Glassmorphism Plus 是独立维护的 Glassmorphism 衍生主题，Plus 使用自己的版本体系；上游 v3.3.7 仅代表当前同步基线，并非 Plus 的版本号。同步来源、选择性合并和署名详见 [UPSTREAM.md](UPSTREAM.md)。
 
-### ✨ 最新版本 · v3.0.1
+### ✨ 最新版本 · v3.0.2
 
-- 首页 Ping 轨道以蓝色波形标示延迟、紫色柱状图标示丢包，保留右侧摘要和信息入口。两轨各 20 格，左旧右新；格高按 mini、compact、comfortable、large 分别为 4、5、6、6 px。
-- 配色中心调整控件间距、排版和分组。访客仍为只读；管理员可预览、取消、保存并读回全站配色，完整合并设置，保留 Ping 绑定与其他配置。
-- 保留点阵旋转地球、VPS 国旗、三网监控、历史图表及现有 Service Worker。正式包在 Windows 官方 Komari 1.6.0 上通过新装与同版本升级；Linux 官方五版本矩阵通过，验证包解压内容与正式包一致。测试环境边界见[兼容记录](docs/compatibility/komari-1.6.0.md)。
+- 首页 Ping 弹窗和节点详情页按当前节点的任务 ID 显示名称与选择；保留合法的数字名称，不会把已删除的同名任务历史拼给新任务。
+- 超过 1 天的历史图只为缺少样本的当前任务补入近期实测点；1 天及更短窗口使用自己的查询结果。保留真实时间、断点与最新延迟，不用摘要造线，不把全丢包画为 0 ms。
+- 访客信息面板随包提供原有固定图标，连续打开详情页时不再为这组图标访问外部图标服务。其他图标和定位服务沿用原有方式。
 
 ---
 
@@ -98,8 +94,8 @@ _历史数据的实际可查看范围取决于后端保留时间及已有采样�
 
 ### 重要说明
 
-- **[v3.0.1 正式版](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.1)** 的唯一客户安装包是 [Glassmorphism-Plus-release-3.0.1.zip](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/download/v3.0.1/Glassmorphism-Plus-release-3.0.1.zip)。
-- 安装包为 7,659,705 字节；SHA-256：`5a302859877d84b31a8cc6d240928751def393b2175e399c69960f5b5ff0c409`。
+- **[v3.0.2 正式版](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/tag/v3.0.2)** 的唯一客户安装包是 [Glassmorphism-Plus-release-3.0.2.zip](https://github.com/VoyagerProbe/Glassmorphism-Plus/releases/download/v3.0.2/Glassmorphism-Plus-release-3.0.2.zip)。
+- 安装包为 7,667,565 字节；SHA-256：`c10ca2d27f81ad8c6b28f75d7ed82a3012a4fd6411d78af0af52c18fcb0fffd0`。
 - GitHub 自动生成的 **Source code (zip)** 是源码快照，**不是** Komari 可安装主题包。
 - Komari 的远程仓库导入流程应使用正式 Release 中的 installer asset；仍不要用 GitHub 自动生成的源码压缩包代替。
 
@@ -189,12 +185,18 @@ bun run release:prepare
 
 ## 📝 版本历史
 
-当前版本更新见上方「最新版本 · v3.0.1」。
+当前版本更新见上方「最新版本 · v3.0.2」。
 
 <details>
 <summary><strong>📚 查看历史版本更新</strong></summary>
 
 <br>
+
+### v3.0.1
+
+- 首页 Ping 轨道以蓝色波形标示延迟、紫色柱状图标示丢包，保留右侧摘要和信息入口。两轨各 20 格，左旧右新；格高按 mini、compact、comfortable、large 分别为 4、5、6、6 px。
+- 配色中心调整控件间距、排版和分组。访客仍为只读；管理员可预览、取消、保存并读回全站配色，完整合并设置，保留 Ping 绑定与其他配置。
+- 保留点阵旋转地球、VPS 国旗、三网监控、历史图表及现有 Service Worker。正式包在 Windows 官方 Komari 1.6.0 上通过新装与同版本升级；Linux 官方五版本矩阵通过，验证包解压内容与正式包一致。测试环境边界见[兼容记录](docs/compatibility/komari-1.6.0.md)。
 
 ### v3.0.0
 
